@@ -12,7 +12,7 @@ before_script:
 env:
   - DATABASE_URL=postgres://postgres@localhost/crystal
 script:
-  - crystal spec
+  - crystal spec | tee /dev/tty | grep "0 failures, 0 errors" -q
 notifications:
   email: false
 sudo: true
