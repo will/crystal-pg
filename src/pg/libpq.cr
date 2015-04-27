@@ -20,9 +20,3 @@ module PG
     puts err unless err == ""
   end
 end
-
-#conn = LibPQ.connect("postgres:///")
-#print_pg_error(conn)
-#
-#print_pg_error(conn)
-
