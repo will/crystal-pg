@@ -1,4 +1,4 @@
 require "spec"
 require "../src/pg"
 
-DB = PG.connect("postgres:///")
+DB = PG.connect(ENV["DATABASE_URL"] || "postgres:///")

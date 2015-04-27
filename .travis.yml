@@ -6,6 +6,7 @@ before_install: |
   sudo apt-get -q update
 install: |
   sudo apt-get install crystal
+cache: apt
 script:
   - crystal spec
 notifications:
