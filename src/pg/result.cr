@@ -1,9 +1,20 @@
 module PG
   class Result
-    getter res
 
-    def initialize(@res)
+    struct Field
+      property name
+      property oid
+      def initialize(@name, @oid) end
+      def self.new_from_res(res, col)
+        new(
+          String.new(LibPQ.fname(res, col)),
+          LibPQ.ftype(res, col)
+        )
+      end
     end
+
+    getter res
+    def initialize(@res) end
 
     def nfields
       @nfields ||= LibPQ.nfields(res)
@@ -14,10 +25,10 @@ module PG
     end
 
     def fields
-      fds = Array(String).new(nfields)
+      fds = Array(Field).new(nfields)
       i = 0
       while i < nfields
-        fds << String.new(LibPQ.fname(res, i))
+        fds << Field.new_from_res(res, i)
         i += 1
       end
       fds

@@ -6,7 +6,8 @@ describe PG::Result, "#fields" do
 
   it "is is a list of the fields" do
     fields = DB.exec("select 1 as one, 2 as two, 3 as three").fields
-    fields.should eq(["one", "two", "three"])
+    fields.map(&.name).should eq(["one", "two", "three"])
+    fields.map(&.oid).should eq([23,23,23])
   end
 end
 

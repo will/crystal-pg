@@ -1,18 +1,21 @@
 module PG
   @[Link(ldflags: "-lpq -I`pg_config --includedir` -L`pg_config --libdir`")]
   lib LibPQ
+    # http://www.postgresql.org/docs/9.4/static/libpq-exec.html
     alias CChar = UInt8
+    alias Int   = Int32
     struct PGconn   end
     struct PGresult end
     fun connect       = PQconnectdb(conninfo : CChar*)         : PGconn*
     fun exec          = PQexec(conn : PGconn*, query : UInt8*) : PGresult*
-    fun result_status = PQresultStatus(res : PGresult*)        : Int32
+    fun result_status = PQresultStatus(res : PGresult*)        : Int
     fun error_message = PQerrorMessage(conn : PGconn*)         : CChar*
 
-    fun nfields  = PQnfields(res : PGresult*) : Int32
-    fun ntuples  = PQntuples(res : PGresult*) : Int32
-    fun fname    = PQfname(res : PGresult*, column_number : Int32) : CChar*
-    fun getvalue = PQgetvalue(res : PGresult*, row_number : Int32, column_number : Int32) : CChar*
+    fun nfields  = PQnfields(res : PGresult*) : Int
+    fun ntuples  = PQntuples(res : PGresult*) : Int
+    fun fname    = PQfname(res : PGresult*, column_number : Int) : CChar*
+    fun ftype    = PQftype(res : PGresult*, column_number : Int) : Int
+    fun getvalue = PQgetvalue(res : PGresult*, row_number : Int, column_number : Int) : CChar*
   end
 
   def print_pg_error(conn)
