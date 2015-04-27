@@ -7,7 +7,7 @@ module PG
     end
 
     def exec(query)
-      LibPQ.exec(raw, query)
+      Result.new(LibPQ.exec(raw, query))
     end
   end
 end
