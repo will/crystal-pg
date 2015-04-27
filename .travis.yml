@@ -7,6 +7,10 @@ before_install: |
 install: |
   sudo apt-get install crystal
 cache: apt
+before_script:
+  - psql -c 'create database crystal;' -U postgres
+env:
+  - DATABASE_URL=postgres://postgres@localhost/crystal
 script:
   - crystal spec
 notifications:
