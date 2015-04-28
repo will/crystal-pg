@@ -11,6 +11,7 @@ module PG
     fun result_status = PQresultStatus(res : PGresult*)        : Int
     fun error_message = PQerrorMessage(conn : PGconn*)         : CChar*
 
+    fun clear    = PQclear(res : PGresult*) : Void
     fun nfields  = PQnfields(res : PGresult*) : Int
     fun ntuples  = PQntuples(res : PGresult*) : Int
     fun fname    = PQfname(res : PGresult*, column_number : Int) : CChar*

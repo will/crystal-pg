@@ -18,22 +18,29 @@ module PG
       end
     end
 
-    getter res
-    def initialize(@res) end
+    getter fields
+    getter rows
+    def initialize(@res)
+      @fields = gather_fields
+      @rows   = gather_rows
+      clear_res
+    end
 
-    def nfields
+    private getter res
+
+    private def nfields
       @nfields ||= LibPQ.nfields(res)
     end
 
-    def ntuples
+    private def ntuples
       @ntuples ||= LibPQ.ntuples(res)
     end
 
-    def decoders
+    private def decoders
       @decoders ||= fields.map(&.decoder)
     end
 
-    def fields
+    private def gather_fields
       fds = Array(Field).new(nfields)
       i = 0
       while i < nfields
@@ -43,7 +50,7 @@ module PG
       fds
     end
 
-    def rows
+    private def gather_rows
       rws = Array( Array(PGValue) ).new(ntuples)
       i = 0
       while i < ntuples
@@ -66,6 +73,11 @@ module PG
       else
         decoders[col].decode(val_ptr)
       end
+    end
+
+    private def clear_res
+      LibPQ.clear(res)
+      @res = nil
     end
 
   end
