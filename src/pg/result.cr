@@ -1,5 +1,6 @@
 module PG
   class Result
+    alias PGValue = String | Nil
 
     struct Field
       property name
@@ -35,19 +36,29 @@ module PG
     end
 
     def rows
-      rws = Array( Array(String) ).new(ntuples)
+      rws = Array( Array(PGValue) ).new(ntuples)
       i = 0
       while i < ntuples
-        rws << Array(String).new(nfields)
+        rws << Array(PGValue).new(nfields)
         j = 0
         while j < nfields
-          val = String.new(LibPQ.getvalue(res, i, j))
+          val = decode_value(res, i, j)
           rws[i] << val
           j += 1
         end
         i += 1
       end
       rws
+    end
+
+
+    private def decode_value(res, i, j)
+      val_ptr = LibPQ.getvalue(res, i, j)
+      if val_ptr.value == 0 && LibPQ.getisnull(res, i, j)
+        nil
+      else
+        String.new(val_ptr)
+      end
     end
 
   end

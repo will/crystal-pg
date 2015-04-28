@@ -18,8 +18,13 @@ describe PG::Result, "#rows" do
     rows[0].size.should eq(0)
   end
 
-  it "can handle text types" do
+  it "can handle undefined types" do
     rows = DB.exec("select 'a', 'b' union all select 'c', 'd'").rows
     rows.should eq([["a", "b"], ["c", "d"]])
+  end
+
+  it "can handle empty strings and nulls" do
+    rows = DB.exec("select 'a', '', null").rows
+    rows.first.should eq( ["a", "", nil] )
   end
 end

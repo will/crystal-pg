@@ -16,6 +16,7 @@ module PG
     fun fname    = PQfname(res : PGresult*, column_number : Int) : CChar*
     fun ftype    = PQftype(res : PGresult*, column_number : Int) : Int
     fun getvalue = PQgetvalue(res : PGresult*, row_number : Int, column_number : Int) : CChar*
+    fun getisnull = PQgetisnull(res : PGresult*, row_number : Int, column_number : Int) : Bool
   end
 
   def print_pg_error(conn)
