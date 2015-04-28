@@ -1,5 +1,5 @@
 module PG
-  alias PGValue = String | Nil | Bool | Int
+  alias PGValue = String | Nil | Bool | Int | Float32 | Float64
 
   abstract class Decoder
     def self.from_oid(oid)
@@ -8,6 +8,10 @@ module PG
         BoolDecoder
       when 20, 21, 23
         IntDecoder
+      when 700
+        Float32Decoder
+      when 701
+        Float64Decoder
       else
         DefaultDecoder
       end.new
@@ -38,6 +42,18 @@ module PG
   class IntDecoder < Decoder
     def decode(value_ptr)
       LibC.atoi value_ptr
+    end
+  end
+
+  class Float32Decoder < Decoder
+    def decode(value_ptr)
+      LibC.strtof value_ptr, nil
+    end
+  end
+
+  class Float64Decoder < Decoder
+    def decode(value_ptr)
+      LibC.atof value_ptr
     end
   end
 
