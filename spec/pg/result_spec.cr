@@ -1,3 +1,12 @@
+macro test_decode(name, select, expected)
+  it {{name}} do
+    rows = DB.exec("select #{{{select}}}").rows
+    rows.size.should eq( 1 )
+    rows.first.size.should eq( 1 )
+    rows.first.first.should eq( {{expected}} )
+  end
+end
+
 describe PG::Result, "#fields" do
   it "is empty on empty results" do
     fields = DB.exec("select").fields
@@ -18,13 +27,12 @@ describe PG::Result, "#rows" do
     rows[0].size.should eq(0)
   end
 
-  it "can handle undefined types" do
-    rows = DB.exec("select 'a', 'b' union all select 'c', 'd'").rows
-    rows.should eq([["a", "b"], ["c", "d"]])
+  it "can handle undefined types and several rows" do
+    rows = DB.exec("select 'a', 'b' union all select '', null").rows
+    rows.should eq([["a", "b"], ["", nil]])
   end
 
-  it "can handle empty strings and nulls" do
-    rows = DB.exec("select 'a', '', null").rows
-    rows.first.should eq( ["a", "", nil] )
-  end
+  test_decode "undefined as strings", "'what'", "what"
+  test_decode "empty strings",        "''",     ""
+  test_decode "null as nil",          "null",   nil
 end
