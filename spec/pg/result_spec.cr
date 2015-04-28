@@ -37,4 +37,5 @@ describe PG::Result, "#rows" do
   test_decode "null as nil",           "null",    nil
   test_decode "boolean false",         "false",   false
   test_decode "boolean true",          "true",    true
+  test_decode "integer",               "1",       1
 end

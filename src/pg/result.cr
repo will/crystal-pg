@@ -1,6 +1,5 @@
 module PG
   class Result
-    alias PGValue = String | Nil | Bool
 
     struct Field
       property name

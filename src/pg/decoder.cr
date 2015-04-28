@@ -1,9 +1,13 @@
 module PG
+  alias PGValue = String | Nil | Bool | Int
+
   abstract class Decoder
     def self.from_oid(oid)
       case oid
       when 16
         BoolDecoder
+      when 20, 21, 23
+        IntDecoder
       else
         DefaultDecoder
       end.new
@@ -30,4 +34,11 @@ module PG
       end
     end
   end
+
+  class IntDecoder < Decoder
+    def decode(value_ptr)
+      LibC.atoi value_ptr
+    end
+  end
+
 end
