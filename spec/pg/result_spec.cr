@@ -41,4 +41,16 @@ describe PG::Result, "#rows" do
   test_decode "boolean true",   "true",           true
   test_decode "integer",        "1",              1
   test_decode "float",          "-0.123::float",  -0.123
+
+  test_decode "timestamptz",  "'2015-02-03 16:15:13-01'::timestamptz",
+                       Time.new(2015, 2, 3,17,15,13,0, Time::Kind::Utc)
+
+  test_decode "timestamptz",  "'2015-02-03 16:15:13.23-01'::timestamptz",
+                       Time.new(2015, 2, 3,17,15,13,23, Time::Kind::Utc)
+
+  test_decode "timestamp",    "'2015-02-03 16:15:13'::timestamp",
+                       Time.new(2015, 2, 3,16,15,13,0, Time::Kind::Utc)
+
+  test_decode "date", "'2015-02-03'::date",
+               Time.new(2015, 2, 3,0,0,0,0, Time::Kind::Utc)
 end
