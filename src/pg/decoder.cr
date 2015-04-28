@@ -1,6 +1,7 @@
 module PG
   alias PGValue = String | Nil | Bool | Int | Float32 | Float64
 
+  # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
   abstract class Decoder
     def self.from_oid(oid)
       case oid
