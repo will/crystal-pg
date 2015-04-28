@@ -27,9 +27,9 @@ describe PG::Result, "#rows" do
     rows[0].size.should eq(0)
   end
 
-  it "can handle undefined types and several rows" do
-    rows = DB.exec("select 'a', 'b' union all select '', null").rows
-    rows.should eq([["a", "b"], ["", nil]])
+  it "can handle several types and several rows" do
+    rows = DB.exec("select 'a', 'b', true union all select '', null, false").rows
+    rows.should eq([["a", "b", true], ["", nil, false]])
   end
 
   test_decode "undefined as strings",  "'what'",  "what"
