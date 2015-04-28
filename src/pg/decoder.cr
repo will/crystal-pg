@@ -12,9 +12,9 @@ module PG
         IntDecoder
       when 25 # text
         DefaultDecoder
-      when 700
+      when 700 # float4
         Float32Decoder
-      when 701
+      when 701 # float8
         Float64Decoder
       when 705 # unknown
         DefaultDecoder
