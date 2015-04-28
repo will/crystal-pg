@@ -1,16 +1,21 @@
 module PG
   class Result
-    alias PGValue = String | Nil
+    alias PGValue = String | Nil | Bool
 
     struct Field
       property name
       property oid
       def initialize(@name, @oid) end
+
       def self.new_from_res(res, col)
         new(
           String.new(LibPQ.fname(res, col)),
           LibPQ.ftype(res, col)
         )
+      end
+
+      def decoder
+        PG::Decoder.from_oid(oid)
       end
     end
 
@@ -23,6 +28,10 @@ module PG
 
     def ntuples
       @ntuples ||= LibPQ.ntuples(res)
+    end
+
+    def decoders
+      @decoders ||= fields.map(&.decoder)
     end
 
     def fields
@@ -51,13 +60,12 @@ module PG
       rws
     end
 
-
-    private def decode_value(res, i, j)
-      val_ptr = LibPQ.getvalue(res, i, j)
-      if val_ptr.value == 0 && LibPQ.getisnull(res, i, j)
+    private def decode_value(res, row, col)
+      val_ptr = LibPQ.getvalue(res, row, col)
+      if val_ptr.value == 0 && LibPQ.getisnull(res, row, col)
         nil
       else
-        String.new(val_ptr)
+        decoders[col].decode(val_ptr)
       end
     end
 

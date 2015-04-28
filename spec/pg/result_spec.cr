@@ -32,7 +32,9 @@ describe PG::Result, "#rows" do
     rows.should eq([["a", "b"], ["", nil]])
   end
 
-  test_decode "undefined as strings", "'what'", "what"
-  test_decode "empty strings",        "''",     ""
-  test_decode "null as nil",          "null",   nil
+  test_decode "undefined as strings",  "'what'",  "what"
+  test_decode "empty strings",         "''",      ""
+  test_decode "null as nil",           "null",    nil
+  test_decode "boolean false",         "false",   false
+  test_decode "boolean true",          "true",    true
 end
