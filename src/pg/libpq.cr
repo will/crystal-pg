@@ -4,14 +4,21 @@ module PG
     # http://www.postgresql.org/docs/9.4/static/libpq-exec.html
     alias CChar = UInt8
     alias Int   = Int32
-    struct PGconn   end
-    struct PGresult end
-    fun connect       = PQconnectdb(conninfo : CChar*)         : PGconn*
-    fun exec          = PQexec(conn : PGconn*, query : UInt8*) : PGresult*
-    fun result_status = PQresultStatus(res : PGresult*)        : Int
-    fun error_message = PQerrorMessage(conn : PGconn*)         : CChar*
 
-    fun clear    = PQclear(res : PGresult*) : Void
+    struct PGconn   end
+    enum ConnStatusType
+      CONNECTION_OK,
+      CONNECTION_BAD
+    end
+    fun connect       = PQconnectdb(conninfo : CChar*) : PGconn*
+    fun status        = PQstatus(conn : PGconn*)       : ConnStatusType
+    fun finish        = PQfinish(conn : PGconn*)       : Void
+    fun error_message = PQerrorMessage(conn : PGconn*) : CChar*
+    fun exec          = PQexec(conn : PGconn*, query : UInt8*) : PGresult*
+
+    struct PGresult end
+    fun result_status = PQresultStatus(res : PGresult*) : Int
+    fun clear    = PQclear(res : PGresult* )  : Void
     fun nfields  = PQnfields(res : PGresult*) : Int
     fun ntuples  = PQntuples(res : PGresult*) : Int
     fun fname    = PQfname(res : PGresult*, column_number : Int) : CChar*
