@@ -75,8 +75,12 @@ module PG
       end
     end
 
-    private def clear_res
+    def self.clear_res(res)
       LibPQ.clear(res)
+    end
+
+    private def clear_res
+      self.class.clear_res(res)
       @res = nil
     end
 

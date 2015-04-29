@@ -7,3 +7,14 @@ describe PG::Connection, "#initialize" do
     expect_raises(PG::ConnectionError) { PG::Connection.new("whatever") }
   end
 end
+
+describe PG::Connection, "#exec" do
+  it "returns a Result" do
+    res = DB.exec("select 1")
+    res.class.should eq(PG::Result)
+  end
+
+  it "raises on bad queries" do
+    expect_raises(PG::ResultError) { DB.exec("select nocolumn from notable") }
+  end
+end

@@ -21,7 +21,7 @@ result.rows   #=> [[value, ...], ...]
 ## Todo
 
 - more datatypes (ranges, hstore, json, byeta)
-- raise postgres errors
+- more info in postgres exceptions
 - paramaterized queires
 - transaction help
 - a lot more
