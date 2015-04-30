@@ -1,6 +1,6 @@
 require "string_scanner"
 module PG
-  alias PGValue = String | Nil | Bool | Int | Float32 | Float64 | Time
+  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time
 
   # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
   abstract class Decoder
