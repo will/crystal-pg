@@ -65,39 +65,38 @@ module PG
   end
 
   class TimeDecoder < Decoder
-    def initialize
-      super
-      @curr = Pointer(UInt8).new(0)
-    end
-
     def decode(value_ptr)
-      @curr = value_ptr
+      curr = value_ptr
 
-      year     = get_next_int
-      month    = get_next_int
-      day      = get_next_int
-      hour     = get_next_int
-      minute   = get_next_int
-      second   = get_next_int
-      fraction = (@curr-1).value == '.'.ord ? get_next_int : 0
-      sign     = (@curr-1).value == '-'.ord ? -1 : 1
-      offset   = get_next_int * sign
+      curr, year   = get_next_int(curr)
+      curr, month  = get_next_int(curr)
+      curr, day    = get_next_int(curr)
+      curr, hour   = get_next_int(curr)
+      curr, minute = get_next_int(curr)
+      curr, second = get_next_int(curr)
+      if (curr-1).value == '.'.ord
+        curr, fraction = get_next_int(curr)
+      else
+        fraction = 0
+      end
+      sign = (curr-1).value == '-'.ord ? -1 : 1
+      curr, offset = get_next_int(curr)
       milisecond = fraction_to_mili(fraction)
 
       t = Time.new(year, month, day, hour, minute, second, milisecond, Time::Kind::Utc)
 
-      return apply_offset(t, offset)
+      return apply_offset(t, offset*sign)
     end
 
-    private def get_next_int
-      return 0 if @curr.value == 0
+    private def get_next_int(curr)
+      return curr, 0 if curr.value == 0
       int = 0
-      while @curr.value >= 48 && @curr.value <= 57
-        int = (int*10) + (@curr.value - 48)
-        @curr += 1
+      while curr.value >= 48 && curr.value <= 57
+        int = (int*10) + (curr.value - 48)
+        curr += 1
       end
-      @curr += 1 unless @curr.value == 0
-      return int
+      curr += 1 unless curr.value == 0
+      return curr,int
     end
 
     # Postgres returns microseconds, Crystal Time only supports miliseconds
