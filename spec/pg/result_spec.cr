@@ -1,5 +1,5 @@
-macro test_decode(name, select, expected)
-  it {{name}} do
+macro test_decode(name, select, expected, file = __FILE__, line = __LINE__)
+  it {{name}}, {{file}}, {{line}} do
     rows = DB.exec("select #{{{select}}}").rows
     rows.size.should eq( 1 )
     rows.first.size.should eq( 1 )
