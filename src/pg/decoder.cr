@@ -67,16 +67,8 @@ module PG
 
   class TimeDecoder < Decoder
     def decode(value_ptr)
-      year       = 1
-      month      = 1
-      day        = 1
-      hour       = 0
-      minute     = 0
-      second     = 0
-      milisecond = 0
-      offset     = 0
-
       str = StringScanner.new(String.new(value_ptr))
+
       year       = str.scan(/(\d+)/).to_i; str.scan(/-/)
       month      = str.scan(/(\d+)/).to_i; str.scan(/-/)
       day        = str.scan(/(\d+)/).to_i; str.scan(/ /)
@@ -85,6 +77,7 @@ module PG
       second     = str.scan(/(\d+)/).to_i; str.scan(/\./)
       milisecond = str.scan(/(\d+)/).to_i
       offset     = str.scan(/([\+|\-]\d+)/).to_i
+
       Time.new(year, month, day, hour - offset, minute, second, milisecond, Time::Kind::Utc)
     end
   end
