@@ -69,17 +69,32 @@ module PG
     def decode(value_ptr)
       str = StringScanner.new(String.new(value_ptr))
 
-      year       = str.scan(/(\d+)/).to_i; str.scan(/-/)
-      month      = str.scan(/(\d+)/).to_i; str.scan(/-/)
-      day        = str.scan(/(\d+)/).to_i; str.scan(/ /)
-      hour       = str.scan(/(\d+)/).to_i; str.scan(/:/)
-      minute     = str.scan(/(\d+)/).to_i; str.scan(/:/)
-      second     = str.scan(/(\d+)/).to_i; str.scan(/\./)
-      milisecond = str.scan(/(\d+)/).to_i
-      offset     = str.scan(/([\+|\-]\d+)/).to_i
+      year     = str.scan(/(\d+)/).to_i; str.scan(/-/)
+      month    = str.scan(/(\d+)/).to_i; str.scan(/-/)
+      day      = str.scan(/(\d+)/).to_i; str.scan(/ /)
+      hour     = str.scan(/(\d+)/).to_i; str.scan(/:/)
+      minute   = str.scan(/(\d+)/).to_i; str.scan(/:/)
+      second   = str.scan(/(\d+)/).to_i; str.scan(/\./)
+      fraction = str.scan(/(\d+)/).to_i
+      offset   = str.scan(/([\+|\-]\d+)/).to_i
+      milisecond = fraction_to_mili(fraction)
 
       Time.new(year, month, day, hour - offset, minute, second, milisecond, Time::Kind::Utc)
     end
+
+    # Postgres returns microseconds, Crystal Time only supports miliseconds
+    private def fraction_to_mili(frac)
+      if frac < 10
+        frac * 100
+      elsif frac < 100
+        frac * 10
+      elsif frac > 1000
+        frac / 1000
+      else
+        frac
+      end
+    end
+
   end
 
 end
