@@ -79,7 +79,9 @@ module PG
       offset   = str.scan(/([\+|\-]\d+)/).to_i
       milisecond = fraction_to_mili(fraction)
 
-      Time.new(year, month, day, hour - offset, minute, second, milisecond, Time::Kind::Utc)
+      t = Time.new(year, month, day, hour, minute, second, milisecond, Time::Kind::Utc)
+
+      return apply_offset(t, offset)
     end
 
     # Postgres returns microseconds, Crystal Time only supports miliseconds
@@ -95,6 +97,13 @@ module PG
       end
     end
 
+    private def apply_offset(t, offset)
+      if offset == 0
+        t
+      else
+        t - TimeSpan.new(offset,0,0)
+      end
+    end
   end
 
 end
