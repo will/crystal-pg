@@ -37,6 +37,12 @@ describe PG::TimeDecoder, "decode" do
 
     dec.decode("2015-05-02 18:13:40.765172+07".cstr).should eq(
        Time.new(2015,05,02,11,13,40,765))
+
+    dec.decode("2015-05-02 18:13:40-07".cstr).should eq(
+       Time.new(2015,05,03,01,13,40,0))
+
+    dec.decode("2015-05-02 18:13:40+07".cstr).should eq(
+       Time.new(2015,05,02,11,13,40,0))
   end
 end
 
