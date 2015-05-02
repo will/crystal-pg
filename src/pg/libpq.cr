@@ -4,6 +4,7 @@ module PG
     # http://www.postgresql.org/docs/9.4/static/libpq-exec.html
     alias CChar = UInt8
     alias Int   = Int32
+    alias Oid   = Int32
 
     struct PGconn   end
     enum ConnStatusType
@@ -15,7 +16,17 @@ module PG
     fun status        = PQstatus(conn : PGconn*)       : ConnStatusType
     fun finish        = PQfinish(conn : PGconn*)       : Void
     fun error_message = PQerrorMessage(conn : PGconn*) : CChar*
-    fun exec          = PQexec(conn : PGconn*, query : UInt8*) : PGresult*
+    fun exec          = PQexec(conn : PGconn*, query : CChar*) : PGresult*
+    fun exec_params   = PQexecParams(
+                          conn          : PGconn* ,
+                          query         : CChar*  ,
+                          n_params      : Int     ,
+                          param_types   : Oid*    ,
+                          param_values  : CChar** ,
+                          param_lengths : Int*    ,
+                          param_formats : Int*    ,
+                          result_format : Int
+                        ) : PGresult*
 
     struct PGresult end
     enum ExecStatusType

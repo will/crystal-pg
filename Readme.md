@@ -7,6 +7,9 @@ DB = PG.connect("postgres://...")
 result = DB.exec("select * from table")
 result.fields #=> [PG::Result::Field, ...]
 result.rows   #=> [[value, ...], ...]
+
+result = DB.exec("select $1::text || ' ' || $2::text", ["hello", "world"])
+result.rows #=> [["hello world"]]
 ```
 
 ## Supported Datatypes
@@ -22,7 +25,6 @@ result.rows   #=> [[value, ...], ...]
 
 - more datatypes (ranges, hstore, json, byeta)
 - more info in postgres exceptions
-- paramaterized queires
 - transaction help
 - a lot more
 
