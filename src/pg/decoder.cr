@@ -1,4 +1,3 @@
-require "string_scanner"
 module PG
   alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time
 
@@ -66,22 +65,39 @@ module PG
   end
 
   class TimeDecoder < Decoder
-    def decode(value_ptr)
-      str = StringScanner.new(String.new(value_ptr))
+    def initialize
+      super
+      @curr = Pointer(UInt8).new(0)
+    end
 
-      year     = str.scan(/(\d+)/).to_i; str.scan(/-/)
-      month    = str.scan(/(\d+)/).to_i; str.scan(/-/)
-      day      = str.scan(/(\d+)/).to_i; str.scan(/ /)
-      hour     = str.scan(/(\d+)/).to_i; str.scan(/:/)
-      minute   = str.scan(/(\d+)/).to_i; str.scan(/:/)
-      second   = str.scan(/(\d+)/).to_i; str.scan(/\./)
-      fraction = str.scan(/(\d+)/).to_i
-      offset   = str.scan(/([\+|\-]\d+)/).to_i
+    def decode(value_ptr)
+      @curr = value_ptr
+
+      year     = get_next_int
+      month    = get_next_int
+      day      = get_next_int
+      hour     = get_next_int
+      minute   = get_next_int
+      second   = get_next_int
+      fraction = (@curr-1).value == '.'.ord ? get_next_int : 0
+      sign     = (@curr-1).value == '-'.ord ? -1 : 1
+      offset   = get_next_int * sign
       milisecond = fraction_to_mili(fraction)
 
       t = Time.new(year, month, day, hour, minute, second, milisecond, Time::Kind::Utc)
 
       return apply_offset(t, offset)
+    end
+
+    private def get_next_int
+      return 0 if @curr.value == 0
+      int = 0
+      while @curr.value >= 48 && @curr.value <= 57
+        int = (int*10) + (@curr.value - 48)
+        @curr += 1
+      end
+      @curr += 1 unless @curr.value == 0
+      return int
     end
 
     # Postgres returns microseconds, Crystal Time only supports miliseconds
