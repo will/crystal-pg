@@ -61,7 +61,7 @@ describe PG::Result, "#to_hash" do
                    union all
                    select '', null, false, -3.2")
     res.to_hash.should eq([
-      {"foo" => "a", "bar" => "b", "baz" => true,   "uhh" => "1.0"},
+      {"foo" => "a", "bar" => "b", "baz" => true,  "uhh" => "1.0"},
       {"foo" => "",  "bar" => nil, "baz" => false, "uhh" => "-3.2"}
     ])
   end
