@@ -44,9 +44,4 @@ module PG
     fun getvalue = PQgetvalue(res : PGresult*, row_number : Int, column_number : Int) : CChar*
     fun getisnull = PQgetisnull(res : PGresult*, row_number : Int, column_number : Int) : Bool
   end
-
-  def print_pg_error(conn)
-    err = String.new(LibPQ.error_message(conn))
-    puts err unless err == ""
-  end
 end
