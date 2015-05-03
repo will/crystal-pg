@@ -5,8 +5,9 @@ A Postgres driver for Crystal [![Build Status](https://travis-ci.org/will/crysta
 ```
 DB = PG.connect("postgres://...")
 result = DB.exec("select * from table")
-result.fields #=> [PG::Result::Field, ...]
-result.rows   #=> [[value, ...], ...]
+result.fields  #=> [PG::Result::Field, …]
+result.rows    #=> [[value, …], …]
+result.to_hash #=> [{"field1" => value, …}, …]
 
 result = DB.exec("select $1::text || ' ' || $2::text", ["hello", "world"])
 result.rows #=> [["hello world"]]

@@ -26,6 +26,18 @@ module PG
       clear_res
     end
 
+    def to_hash
+      field_names = fields.map(&.name)
+
+      if field_names.uniq.size != field_names.size
+        raise PG::RuntimeError.new("Duplicate field names in result set")
+      end
+
+      rows.map do |row|
+        Hash.zip(field_names, row)
+      end
+    end
+
     private getter res
 
     private def nfields

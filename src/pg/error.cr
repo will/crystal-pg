@@ -1,7 +1,5 @@
 module PG
-  class Error < ::Exception
-
-  end
+  class Error < ::Exception end
 
   class ConnectionError < Error
     def initialize(raw_connection)
@@ -16,4 +14,6 @@ module PG
       super(msg)
     end
   end
+
+  class RuntimeError < Error end
 end
