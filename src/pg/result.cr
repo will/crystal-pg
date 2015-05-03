@@ -54,26 +54,20 @@ module PG
 
     private def gather_fields
       fds = Array(Field).new(nfields)
-      i = 0
-      while i < nfields
+      nfields.times do |i|
         fds << Field.new_from_res(res, i)
-        i += 1
       end
       fds
     end
 
     private def gather_rows
       rws = Array( Array(PGValue) ).new(ntuples)
-      i = 0
-      while i < ntuples
+      ntuples.times do |i|
         rws << Array(PGValue).new(nfields)
-        j = 0
-        while j < nfields
+        nfields.times do |j|
           val = decode_value(res, i, j)
           rws[i] << val
-          j += 1
         end
-        i += 1
       end
       rws
     end
