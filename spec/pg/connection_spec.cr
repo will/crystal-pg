@@ -17,6 +17,12 @@ describe PG::Connection, "#exec" do
   it "raises on bad queries" do
     expect_raises(PG::ResultError) { DB.exec("select nocolumn from notable") }
   end
+
+  it "returns a Result when create table" do
+    res = DB.exec("create table if not exists test()")
+    res.class.should eq(PG::Result)
+    DB.exec("drop table test")
+  end
 end
 
 describe PG::Connection, "#exec with params" do
