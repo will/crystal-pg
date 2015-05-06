@@ -13,7 +13,7 @@ module PG
         IntDecoder
       when 25 # text
         DefaultDecoder
-      when 114
+      when 114, 3802
         JsonDecoder
       when 700 # float4
         Float32Decoder
