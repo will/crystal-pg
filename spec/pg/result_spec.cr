@@ -42,6 +42,9 @@ describe PG::Result, "#rows" do
   test_decode "integer",        "1",              1
   test_decode "float",          "-0.123::float",  -0.123
 
+  test_decode "json",  "'[1,\"a\",true]'::json", [1, "a", true]
+  test_decode "json",  "'{\"a\":1}'::json",      {"a" => 1}
+
   test_decode "timestamptz",  "'2015-02-03 16:15:13-01'::timestamptz",
                        Time.new(2015, 2, 3,17,15,13,0, Time::Kind::Utc)
 

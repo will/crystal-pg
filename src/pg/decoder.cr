@@ -1,5 +1,7 @@
+require "json"
+
 module PG
-  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time
+  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Type
 
   module Decoder
     # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
@@ -11,6 +13,8 @@ module PG
         IntDecoder
       when 25 # text
         DefaultDecoder
+      when 114
+        JsonDecoder
       when 700 # float4
         Float32Decoder
       when 701 # float8
@@ -62,6 +66,12 @@ module PG
     class Float64Decoder < Decoder
       def decode(value_ptr)
         LibC.atof value_ptr
+      end
+    end
+
+    class JsonDecoder < Decoder
+      def decode(value_ptr)
+        JSON.parse(String.new(value_ptr))
       end
     end
 
