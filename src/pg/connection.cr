@@ -47,7 +47,8 @@ module PG
     private def check_status(res)
       status = LibPQ.result_status(res)
       return if ( status == LibPQ::ExecStatusType::PGRES_TUPLES_OK ||
-                  status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE )
+                  status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
+                  status == LibPQ::ExecStatusType::PGRES_COMMAND_OK )
       error = ResultError.new(res, status)
       Result.clear_res(res)
       raise error
