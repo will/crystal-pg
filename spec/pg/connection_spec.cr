@@ -19,9 +19,9 @@ describe PG::Connection, "#exec" do
   end
 
   it "returns a Result when create table" do
-    DB.exec("drop table test")
-    res = DB.exec("create table test()")
+    res = DB.exec("create table if not exists test()")
     res.class.should eq(PG::Result)
+    DB.exec("drop table test")
   end
 end
 
