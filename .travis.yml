@@ -19,7 +19,6 @@ env:
   - TRAVIS_POSTGRESQL_VERSION=9.3
   - TRAVIS_POSTGRESQL_VERSION=9.2
   - TRAVIS_POSTGRESQL_VERSION=9.1
-  - TRAVIS_POSTGRESQL_VERSION=9.0
 script:
   - crystal spec | tee /dev/tty | grep "0 failures, 0 errors" -q
 notifications:

@@ -1,3 +1,5 @@
+require "../spec_helper"
+
 macro test_decode(name, select, expected, file = __FILE__, line = __LINE__)
   it {{name}}, {{file}}, {{line}} do
     rows = DB.exec("select #{{{select}}}").rows
@@ -9,8 +11,10 @@ end
 
 describe PG::Result, "#fields" do
   it "is empty on empty results" do
-    fields = DB.exec("select").fields
-    fields.size.should eq(0)
+    if Helper.db_version_gte(9,4)
+      fields = DB.exec("select").fields
+      fields.size.should eq(0)
+    end
   end
 
   it "is is a list of the fields" do
@@ -22,9 +26,11 @@ end
 
 describe PG::Result, "#rows" do
   it "is an empty 2d array on empty results" do
-    rows = DB.exec("select").rows
-    rows.size.should    eq(1)
-    rows[0].size.should eq(0)
+    if Helper.db_version_gte(9,4)
+      rows = DB.exec("select").rows
+      rows.size.should    eq(1)
+      rows[0].size.should eq(0)
+    end
   end
 
   it "can handle several types and several rows" do
@@ -42,9 +48,13 @@ describe PG::Result, "#rows" do
   test_decode "integer",        "1",              1
   test_decode "float",          "-0.123::float",  -0.123
 
-  test_decode "json",  "'[1,\"a\",true]'::json", [1, "a", true]
-  test_decode "json",  "'{\"a\":1}'::json",      {"a" => 1}
-  test_decode "jsonb", "'[1,2,3]'::jsonb",       [1, 2, 3]
+  if Helper.db_version_gte(9,2)
+    test_decode "json",  "'[1,\"a\",true]'::json", [1, "a", true]
+    test_decode "json",  "'{\"a\":1}'::json",      {"a" => 1}
+  end
+  if Helper.db_version_gte(9,4)
+    test_decode "jsonb", "'[1,2,3]'::jsonb",       [1, 2, 3]
+  end
 
   test_decode "timestamptz",  "'2015-02-03 16:15:13-01'::timestamptz",
                        Time.new(2015, 2, 3,17,15,13,0, Time::Kind::Utc)

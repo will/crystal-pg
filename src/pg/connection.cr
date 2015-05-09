@@ -42,6 +42,16 @@ module PG
       @raw = nil
     end
 
+    def version
+      query = "SELECT ver[1] AS major, ver[2] AS minor, ver[3] AS patch
+               FROM regexp_matches(version(), 'PostgreSQL (\\d+)\\.(\\d+)\\.(\\d+)') ver"
+      version = exec(query).rows.first
+      major = version[0].to_s.to_i
+      minor = version[1].to_s.to_i
+      patch = version[2].to_s.to_i
+     {:major => major, :minor => minor, :patch => patch}
+    end
+
     private getter raw
 
     private def check_status(res)
