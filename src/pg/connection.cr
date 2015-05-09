@@ -43,13 +43,10 @@ module PG
     end
 
     def version
-      query = "SELECT ver[1] AS major, ver[2] AS minor, ver[3] AS patch
+      query = "SELECT ver[1]::int AS major, ver[2]::int AS minor, ver[3]::int AS patch
                FROM regexp_matches(version(), 'PostgreSQL (\\d+)\\.(\\d+)\\.(\\d+)') ver"
-      version = exec(query).rows.first
-      major = version[0].to_s.to_i
-      minor = version[1].to_s.to_i
-      patch = version[2].to_s.to_i
-     {:major => major, :minor => minor, :patch => patch}
+      version = exec(query).rows.first.map {|i| i as Int32 }
+      {:major => version[0], :minor => version[1], :patch => version[2]}
     end
 
     private getter raw
