@@ -26,11 +26,12 @@ Linking requires that the `pg_config` binary is in your `$PATH` and returns corr
 - int8, int2, int4
 - float4, float8
 - timestamptz, date, timestamp (but no one should use ts when tstz exists!)
+- json and jsonb
 
 
 ## Todo
 
-- more datatypes (ranges, hstore, json, byeta)
+- more datatypes (ranges, hstore, byeta)
 - more info in postgres exceptions
 - transaction help
 - a lot more
