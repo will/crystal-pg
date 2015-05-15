@@ -1,3 +1,4 @@
+require "./core_ext/*"
 require "./pg/*"
 
 module PG

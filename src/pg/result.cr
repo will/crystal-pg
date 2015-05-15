@@ -1,5 +1,5 @@
 module PG
-  class Result
+  class Result(T)
 
     struct Field
       property name
@@ -20,9 +20,9 @@ module PG
 
     getter fields
     getter rows
-    def initialize(@res)
+    def initialize(types : T, @res)
       @fields = gather_fields
-      @rows   = gather_rows
+      @rows   = gather_rows(types)
       clear_res
     end
 
@@ -60,17 +60,25 @@ module PG
       fds
     end
 
-    private def gather_rows
-      rws = Array( Array(PGValue) ).new(ntuples)
-      ntuples.times do |i|
-        rws << Array(PGValue).new(nfields)
-        nfields.times do |j|
-          val = decode_value(res, i, j)
-          rws[i] << val
+    private def gather_rows(types : Array(PGValue))
+      Array.new(ntuples) do |i|
+        Array.new(nfields) do |j|
+          decode_value(res, i, j)
         end
       end
-      rws
     end
+
+    macro generate_gather_rows(from, to)
+      {% for n in (from..to) %}
+        private def gather_rows(types : Tuple({% for i in (1...n) %}Class, {%end%} Class))
+          Array.new(ntuples) do |i|
+            { {% for j in (0...n) %} types[{{j}}].as_cast( decode_value(res,i,{{j}}) ), {% end %} }
+          end
+        end
+      {% end %}
+    end
+
+    generate_gather_rows(1,32)
 
     private def decode_value(res, row, col)
       val_ptr = LibPQ.getvalue(res, row, col)

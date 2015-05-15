@@ -10,12 +10,37 @@ module PG
       end
     end
 
-    def exec(query)
-      exec(query, [] of PG::PGValue)
+    def exec(query : String)
+      exec([] of PG::PGValue, query, [] of PG::PGValue)
     end
 
-    def exec(query, params)
-      #res = LibPQ.exec(raw, query)
+    def exec(query : String, params)
+      exec([] of PG::PGValue, query, params)
+    end
+
+    def exec(types, query : String)
+      exec(types, query, [] of PG::PGValue)
+    end
+
+    def exec(types, query : String, params)
+      Result.new(types, libpq_exec(query, params))
+    end
+
+    def finish
+      LibPQ.finish(raw)
+      @raw = nil
+    end
+
+    def version
+      query = "SELECT ver[1]::int AS major, ver[2]::int AS minor, ver[3]::int AS patch
+               FROM regexp_matches(version(), 'PostgreSQL (\\d+)\\.(\\d+)\\.(\\d+)') ver"
+      version = exec({Int32, Int32, Int32}, query).rows.first
+      {major: version[0], minor: version[1], patch: version[2]}
+    end
+
+    private getter raw
+
+    private def libpq_exec(query, params)
       n_params      = params.size
       param_types   = Pointer(LibPQ::Int).null # have server infer types
       param_values  = params.map { |v| simple_encode(v) }
@@ -34,22 +59,9 @@ module PG
         result_format
       )
       check_status(res)
-      Result.new(res)
+      res
     end
 
-    def finish
-      LibPQ.finish(raw)
-      @raw = nil
-    end
-
-    def version
-      query = "SELECT ver[1]::int AS major, ver[2]::int AS minor, ver[3]::int AS patch
-               FROM regexp_matches(version(), 'PostgreSQL (\\d+)\\.(\\d+)\\.(\\d+)') ver"
-      version = exec(query).rows.first.map {|i| i as Int32 }
-      {:major => version[0], :minor => version[1], :patch => version[2]}
-    end
-
-    private getter raw
 
     private def check_status(res)
       status = LibPQ.result_status(res)
