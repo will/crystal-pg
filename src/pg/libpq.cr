@@ -6,7 +6,7 @@ module PG
     alias Int   = Int32
     alias Oid   = Int32
 
-    struct PGconn   end
+    alias PGconn = Void
     enum ConnStatusType
       CONNECTION_OK, CONNECTION_BAD, CONNECTION_STARTED, CONNECTION_MADE,
       CONNECTION_AWAITING_RESPONSE, CONNECTION_AUTH_OK, CONNECTION_SETENV,
@@ -28,7 +28,7 @@ module PG
                           result_format : Int
                         ) : PGresult*
 
-    struct PGresult end
+    alias PGresult = Void
     enum ExecStatusType
       PGRES_EMPTY_QUERY, PGRES_COMMAND_OK, PGRES_TUPLES_OK, PGRES_COPY_OUT,
       PGRES_COPY_IN, PGRES_BAD_RESPONSE, PGRES_NONFATAL_ERROR, PGRES_FATAL_ERROR,
