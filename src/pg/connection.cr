@@ -1,7 +1,7 @@
 require "./error"
 module PG
   class Connection
-    def initialize(conninfo)
+    def initialize(conninfo : String)
       @raw = LibPQ.connect(conninfo)
       unless LibPQ.status(raw) == LibPQ::ConnStatusType::CONNECTION_OK
         error = ConnectionError.new(@raw)
