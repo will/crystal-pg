@@ -55,6 +55,9 @@ describe PG::Result, "#rows" do
   test_decode "integer",        "1",              1
   test_decode "float",          "-0.123::float",  -0.123
 
+  test_decode "double prec.",   "'35.03554004971999'::float8", 35.03554004971999
+  test_decode "flot prec.",     "'0.10000122'::float4", 0.10000122_f32
+
   if Helper.db_version_gte(9,2)
     test_decode "json",  "'[1,\"a\",true]'::json", [1, "a", true]
     test_decode "json",  "'{\"a\":1}'::json",      {"a" => 1}
