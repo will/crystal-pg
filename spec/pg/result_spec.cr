@@ -2,7 +2,7 @@ require "../spec_helper"
 
 macro test_decode(name, select, expected, file = __FILE__, line = __LINE__)
   it {{name}}, {{file}}, {{line}} do
-    rows = DB.exec("select #{{{select}}}").rows
+    rows = $DB.exec("select #{{{select}}}").rows
     rows.size.should eq( 1 )
     rows.first.size.should eq( 1 )
     rows.first.first.should eq( {{expected}} )
@@ -12,13 +12,13 @@ end
 describe PG::Result, "#fields" do
   it "is empty on empty results" do
     if Helper.db_version_gte(9,4)
-      fields = DB.exec("select").fields
+      fields = $DB.exec("select").fields
       fields.size.should eq(0)
     end
   end
 
   it "is is a list of the fields" do
-    fields = DB.exec("select 1 as one, 2 as two, 3 as three").fields
+    fields = $DB.exec("select 1 as one, 2 as two, 3 as three").fields
     fields.map(&.name).should eq(["one", "two", "three"])
     fields.map(&.oid).should eq([23,23,23])
   end
@@ -27,14 +27,14 @@ end
 describe PG::Result, "#rows" do
   it "is an empty 2d array on empty results" do
     if Helper.db_version_gte(9,4)
-      rows = DB.exec("select").rows
+      rows = $DB.exec("select").rows
       rows.size.should    eq(1)
       rows[0].size.should eq(0)
     end
   end
 
   it "can handle several types and several rows" do
-    rows = DB.exec(
+    rows = $DB.exec(
              {String, PG::NilableString, Bool, Int32},
              "select 'a', 'b', true, 22 union all select '', null, false, 53"
            ).rows
@@ -78,7 +78,7 @@ end
 
 describe PG::Result, "#to_hash" do
   it "represents the rows and fields as a hash" do
-    res = DB.exec("select 'a' as foo, 'b' as bar, true as baz, 1.0 as uhh
+    res = $DB.exec("select 'a' as foo, 'b' as bar, true as baz, 1.0 as uhh
                    union all
                    select '', null, false, -3.2")
     res.to_hash.should eq([
@@ -88,7 +88,7 @@ describe PG::Result, "#to_hash" do
   end
 
   it "raises if there are columns with the same name" do
-    res = DB.exec("select 'a' as foo, 'b' as foo, 'c' as bar")
+    res = $DB.exec("select 'a' as foo, 'b' as foo, 'c' as bar")
     expect_raises { res.to_hash }
   end
 end
