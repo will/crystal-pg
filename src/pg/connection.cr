@@ -70,7 +70,7 @@ module PG
       param_values  = params.map { |v| simple_encode(v) }
       param_lengths = Pointer(LibPQ::Int).null # only for binary which is not yet supported
       param_formats = Pointer(LibPQ::Int).null # if null, only text is assumed
-      result_format = 0 # text vs. binary
+      result_format = 1 # text vs. binary
 
       res = LibPQ.exec_params(
         raw           ,

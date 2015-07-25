@@ -17,14 +17,18 @@ module PG
         IntDecoder
       when 25 # text
         DefaultDecoder
-      when 114, 3802
+      when 114
         JsonDecoder
+      when 3802
+        JsonbDecoder
       when 700 # float4
         Float32Decoder
       when 701 # float8
         Float64Decoder
       when 705 # unknown
         DefaultDecoder
+      when 1082
+        DateDecoder
       when 1082, 1114, 1184 # 1082:date 1114:ts, 1184:tstz
         TimeDecoder
       else
@@ -34,6 +38,28 @@ module PG
 
     abstract class Decoder
       def decode(value_ptr) end
+
+      private def swap32(ptr : UInt8*) : UInt32*
+        n = (((((((( 0_u32
+         ) | ptr[0] ) << 8
+         ) | ptr[1] ) << 8
+         ) | ptr[2] ) << 8
+         ) | ptr[3] )
+        pointerof(n)
+      end
+
+      private def swap64(ptr : UInt8*) : UInt64*
+        n = (((((((((((((((( 0_u64
+         ) | ptr[0] ) << 8
+         ) | ptr[1] ) << 8
+         ) | ptr[2] ) << 8
+         ) | ptr[3] ) << 8
+         ) | ptr[4] ) << 8
+         ) | ptr[5] ) << 8
+         ) | ptr[6] ) << 8
+         ) | ptr[7] )
+        pointerof(n)
+      end
     end
 
     class DefaultDecoder < Decoder
@@ -45,31 +71,36 @@ module PG
     class BoolDecoder < Decoder
       def decode(value_ptr)
         case value_ptr.value
-        when 't'.ord
-          true
-        when 'f'.ord
+        when 0
           false
+        when 1
+          true
+      #  when 't'.ord
+      #    true
+      #  when 'f'.ord
+      #    false
         else
-          raise "bad boolean decode"
+          raise "bad boolean decode: #{value_ptr.value}"
         end
       end
     end
 
     class IntDecoder < Decoder
       def decode(value_ptr)
-        LibC.atoi value_ptr
+        (swap32(value_ptr) as Int32*).value
       end
     end
 
     class Float32Decoder < Decoder
+      # byte swapped in the same way as int4
       def decode(value_ptr)
-        LibC.strtof value_ptr, nil
+        (swap32(value_ptr) as Float32*).value
       end
     end
 
     class Float64Decoder < Decoder
       def decode(value_ptr)
-        LibC.atof value_ptr
+        (swap64(value_ptr) as Float64*).value
       end
     end
 
@@ -79,7 +110,28 @@ module PG
       end
     end
 
+    class JsonbDecoder < Decoder
+      def decode(value_ptr)
+        # move past single 0x01 byte at the start of jsonb
+        JSON.parse(String.new(value_ptr+1))
+      end
+    end
+
+    class DateDecoder < Decoder
+      def decode(value_ptr)
+        v = (swap32(value_ptr) as Int32*).value
+        return Time.new(2000,1,1, kind: Time::Kind::Utc) + TimeSpan.new(v,0,0,0)
+      end
+    end
+
     class TimeDecoder < Decoder
+      def decode(value_ptr)
+        v = (swap64(value_ptr) as Int64*).value / 1000
+        return Time.new(2000,1,1, kind: Time::Kind::Utc) + TimeSpan.new(0,0,0,0,v)
+      end
+    end
+
+    class StringTimeDecoder < Decoder
       def decode(value_ptr)
         curr = value_ptr
 

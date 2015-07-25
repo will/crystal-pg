@@ -81,12 +81,12 @@ end
 
 describe PG::Result, "#to_hash" do
   it "represents the rows and fields as a hash" do
-    res = DB.exec("select 'a' as foo, 'b' as bar, true as baz, 1.0 as uhh
+    res = DB.exec("select 'a' as foo, 'b' as bar, true as baz, 1.0::float as uhh
                    union all
-                   select '', null, false, -3.2")
+                   select '', null, false, -3.2::float")
     res.to_hash.should eq([
-      {"foo" => "a", "bar" => "b", "baz" => true,  "uhh" => "1.0"},
-      {"foo" => "",  "bar" => nil, "baz" => false, "uhh" => "-3.2"}
+      {"foo" => "a", "bar" => "b", "baz" => true,  "uhh" => 1.0},
+      {"foo" => "",  "bar" => nil, "baz" => false, "uhh" => -3.2}
     ])
   end
 

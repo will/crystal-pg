@@ -1,7 +1,7 @@
 require "../spec_helper"
-describe PG::Decoder::TimeDecoder, "decode" do
+describe PG::Decoder::StringTimeDecoder, "decode" do
   it "can parse basic dates and times" do
-    dec = PG::Decoder::TimeDecoder.new
+    dec = PG::Decoder::StringTimeDecoder.new
 
     dec.decode("2014-01-02".cstr).should eq(
        Time.new(2014, 1, 2))
@@ -11,7 +11,7 @@ describe PG::Decoder::TimeDecoder, "decode" do
   end
 
   it "can parse microseconds to miliseconds" do
-    dec = PG::Decoder::TimeDecoder.new
+    dec = PG::Decoder::StringTimeDecoder.new
 
     dec.decode("2014-01-02 18:20:33.266293".cstr).should eq(
        Time.new(2014, 1, 2,18,20,33,266))
@@ -27,7 +27,7 @@ describe PG::Decoder::TimeDecoder, "decode" do
   end
 
   it "can parse timezone offsets" do
-    dec = PG::Decoder::TimeDecoder.new
+    dec = PG::Decoder::StringTimeDecoder.new
 
     dec.decode("2015-05-02 18:13:40.765172+00".cstr).should eq(
        Time.new(2015, 5, 2,18,13,40,765))
