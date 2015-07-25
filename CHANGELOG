@@ -2,6 +2,10 @@ upcoming
 ========
 
 
+v0.2.0    2015-07-25
+====================
+
+* Add Connection#escape_literal and Connection#escape_identifier
 
 v0.1.0    2015-06-14
 ====================
