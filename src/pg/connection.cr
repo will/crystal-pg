@@ -48,14 +48,7 @@ module PG
     # value is passed as a separate parameter in `#exec`
     def escape_literal(str)
       escaped = LibPQ.escape_literal(raw, str, str.length)
-      if escaped.null?
-        error = ConnectionError.new(raw)
-        raise error
-      else
-        result = String.new(escaped)
-        LibPQ.freemem(escaped as Pointer(Void))
-        result
-      end
+      extract_escaped_result(escaped)
     end
 
     # `#escape_identifier` escapes a string for use as an SQL identifier, such
@@ -66,14 +59,7 @@ module PG
     # preserved.
     def escape_identifier(str)
       escaped = LibPQ.escape_identifier(raw, str, str.length)
-      if escaped.null?
-        error = ConnectionError.new(raw)
-        raise error
-      else
-        result = String.new(escaped)
-        LibPQ.freemem(escaped as Pointer(Void))
-        result
-      end
+      extract_escaped_result(escaped)
     end
 
     private getter raw
@@ -100,7 +86,6 @@ module PG
       res
     end
 
-
     private def check_status(res)
       status = LibPQ.result_status(res)
       return if ( status == LibPQ::ExecStatusType::PGRES_TUPLES_OK ||
@@ -118,6 +103,17 @@ module PG
         Pointer(LibPQ::CChar).null
       else
         val.to_s.to_unsafe
+      end
+    end
+
+    private def extract_escaped_result(escaped)
+      if escaped.null?
+        error = ConnectionError.new(raw)
+        raise error
+      else
+        result = String.new(escaped)
+        LibPQ.freemem(escaped as Pointer(Void))
+        result
       end
     end
   end
