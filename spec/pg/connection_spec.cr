@@ -1,3 +1,5 @@
+require "../spec_helper"
+
 describe PG::Connection, "#initialize" do
   it "works on a good connection" do
     PG::Connection.new(DB_URL)
@@ -66,5 +68,9 @@ describe PG::Connection, "#exec untyped with params" do
     res = DB.exec(query, param)
     res.rows.should eq([param])
   end
+end
 
+describe PG::Connection, "#escape_literal" do
+  assert { DB.escape_literal(%(foo)).should eq(%('foo')) }
+  assert { DB.escape_literal(%(some"thing)).should eq(%('some\"thing')) }
 end

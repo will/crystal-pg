@@ -27,6 +27,7 @@ module PG
                           param_formats : Int*    ,
                           result_format : Int
                         ) : PGresult
+    fun escape_literal = PQescapeLiteral(conn : PGconn, str : CChar*, length : Int) : CChar*
 
     alias PGresult = Void*
     enum ExecStatusType
@@ -43,5 +44,7 @@ module PG
     fun ftype    = PQftype(res : PGresult, column_number : Int) : Int
     fun getvalue = PQgetvalue(res : PGresult, row_number : Int, column_number : Int) : CChar*
     fun getisnull = PQgetisnull(res : PGresult, row_number : Int, column_number : Int) : Bool
+
+    fun freemem = PQfreemem(ptr : Void*) : Void
   end
 end

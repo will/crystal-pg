@@ -38,6 +38,26 @@ module PG
       {major: version[0], minor: version[1], patch: version[2]}
     end
 
+    # `#escape_literal` escapes a string for use within an SQL command. This is
+    # useful when inserting data values as literal constants in SQL commands.
+    # Certain characters (such as quotes and backslashes) must be escaped to
+    # prevent them from being interpreted specially by the SQL parser.
+    # PQescapeLiteral performs this operation.
+    #
+    # Note that it is not necessary nor correct to do escaping when a data
+    # value is passed as a separate parameter in `#exec`
+    def escape_literal(str)
+      escaped = LibPQ.escape_literal(raw, str, str.length)
+      if escaped.null?
+        error = ConnectionError.new(raw)
+        raise error
+      else
+        result = String.new(escaped)
+        LibPQ.freemem(escaped as Pointer(Void))
+        result
+      end
+    end
+
     private getter raw
 
     private def libpq_exec(query, params)
