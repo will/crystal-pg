@@ -58,6 +58,24 @@ module PG
       end
     end
 
+    # `#escape_identifier` escapes a string for use as an SQL identifier, such
+    # as a table, column, or function name. This is useful when a user-supplied
+    # identifier might contain special characters that would otherwise not be
+    # interpreted as part of the identifier by the SQL parser, or when the
+    # identifier might contain upper case characters whose case should be
+    # preserved.
+    def escape_identifier(str)
+      escaped = LibPQ.escape_identifier(raw, str, str.length)
+      if escaped.null?
+        error = ConnectionError.new(raw)
+        raise error
+      else
+        result = String.new(escaped)
+        LibPQ.freemem(escaped as Pointer(Void))
+        result
+      end
+    end
+
     private getter raw
 
     private def libpq_exec(query, params)

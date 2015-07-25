@@ -29,6 +29,7 @@ module PG
                           result_format : Int
                         ) : PGresult
     fun escape_literal = PQescapeLiteral(conn : PGconn, str : CStr, length : Int) : CStr
+    fun escape_identifier = PQescapeIdentifier(conn : PGconn, str : CStr, length : Int) : CStr
 
     alias PGresult = Void*
     enum ExecStatusType
