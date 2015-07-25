@@ -73,11 +73,15 @@ end
 describe PG::Connection, "#escape_literal" do
   assert { DB.escape_literal(%(foo)).should eq(%('foo')) }
   assert { DB.escape_literal(%(some"thing)).should eq(%('some\"thing')) }
-  # TODO: need example that causes an exception
+  it "raises on invalid strings" do
+    expect_raises(PG::ConnectionError) { DB.escape_literal("\u{F4}") }
+  end
 end
 
 describe PG::Connection, "#escape_identifier" do
   assert { DB.escape_identifier(%(foo)).should eq(%("foo")) }
   assert { DB.escape_identifier(%(someTHING)).should eq(%("someTHING")) }
-  # TODO: need example that causes an exception
+  it "raises on invalid strings" do
+    expect_raises(PG::ConnectionError) { DB.escape_identifier("\u{F4}") }
+  end
 end
