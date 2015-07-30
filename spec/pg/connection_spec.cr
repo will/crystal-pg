@@ -60,8 +60,8 @@ describe PG::Connection, "#exec untyped with params" do
   end
 
   it "can properly encode various types" do
-    time = Time.new(2015,05,02,13,14,15,0, Time::Kind::Utc)
-    date = Time.new(2015,05,02, 0, 0, 0,0, Time::Kind::Utc)
+    time = Time.new(2015,5,2,13,14,15,0, Time::Kind::Utc)
+    date = Time.new(2015,5,2, 0, 0, 0,0, Time::Kind::Utc)
     query = "select
              $1::text, $2::int, $3::text, $4::float, $5::timestamptz, $6::date, $7::bool"
     param =  ["hello",       2,    nil,    -4.23,      time,            date,       true]
