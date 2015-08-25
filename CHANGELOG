@@ -1,6 +1,10 @@
 upcoming
 ========
 
+v0.3.0    2015-08-24
+====================
+* switch to binary result format
+* decoders are now pluggable with PG::Decoder.register_decoder
 
 v0.2.0    2015-07-25
 ====================
