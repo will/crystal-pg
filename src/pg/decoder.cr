@@ -113,18 +113,18 @@ module PG
     end
 
     # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
-    register_decoder BoolDecoder.new,      16 # bool
-    register_decoder IntDecoder.new,       20 # int8
-    register_decoder IntDecoder.new,       21 # int2
-    register_decoder IntDecoder.new,       23 # int4
+    register_decoder    BoolDecoder.new,   16 # bool
+    register_decoder     IntDecoder.new,   20 # int8
+    register_decoder     IntDecoder.new,   21 # int2
+    register_decoder     IntDecoder.new,   23 # int4
     register_decoder DefaultDecoder.new,   25 # text
-    register_decoder JsonDecoder.new,     114 # json
-    register_decoder JsonbDecoder.new,   3802 # jsonb
+    register_decoder    JsonDecoder.new,  114 # json
+    register_decoder   JsonbDecoder.new, 3802 # jsonb
     register_decoder Float32Decoder.new,  700 # float4
     register_decoder Float64Decoder.new,  701 # float8
     register_decoder DefaultDecoder.new,  705 # unknown
-    register_decoder DateDecoder.new,    1082 # date
-    register_decoder TimeDecoder.new,    1114 # timestamp
-    register_decoder TimeDecoder.new,    1184 # timestamptz
+    register_decoder    DateDecoder.new, 1082 # date
+    register_decoder    TimeDecoder.new, 1114 # timestamp
+    register_decoder    TimeDecoder.new, 1184 # timestamptz
   end
 end
