@@ -12,26 +12,24 @@ module PG
     abstract class Decoder
       def decode(value_ptr) end
 
-      private def swap32(ptr : UInt8*) : UInt32*
-        n = (((((((( 0_u32
-         ) | ptr[0] ) << 8
-         ) | ptr[1] ) << 8
-         ) | ptr[2] ) << 8
-         ) | ptr[3] )
-        pointerof(n)
+      private def swap32(ptr : UInt8*) : UInt32
+        (((((((( 0_u32
+          ) | ptr[0] ) << 8
+          ) | ptr[1] ) << 8
+          ) | ptr[2] ) << 8
+          ) | ptr[3] )
       end
 
-      private def swap64(ptr : UInt8*) : UInt64*
-        n = (((((((((((((((( 0_u64
-         ) | ptr[0] ) << 8
-         ) | ptr[1] ) << 8
-         ) | ptr[2] ) << 8
-         ) | ptr[3] ) << 8
-         ) | ptr[4] ) << 8
-         ) | ptr[5] ) << 8
-         ) | ptr[6] ) << 8
-         ) | ptr[7] )
-        pointerof(n)
+      private def swap64(ptr : UInt8*) : UInt64
+        (((((((((((((((( 0_u64
+          ) | ptr[0] ) << 8
+          ) | ptr[1] ) << 8
+          ) | ptr[2] ) << 8
+          ) | ptr[3] ) << 8
+          ) | ptr[4] ) << 8
+          ) | ptr[5] ) << 8
+          ) | ptr[6] ) << 8
+          ) | ptr[7] )
       end
     end
 
@@ -56,20 +54,22 @@ module PG
 
     class IntDecoder < Decoder
       def decode(value_ptr)
-        (swap32(value_ptr) as Int32*).value
+        swap32(value_ptr).to_i32
       end
     end
 
     class Float32Decoder < Decoder
       # byte swapped in the same way as int4
       def decode(value_ptr)
-        (swap32(value_ptr) as Float32*).value
+        u32 = swap32(value_ptr)
+        (pointerof(u32) as Float32*).value
       end
     end
 
     class Float64Decoder < Decoder
       def decode(value_ptr)
-        (swap64(value_ptr) as Float64*).value
+        u64 = swap64(value_ptr)
+        (pointerof(u64) as Float64*).value
       end
     end
 
@@ -88,14 +88,14 @@ module PG
 
     class DateDecoder < Decoder
       def decode(value_ptr)
-        v = (swap32(value_ptr) as Int32*).value
+        v = swap32(value_ptr).to_i32
         return Time.new(2000,1,1, kind: Time::Kind::Utc) + TimeSpan.new(v,0,0,0)
       end
     end
 
     class TimeDecoder < Decoder
       def decode(value_ptr)
-        v = (swap64(value_ptr) as Int64*).value / 1000
+        v = swap64(value_ptr).to_i64 / 1000
         return Time.new(2000,1,1, kind: Time::Kind::Utc) + TimeSpan.new(0,0,0,0,v)
       end
     end
