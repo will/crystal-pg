@@ -8,10 +8,8 @@ v0.3.0    2015-08-24
 
 v0.2.0    2015-07-25
 ====================
-
 * Add Connection#escape_literal and Connection#escape_identifier
 
 v0.1.0    2015-06-14
 ====================
-
 * first named version using crystal shards
