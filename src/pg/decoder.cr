@@ -102,11 +102,10 @@ module PG
       end
     end
 
-    @@decoders = Hash(Int32, PG::Decoder::Decoder).new
-    @@default = DefaultDecoder.new
+    @@decoders = Hash(Int32, PG::Decoder::Decoder).new(DefaultDecoder.new)
 
     def self.from_oid(oid)
-      @@decoders[oid]? || @@default
+      @@decoders[oid]
     end
 
     def self.register_decoder(decoder, oid)
