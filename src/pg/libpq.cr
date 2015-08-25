@@ -1,5 +1,5 @@
 module PG
-  @[Link(ldflags: "-lpq -I`pg_config --includedir` -L`pg_config --libdir`")]
+  @[Link(ldflags: "-lpq -L`pg_config --libdir`")]
   lib LibPQ
     # http://www.postgresql.org/docs/9.4/static/libpq-exec.html
     alias CChar = UInt8
