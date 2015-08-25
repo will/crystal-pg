@@ -1,9 +1,14 @@
 upcoming
 ========
 
+v0.3.1    2015-08-25
+====================
+* BUGFIX: previous release would give wrong reults under --release
+* 3x fater again on time parsing, total ~10x faster than text format
+
 v0.3.0    2015-08-24
 ====================
-* switch to binary result format
+* switch to much faster binary result format (time parsing 3.4x faster than text)
 * decoders are now pluggable with PG::Decoder.register_decoder
 
 v0.2.0    2015-07-25
