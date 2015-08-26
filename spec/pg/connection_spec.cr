@@ -71,7 +71,7 @@ describe PG::Connection, "#exec untyped with params" do
 end
 
 describe PG::Connection, "#exec_all" do
-  it "returns a Result" do
+  it "returns nil" do
     res = DB.exec_all("select 1; select 2;")
     res.class.should eq( Nil )
   end
