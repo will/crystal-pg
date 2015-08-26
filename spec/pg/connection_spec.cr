@@ -70,6 +70,17 @@ describe PG::Connection, "#exec untyped with params" do
   end
 end
 
+describe PG::Connection, "#exec_all" do
+  it "returns a Result" do
+    res = DB.exec_all("select 1; select 2;")
+    res.class.should eq( Nil )
+  end
+
+  it "raises on bad queries" do
+    expect_raises(PG::ResultError) { DB.exec_all("select 1; select nocolumn from notable;") }
+  end
+end
+
 describe PG::Connection, "#escape_literal" do
   assert { DB.escape_literal(%(foo)).should eq(%('foo')) }
   assert { DB.escape_literal(%(some"thing)).should eq(%('some\"thing')) }

@@ -26,6 +26,11 @@ module PG
       Result.new(types, libpq_exec(query, params))
     end
 
+    def exec_all(query: String)
+      res = LibPQ.exec(raw, query)
+      check_status(res)
+    end
+
     def finish
       LibPQ.finish(raw)
       @raw = nil
