@@ -70,7 +70,6 @@ module PG
       end
     end
 
-
     class Int8Decoder < Decoder
       def decode(value_ptr)
         swap64(value_ptr).to_i64
