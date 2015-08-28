@@ -10,7 +10,13 @@ module PG
   module Decoder
 
     abstract class Decoder
-      def decode(value_ptr) end
+      abstract def decode(value_ptr)
+
+      private def swap16(ptr : UInt8*) : UInt16
+        (((( 0_u16
+          ) | ptr[0] ) << 8
+          ) | ptr[1] )
+      end
 
       private def swap32(ptr : UInt8*) : UInt32
         (((((((( 0_u32
@@ -52,9 +58,22 @@ module PG
       end
     end
 
+    class Int2Decoder < Decoder
+      def decode(value_ptr)
+        swap16(value_ptr).to_i16
+      end
+    end
+
     class IntDecoder < Decoder
       def decode(value_ptr)
         swap32(value_ptr).to_i32
+      end
+    end
+
+
+    class Int8Decoder < Decoder
+      def decode(value_ptr)
+        swap64(value_ptr).to_i64
       end
     end
 
@@ -114,9 +133,9 @@ module PG
 
     # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
     register_decoder    BoolDecoder.new,   16 # bool
-    register_decoder     IntDecoder.new,   20 # int8
-    register_decoder     IntDecoder.new,   21 # int2
-    register_decoder     IntDecoder.new,   23 # int4
+    register_decoder    Int8Decoder.new,   20 # int8 (bigint)
+    register_decoder    Int2Decoder.new,   21 # int2 (smallint)
+    register_decoder     IntDecoder.new,   23 # int4 (integer)
     register_decoder DefaultDecoder.new,   25 # text
     register_decoder    JsonDecoder.new,  114 # json
     register_decoder   JsonbDecoder.new, 3802 # jsonb

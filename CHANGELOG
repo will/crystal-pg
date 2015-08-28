@@ -2,6 +2,7 @@ upcoming
 ========
 
 * Connection#exec_all (thanks @solisoft)
+* BUGFIX: bigint and smallint were broken since v0.3.0
 
 v0.3.1    2015-08-25
 ====================

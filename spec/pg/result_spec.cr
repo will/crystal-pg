@@ -52,7 +52,9 @@ describe PG::Result, "#rows" do
   test_decode "null as nil",    "null",           nil
   test_decode "boolean false",  "false",          false
   test_decode "boolean true",   "true",           true
-  test_decode "integer",        "1",              1
+  test_decode "int2 smallint",  "1::int2",        1
+  test_decode "int4 int",       "1::int4",        1
+  test_decode "int8 bigint",    "1::int8",        1
   test_decode "float",          "-0.123::float",  -0.123
 
   test_decode "double prec.",   "'35.03554004971999'::float8", 35.03554004971999
