@@ -1,6 +1,8 @@
 upcoming
 ========
 
+v0.3.2    2015-08-28
+====================
 * Connection#exec_all (thanks @solisoft)
 * BUGFIX: bigint and smallint were broken since v0.3.0
 
