@@ -48,6 +48,17 @@ describe PG::Result, "#to_hash" do
     ])
   end
 
+  it "represents the rows and fields as a hash with typed querying" do
+    res = DB.exec({String, String, Bool, Int32},
+                  "select 'a' as foo, 'b' as bar, true as baz, 10 as uhh
+                   union all
+                   select '', 'c', false, 20")
+    res.to_hash.should eq([
+      {"foo" => "a", "bar" => "b", "baz" => true,  "uhh" => 10},
+      {"foo" => "",  "bar" => "c", "baz" => false, "uhh" => 20}
+    ])
+  end
+
   it "raises if there are columns with the same name" do
     res = DB.exec("select 'a' as foo, 'b' as foo, 'c' as bar")
     expect_raises { res.to_hash }

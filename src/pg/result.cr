@@ -34,7 +34,7 @@ module PG
       end
 
       rows.map do |row|
-        Hash.zip(field_names, row)
+        Hash.zip(field_names, row.to_a)
       end
     end
 
