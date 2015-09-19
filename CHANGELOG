@@ -1,6 +1,11 @@
 upcoming
 ========
 
+v0.4.0    2015-09-19
+====================
+* Fix and require Crystal 0.8.0
+* Allow #to_hash with typed querying interface (thanks @werner)
+
 v0.3.2    2015-08-28
 ====================
 * Connection#exec_all (thanks @solisoft)
