@@ -52,7 +52,7 @@ module PG
     # Note that it is not necessary nor correct to do escaping when a data
     # value is passed as a separate parameter in `#exec`
     def escape_literal(str)
-      escaped = LibPQ.escape_literal(raw, str, str.length)
+      escaped = LibPQ.escape_literal(raw, str, str.size)
       extract_escaped_result(escaped)
     end
 
@@ -63,7 +63,7 @@ module PG
     # identifier might contain upper case characters whose case should be
     # preserved.
     def escape_identifier(str)
-      escaped = LibPQ.escape_identifier(raw, str, str.length)
+      escaped = LibPQ.escape_identifier(raw, str, str.size)
       extract_escaped_result(escaped)
     end
 
