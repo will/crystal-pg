@@ -109,14 +109,14 @@ module PG
     class DateDecoder < Decoder
       def decode(value_ptr)
         v = swap32(value_ptr).to_i32
-        Time.new(JAN_1_2K_TICKS + (TimeSpan::TicksPerDay * v), kind: Time::Kind::Utc)
+        Time.new(JAN_1_2K_TICKS + (Time::Span::TicksPerDay * v), kind: Time::Kind::Utc)
       end
     end
 
     class TimeDecoder < Decoder
       def decode(value_ptr)
         v = swap64(value_ptr).to_i64 / 1000
-        Time.new(JAN_1_2K_TICKS + (TimeSpan::TicksPerMillisecond * v), kind: Time::Kind::Utc)
+        Time.new(JAN_1_2K_TICKS + (Time::Span::TicksPerMillisecond * v), kind: Time::Kind::Utc)
       end
     end
 

@@ -31,7 +31,7 @@ describe PG::Result, "#rows" do
            ).rows
     rows.should eq([{"a", "b", true,  22},
                     {"",  nil, false, 53}])
-    [rows[0][0],    rows[1][0]].map(&.length).sum.should eq(1)
+    [rows[0][0],    rows[1][0]].map(&.size).sum.should eq(1)
     (rows[0][2] && !rows[1][2]).should be_true
     (rows[0][3] <   rows[1][3]).should be_true
   end
