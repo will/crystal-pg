@@ -1,6 +1,10 @@
 upcoming
 ========
 
+v0.4.2    2015-09-29
+====================
+* fix UUIDs to have appropriate dashes
+
 v0.4.1    2015-09-29
 ====================
 * Fix UUID type
