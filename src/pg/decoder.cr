@@ -120,6 +120,12 @@ module PG
       end
     end
 
+    class UuidDecoder < Decoder
+      def decode(value_ptr)
+        value_ptr.to_slice(16).hexstring
+      end
+    end
+
     @@decoders = Hash(Int32, PG::Decoder::Decoder).new(DefaultDecoder.new)
 
     def self.from_oid(oid)
@@ -144,5 +150,6 @@ module PG
     register_decoder    DateDecoder.new, 1082 # date
     register_decoder    TimeDecoder.new, 1114 # timestamp
     register_decoder    TimeDecoder.new, 1184 # timestamptz
+    register_decoder    UuidDecoder.new, 2950 # uuid
   end
 end
