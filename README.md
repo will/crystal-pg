@@ -60,7 +60,7 @@ Linking requires that the `pg_config` binary is in your `$PATH` and returns corr
 
 ## Todo
 
-- more datatypes (ranges, hstore, byeta)
+- more datatypes (ranges, hstore)
 - more info in postgres exceptions
 - transaction help
 - a lot more
