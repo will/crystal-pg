@@ -85,7 +85,8 @@ module PG
       if val_ptr.value == 0 && LibPQ.getisnull(res, row, col)
         nil
       else
-        decoders[col].decode(val_ptr)
+        size = LibPQ.getlength(res, row, col)
+        decoders[col].decode(val_ptr.to_slice(size))
       end
     end
 

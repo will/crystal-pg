@@ -45,6 +45,7 @@ module PG
     fun fname    = PQfname(res : PGresult, column_number : Int) : CStr
     fun ftype    = PQftype(res : PGresult, column_number : Int) : Int
     fun getvalue = PQgetvalue(res : PGresult, row_number : Int, column_number : Int) : CStr
+    fun getlength = PQgetlength(res : PGresult, row_number : Int, column_number : Int) : Int
     fun getisnull = PQgetisnull(res : PGresult, row_number : Int, column_number : Int) : Bool
 
     fun freemem = PQfreemem(ptr : Void*) : Void

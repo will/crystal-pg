@@ -25,6 +25,10 @@ describe PG::Decoder do
   test_decode "double prec.",   "'35.03554004971999'::float8", 35.03554004971999
   test_decode "flot prec.",     "'0.10000122'::float4", 0.10000122_f32
 
+  test_decode "bytea",       "E'\\\\001\\\\134\\\\176'::bytea", Slice(UInt8).new UInt8[0o001, 0o134, 0o176].to_unsafe, 3
+  test_decode "bytea",       "E'\\\\005\\\\000\\\\377\\\\200'::bytea", Slice(UInt8).new UInt8[5, 0, 255, 128].to_unsafe, 4
+  test_decode "bytea empty", "E''::bytea",                      Slice(UInt8).new UInt8[].to_unsafe, 0
+
   test_decode "uuid", "'7d61d548124c4b38bc05cfbb88cfd1d1'::uuid",     "7d61d548-124c-4b38-bc05-cfbb88cfd1d1"
   test_decode "uuid", "'7d61d548-124c-4b38-bc05-cfbb88cfd1d1'::uuid", "7d61d548-124c-4b38-bc05-cfbb88cfd1d1"
 
