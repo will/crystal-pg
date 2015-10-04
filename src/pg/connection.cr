@@ -1,6 +1,32 @@
 require "./error"
 module PG
   class Connection
+    # :nodoc:
+    record Param, slice, format do # Internal wrapper to represent an encoded parameter
+      delegate to_unsafe, slice
+      delegate size,      slice
+
+      # The only special case is nil->null and slice.
+      # If more types need special cases, there should be an encoder
+      def self.encode(val)
+        if val.nil?
+          binary Pointer(LibPQ::CChar).null.to_slice(0)
+        elsif val.is_a? Slice
+          binary val
+        else
+          text val.to_s.to_slice
+        end
+      end
+
+      def self.binary(slice)
+        new slice, 1
+      end
+
+      def self.text(slice)
+        new slice, 0
+      end
+    end
+
     def initialize(conninfo : String)
       @raw = LibPQ.connect(conninfo)
       unless LibPQ.status(raw) == LibPQ::ConnStatusType::CONNECTION_OK
@@ -70,12 +96,13 @@ module PG
     private getter raw
 
     private def libpq_exec(query, params)
-      n_params      = params.size
-      param_types   = Pointer(LibPQ::Int).null # have server infer types
-      param_values  = params.map { |v| simple_encode(v) }
-      param_lengths = Pointer(LibPQ::Int).null # only for binary which is not yet supported
-      param_formats = Pointer(LibPQ::Int).null # if null, only text is assumed
-      result_format = 1 # text vs. binary
+      encoded_params = params.map { |v| Param.encode(v) }
+      n_params       = params.size
+      param_types    = Pointer(LibPQ::Int).null # have server infer types
+      param_values   = encoded_params.map &.to_unsafe
+      param_lengths  = encoded_params.map &.size
+      param_formats  = encoded_params.map &.format
+      result_format  = 1 # text vs. binary
 
       res = LibPQ.exec_params(
         raw           ,
@@ -99,16 +126,6 @@ module PG
       error = ResultError.new(res, status)
       Result.clear_res(res)
       raise error
-    end
-
-    # The only special case is nil->null.
-    # If more types need special cases, there should be an encoder
-    private def simple_encode(val)
-      if val.nil?
-        Pointer(LibPQ::CChar).null
-      else
-        val.to_s.to_unsafe
-      end
     end
 
     private def extract_escaped_result(escaped)
