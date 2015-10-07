@@ -52,7 +52,7 @@ module PG
       Result.new(types, libpq_exec(query, params))
     end
 
-    def exec_all(query: String)
+    def exec_all(query : String)
       res = LibPQ.exec(raw, query)
       check_status(res)
     end
@@ -80,6 +80,19 @@ module PG
     def escape_literal(str)
       escaped = LibPQ.escape_literal(raw, str, str.size)
       extract_escaped_result(escaped)
+    end
+
+    # `#escape_literal` escapes binary data suitable for use with the BYTEA type.
+    def escape_literal(slice : Slice(UInt8))
+      ssize = slice.size * 2 + 4
+      String.new(ssize) do |buffer|
+        buffer[0] = '\''.ord.to_u8
+        buffer[1] = '\\'.ord.to_u8
+        buffer[2] = 'x'.ord.to_u8
+        slice.hexstring(buffer + 3)
+        buffer[ssize - 1] = '\''.ord.to_u8
+        {ssize, ssize}
+      end
     end
 
     # `#escape_identifier` escapes a string for use as an SQL identifier, such

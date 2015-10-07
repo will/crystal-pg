@@ -85,6 +85,7 @@ end
 describe PG::Connection, "#escape_literal" do
   assert { DB.escape_literal(%(foo)).should eq(%('foo')) }
   assert { DB.escape_literal(%(some"thing)).should eq(%('some\"thing')) }
+  assert { DB.escape_literal(%(foo).to_slice).should eq(%('\\x666f6f')) }
   it "raises on invalid strings" do
     expect_raises(PG::ConnectionError) { DB.escape_literal("\u{F4}") }
   end
