@@ -2,7 +2,7 @@ require "../spec_helper"
 
 describe PG::Result, "#fields" do
   it "is empty on empty results" do
-    if Helper.db_version_gte(9,4)
+    if Helper.db_version_gte(9, 4)
       fields = DB.exec("select").fields
       fields.size.should eq(0)
     end
@@ -11,15 +11,15 @@ describe PG::Result, "#fields" do
   it "is is a list of the fields" do
     fields = DB.exec("select 1 as one, 2 as two, 3 as three").fields
     fields.map(&.name).should eq(["one", "two", "three"])
-    fields.map(&.oid).should eq([23,23,23])
+    fields.map(&.oid).should eq([23, 23, 23])
   end
 end
 
 describe PG::Result, "#rows" do
   it "is an empty 2d array on empty results" do
-    if Helper.db_version_gte(9,4)
+    if Helper.db_version_gte(9, 4)
       rows = DB.exec("select").rows
-      rows.size.should    eq(1)
+      rows.size.should eq(1)
       rows[0].size.should eq(0)
     end
   end

@@ -3,4 +3,3 @@ class Class
     other as self
   end
 end
-

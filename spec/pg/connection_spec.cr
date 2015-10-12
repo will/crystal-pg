@@ -30,7 +30,7 @@ end
 describe PG::Connection, "#exec typed" do
   it "returns a Result" do
     res = DB.exec({Int32}, "select 1")
-    res.class.should eq( PG::Result({Int32.class}) )
+    res.class.should eq(PG::Result({Int32.class}))
   end
 
   it "raises on bad queries" do
@@ -41,7 +41,7 @@ end
 describe PG::Connection, "#exec typed with params" do
   it "returns a Result" do
     res = DB.exec({Float64}, "select $1::float * $2::float ", [3.4, -2])
-    res.class.should eq( PG::Result({Float64.class}) )
+    res.class.should eq(PG::Result({Float64.class}))
   end
 
   it "raises on bad queries" do
@@ -74,7 +74,7 @@ end
 describe PG::Connection, "#exec_all" do
   it "returns nil" do
     res = DB.exec_all("select 1; select 2;")
-    res.class.should eq( Nil )
+    res.class.should eq(Nil)
   end
 
   it "raises on bad queries" do

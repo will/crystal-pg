@@ -112,11 +112,11 @@ module PG
     class JsonbDecoder < Decoder
       def decode(bytes)
         # move past single 0x01 byte at the start of jsonb
-        JSON.parse(String.new(bytes+1))
+        JSON.parse(String.new(bytes + 1))
       end
     end
 
-    JAN_1_2K_TICKS = Time.new(2000,1,1, kind: Time::Kind::Utc).ticks
+    JAN_1_2K_TICKS = Time.new(2000, 1, 1, kind: Time::Kind::Utc).ticks
 
     class DateDecoder < Decoder
       def decode(bytes)

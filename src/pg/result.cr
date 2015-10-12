@@ -1,10 +1,11 @@
 module PG
   class Result(T)
-
     struct Field
       property name
       property oid
-      def initialize(@name, @oid) end
+
+      def initialize(@name, @oid)
+      end
 
       def self.new_from_res(res, col)
         new(
@@ -70,7 +71,7 @@ module PG
 
     macro generate_gather_rows(from, to)
       {% for n in (from..to) %}
-        private def gather_rows(types : Tuple({% for i in (1...n) %}Class, {%end%} Class))
+        private def gather_rows(types : Tuple({% for i in (1...n) %}Class, {% end %} Class))
           Array.new(ntuples) do |i|
             { {% for j in (0...n) %} types[{{j}}].as_cast( decode_value(res,i,{{j}}) ), {% end %} }
           end
@@ -78,7 +79,7 @@ module PG
       {% end %}
     end
 
-    generate_gather_rows(1,32)
+    generate_gather_rows(1, 32)
 
     private def decode_value(res, row, col)
       val_ptr = LibPQ.getvalue(res, row, col)
@@ -98,7 +99,5 @@ module PG
       self.class.clear_res(res)
       @res = nil
     end
-
   end
 end
-
