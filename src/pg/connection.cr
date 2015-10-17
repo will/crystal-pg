@@ -1,10 +1,11 @@
 require "./error"
+
 module PG
   class Connection
     # :nodoc:
     record Param, slice, format do # Internal wrapper to represent an encoded parameter
       delegate to_unsafe, slice
-      delegate size,      slice
+      delegate size, slice
 
       # The only special case is nil->null and slice.
       # If more types need special cases, there should be an encoder
@@ -110,32 +111,32 @@ module PG
 
     private def libpq_exec(query, params)
       encoded_params = params.map { |v| Param.encode(v) }
-      n_params       = params.size
-      param_types    = Pointer(LibPQ::Int).null # have server infer types
-      param_values   = encoded_params.map &.to_unsafe
-      param_lengths  = encoded_params.map &.size
-      param_formats  = encoded_params.map &.format
-      result_format  = 1 # text vs. binary
+      n_params = params.size
+      param_types = Pointer(LibPQ::Int).null # have server infer types
+      param_values = encoded_params.map &.to_unsafe
+      param_lengths = encoded_params.map &.size
+      param_formats = encoded_params.map &.format
+      result_format = 1 # text vs. binary
 
       res = LibPQ.exec_params(
-        raw           ,
-        query         ,
-        n_params      ,
-        param_types   ,
-        param_values  ,
-        param_lengths ,
-        param_formats ,
-        result_format
-      )
+              raw,
+              query,
+              n_params,
+              param_types,
+              param_values,
+              param_lengths,
+              param_formats,
+              result_format
+            )
       check_status(res)
       res
     end
 
     private def check_status(res)
       status = LibPQ.result_status(res)
-      return if ( status == LibPQ::ExecStatusType::PGRES_TUPLES_OK ||
-                  status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
-                  status == LibPQ::ExecStatusType::PGRES_COMMAND_OK )
+      return if (status == LibPQ::ExecStatusType::PGRES_TUPLES_OK ||
+        status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
+        status == LibPQ::ExecStatusType::PGRES_COMMAND_OK)
       error = ResultError.new(res, status)
       Result.clear_res(res)
       raise error

@@ -8,7 +8,6 @@ module PG
   alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Type
 
   module Decoder
-
     abstract class Decoder
       abstract def decode(bytes)
 
@@ -17,9 +16,9 @@ module PG
       end
 
       private def swap16(ptr : UInt8*) : UInt16
-        (((( 0_u16
-          ) | ptr[0] ) << 8
-          ) | ptr[1] )
+        ((((0_u16
+          ) | ptr[0]) << 8
+          ) | ptr[1])
       end
 
       private def swap32(slice : Slice(UInt8))
@@ -27,11 +26,11 @@ module PG
       end
 
       private def swap32(ptr : UInt8*) : UInt32
-        (((((((( 0_u32
-          ) | ptr[0] ) << 8
-          ) | ptr[1] ) << 8
-          ) | ptr[2] ) << 8
-          ) | ptr[3] )
+        ((((((((0_u32
+          ) | ptr[0]) << 8
+          ) | ptr[1]) << 8
+          ) | ptr[2]) << 8
+          ) | ptr[3])
       end
 
       private def swap64(slice : Slice(UInt8))
@@ -39,15 +38,15 @@ module PG
       end
 
       private def swap64(ptr : UInt8*) : UInt64
-        (((((((((((((((( 0_u64
-          ) | ptr[0] ) << 8
-          ) | ptr[1] ) << 8
-          ) | ptr[2] ) << 8
-          ) | ptr[3] ) << 8
-          ) | ptr[4] ) << 8
-          ) | ptr[5] ) << 8
-          ) | ptr[6] ) << 8
-          ) | ptr[7] )
+        ((((((((((((((((0_u64
+          ) | ptr[0]) << 8
+          ) | ptr[1]) << 8
+          ) | ptr[2]) << 8
+          ) | ptr[3]) << 8
+          ) | ptr[4]) << 8
+          ) | ptr[5]) << 8
+          ) | ptr[6]) << 8
+          ) | ptr[7])
       end
     end
 
@@ -136,10 +135,10 @@ module PG
       def decode(bytes)
         String.new(36) do |buffer|
           buffer[8] = buffer[13] = buffer[18] = buffer[23] = 45_u8
-          bytes[ 0, 4].hexstring(buffer + 0)
-          bytes[ 4, 2].hexstring(buffer + 9)
-          bytes[ 6, 2].hexstring(buffer + 14)
-          bytes[ 8, 2].hexstring(buffer + 19)
+          bytes[0, 4].hexstring(buffer + 0)
+          bytes[4, 2].hexstring(buffer + 9)
+          bytes[6, 2].hexstring(buffer + 14)
+          bytes[8, 2].hexstring(buffer + 19)
           bytes[10, 6].hexstring(buffer + 24)
           {36, 36}
         end
@@ -163,20 +162,20 @@ module PG
     end
 
     # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
-    register_decoder    BoolDecoder.new,   16 # bool
-    register_decoder   ByteaDecoder.new,   17 # bytea
-    register_decoder    Int8Decoder.new,   20 # int8 (bigint)
-    register_decoder    Int2Decoder.new,   21 # int2 (smallint)
-    register_decoder     IntDecoder.new,   23 # int4 (integer)
-    register_decoder DefaultDecoder.new,   25 # text
-    register_decoder    JsonDecoder.new,  114 # json
-    register_decoder   JsonbDecoder.new, 3802 # jsonb
-    register_decoder Float32Decoder.new,  700 # float4
-    register_decoder Float64Decoder.new,  701 # float8
-    register_decoder DefaultDecoder.new,  705 # unknown
-    register_decoder    DateDecoder.new, 1082 # date
-    register_decoder    TimeDecoder.new, 1114 # timestamp
-    register_decoder    TimeDecoder.new, 1184 # timestamptz
-    register_decoder    UuidDecoder.new, 2950 # uuid
+    register_decoder BoolDecoder.new, 16     # bool
+    register_decoder ByteaDecoder.new, 17    # bytea
+    register_decoder Int8Decoder.new, 20     # int8 (bigint)
+    register_decoder Int2Decoder.new, 21     # int2 (smallint)
+    register_decoder IntDecoder.new, 23      # int4 (integer)
+    register_decoder DefaultDecoder.new, 25  # text
+    register_decoder JsonDecoder.new, 114    # json
+    register_decoder JsonbDecoder.new, 3802  # jsonb
+    register_decoder Float32Decoder.new, 700 # float4
+    register_decoder Float64Decoder.new, 701 # float8
+    register_decoder DefaultDecoder.new, 705 # unknown
+    register_decoder DateDecoder.new, 1082   # date
+    register_decoder TimeDecoder.new, 1114   # timestamp
+    register_decoder TimeDecoder.new, 1184   # timestamptz
+    register_decoder UuidDecoder.new, 2950   # uuid
   end
 end

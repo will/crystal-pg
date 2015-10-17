@@ -21,9 +21,10 @@ module PG
 
     getter fields
     getter rows
+
     def initialize(types : T, @res)
       @fields = gather_fields
-      @rows   = gather_rows(types)
+      @rows = gather_rows(types)
       clear_res
     end
 
