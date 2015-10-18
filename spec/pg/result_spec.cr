@@ -29,11 +29,11 @@ describe PG::Result, "#rows" do
              {String, PG::NilableString, Bool, Int32},
              "select 'a', 'b', true, 22 union all select '', null, false, 53"
            ).rows
-    rows.should eq([{"a", "b", true,  22},
-                    {"",  nil, false, 53}])
-    [rows[0][0],    rows[1][0]].map(&.size).sum.should eq(1)
+    rows.should eq([{"a", "b", true, 22},
+                    {"", nil, false, 53}])
+    [rows[0][0], rows[1][0]].map(&.size).sum.should eq(1)
     (rows[0][2] && !rows[1][2]).should be_true
-    (rows[0][3] <   rows[1][3]).should be_true
+    (rows[0][3] < rows[1][3]).should be_true
   end
 end
 
@@ -43,8 +43,8 @@ describe PG::Result, "#to_hash" do
                    union all
                    select '', null, false, -3.2::float")
     res.to_hash.should eq([
-      {"foo" => "a", "bar" => "b", "baz" => true,  "uhh" => 1.0},
-      {"foo" => "",  "bar" => nil, "baz" => false, "uhh" => -3.2}
+      {"foo" => "a", "bar" => "b", "baz" => true, "uhh" => 1.0},
+      {"foo" => "", "bar" => nil, "baz" => false, "uhh" => -3.2},
     ])
   end
 
@@ -54,8 +54,8 @@ describe PG::Result, "#to_hash" do
                    union all
                    select '', 'c', false, 20")
     res.to_hash.should eq([
-      {"foo" => "a", "bar" => "b", "baz" => true,  "uhh" => 10},
-      {"foo" => "",  "bar" => "c", "baz" => false, "uhh" => 20}
+      {"foo" => "a", "bar" => "b", "baz" => true, "uhh" => 10},
+      {"foo" => "", "bar" => "c", "baz" => false, "uhh" => 20},
     ])
   end
 
