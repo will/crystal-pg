@@ -1,8 +1,17 @@
 require "../spec_helper"
-
+require "uri"
 describe PG::Connection, "#initialize" do
   it "works on a good connection" do
     PG::Connection.new(DB_URL)
+
+    uri = URI.parse(DB_URL)
+    info = {} of String => String
+    info["host"] = uri.host as String if uri.host
+    info["user"] = uri.user as String if uri.user
+    info["password"] = uri.password as String if uri.password
+    info["port"] = "#{uri.port}" if uri.port
+    info["dbname"] = (uri.path as String).delete('/') if uri.path
+    PG::Connection.new(info)
   end
 
   it "raises on bad connections" do
