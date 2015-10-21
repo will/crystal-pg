@@ -1,5 +1,4 @@
 require "./error"
-require "yaml"
 
 module PG
   class Connection
@@ -40,12 +39,10 @@ module PG
 
     # `#initialize` Connect to the server with values of Hash.
     #
-    # ```
-    # info = { "host": "localhost", "user": "postgres", "password": "password", "db_name": "test_db", "port": "5432"}
-    # PG::Connection.new(info)
-    # ```
-    def initialize(parameters : Hash(YAML::Type, YAML::Type))
-      initialize(parameters.map {|param, value| "#{param}=#{value}" }.join(" "))
+    #     PG::Connection.new({ "host": "localhost", "user": "postgres",
+    #       "password":"password", "db_name": "test_db", "port": "5432" })
+    def initialize(parameters : Hash)
+      initialize(parameters.map { |param, value| "#{param}=#{value}" }.join(" "))
     end
 
     def exec(query : String)
