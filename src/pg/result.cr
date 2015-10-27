@@ -55,11 +55,9 @@ module PG
     end
 
     private def gather_fields
-      fds = Array(Field).new(nfields)
-      nfields.times do |i|
-        fds << Field.new_from_res(res, i)
+      Array.new(nfields) do |i|
+        Field.new_from_res(res, i)
       end
-      fds
     end
 
     private def gather_rows(types : Array(PGValue))
