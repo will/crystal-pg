@@ -127,15 +127,15 @@ module PG
       result_format = 1 # text vs. binary
 
       res = LibPQ.exec_params(
-              raw,
-              query,
-              n_params,
-              param_types,
-              param_values,
-              param_lengths,
-              param_formats,
-              result_format
-            )
+        raw,
+        query,
+        n_params,
+        param_types,
+        param_values,
+        param_lengths,
+        param_formats,
+        result_format
+      )
       check_status(res)
       res
     end
@@ -143,8 +143,8 @@ module PG
     private def check_status(res)
       status = LibPQ.result_status(res)
       return if (status == LibPQ::ExecStatusType::PGRES_TUPLES_OK ||
-        status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
-        status == LibPQ::ExecStatusType::PGRES_COMMAND_OK)
+                status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
+                status == LibPQ::ExecStatusType::PGRES_COMMAND_OK)
       error = ResultError.new(res, status)
       Result.clear_res(res)
       raise error

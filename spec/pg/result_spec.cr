@@ -26,11 +26,11 @@ describe PG::Result, "#rows" do
 
   it "can handle several types and several rows" do
     rows = DB.exec(
-             {String, PG::NilableString, Bool, Int32},
-             "select 'a', 'b', true, 22 union all select '', null, false, 53"
-           ).rows
+      {String, PG::NilableString, Bool, Int32},
+      "select 'a', 'b', true, 22 union all select '', null, false, 53"
+    ).rows
     rows.should eq([{"a", "b", true, 22},
-                    {"", nil, false, 53}])
+      {"", nil, false, 53}])
     [rows[0][0], rows[1][0]].map(&.size).sum.should eq(1)
     (rows[0][2] && !rows[1][2]).should be_true
     (rows[0][3] < rows[1][3]).should be_true
@@ -50,7 +50,7 @@ describe PG::Result, "#to_hash" do
 
   it "represents the rows and fields as a hash with typed querying" do
     res = DB.exec({String, String, Bool, Int32},
-                  "select 'a' as foo, 'b' as bar, true as baz, 10 as uhh
+      "select 'a' as foo, 'b' as bar, true as baz, 10 as uhh
                    union all
                    select '', 'c', false, 20")
     res.to_hash.should eq([
