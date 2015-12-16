@@ -146,7 +146,7 @@ module PG
                 status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
                 status == LibPQ::ExecStatusType::PGRES_COMMAND_OK)
       error = ResultError.new(res, status)
-      Result.clear_res(res)
+      LibPQ.clear(res)
       raise error
     end
 

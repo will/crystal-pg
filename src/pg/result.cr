@@ -19,13 +19,25 @@ module PG
       end
     end
 
-    getter fields
-    getter rows
+    def initialize(@types : T, @res)
+    end
 
-    def initialize(types : T, @res)
-      @fields = gather_fields
-      @rows = gather_rows(types)
-      clear_res
+    def finalize
+      LibPQ.clear(res)
+    end
+
+    def fields
+      @fields ||= Array.new(nfields) do |i|
+        Field.new_from_res(res, i)
+      end
+    end
+
+    def rows
+      @rows ||= gather_rows(@types)
+    end
+
+    def any?
+      ntuples > 0
     end
 
     def to_hash
@@ -42,28 +54,18 @@ module PG
 
     private getter res
 
-    private def nfields
-      @nfields ||= LibPQ.nfields(res)
-    end
-
     private def ntuples
-      @ntuples ||= LibPQ.ntuples(res)
+      LibPQ.ntuples(res)
     end
 
-    private def decoders
-      @decoders ||= fields.map(&.decoder)
-    end
-
-    private def gather_fields
-      Array.new(nfields) do |i|
-        Field.new_from_res(res, i)
-      end
+    private def nfields
+      LibPQ.nfields(res)
     end
 
     private def gather_rows(types : Array(PGValue))
       Array.new(ntuples) do |i|
         Array.new(nfields) do |j|
-          decode_value(res, i, j)
+          decode_value(i, j)
         end
       end
     end
@@ -72,7 +74,7 @@ module PG
       {% for n in (from..to) %}
         private def gather_rows(types : Tuple({% for i in (1...n) %}Class, {% end %} Class))
           Array.new(ntuples) do |i|
-            { {% for j in (0...n) %} types[{{j}}].cast( decode_value(res,i,{{j}}) ), {% end %} }
+            { {% for j in (0...n) %} types[{{j}}].cast( decode_value(i, {{j}}) ), {% end %} }
           end
         end
       {% end %}
@@ -80,23 +82,14 @@ module PG
 
     generate_gather_rows(1, 32)
 
-    private def decode_value(res, row, col)
+    protected def decode_value(row, col)
       val_ptr = LibPQ.getvalue(res, row, col)
       if val_ptr.value == 0 && LibPQ.getisnull(res, row, col)
         nil
       else
         size = LibPQ.getlength(res, row, col)
-        decoders[col].decode(val_ptr.to_slice(size))
+        fields[col].decoder.decode(val_ptr.to_slice(size))
       end
-    end
-
-    def self.clear_res(res)
-      LibPQ.clear(res)
-    end
-
-    private def clear_res
-      self.class.clear_res(res)
-      @res = nil
     end
   end
 end
