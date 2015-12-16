@@ -1,5 +1,16 @@
 module PG
   class Result(T)
+    struct Row
+      def initialize(@result, @row)
+      end
+
+      def each
+        @result.fields.each_with_index do |field, col|
+          yield field.name, @result.decode_value(@row, col)
+        end
+      end
+    end
+
     struct Field
       property name
       property oid
@@ -24,6 +35,10 @@ module PG
 
     def finalize
       LibPQ.clear(res)
+    end
+
+    def each
+      ntuples.times { |i| yield Row.new(self, i) }
     end
 
     def fields

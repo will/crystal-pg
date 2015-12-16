@@ -64,3 +64,43 @@ describe PG::Result, "#to_hash" do
     expect_raises { res.to_hash }
   end
 end
+
+struct FooBarBaz
+  property foo, bar, baz
+
+  def initialize(@foo, @bar, @baz)
+  end
+
+  def self.from_pg(row : PG::Result::Row)
+    foo = bar = baz = nil
+
+    row.each do |field_name, value|
+      case field_name
+      when "foo" then foo = value as String
+      when "bar" then bar = value as Bool
+      when "baz" then baz = value as Int32
+      end
+    end
+
+    new(foo, bar, baz)
+  end
+end
+
+describe PG::Result, "#each" do
+  it "iterates rows and fields" do
+    result = DB.exec(
+      "select 'a' as foo, true as bar, 10 as baz
+      union all select '', false, 20"
+    )
+    data = [] of FooBarBaz
+    result.each { |row| data << FooBarBaz.from_pg(row) }
+
+    data.should eq [
+      FooBarBaz.new("a", true, 10),
+      FooBarBaz.new("", false, 20),
+    ]
+    typeof(data[0].foo).to_s.should match(/String/)
+    typeof(data[0].bar).to_s.should match(/Bool/)
+    typeof(data[0].baz).to_s.should match(/Int32/)
+  end
+end
