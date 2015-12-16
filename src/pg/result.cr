@@ -72,7 +72,7 @@ module PG
       {% for n in (from..to) %}
         private def gather_rows(types : Tuple({% for i in (1...n) %}Class, {% end %} Class))
           Array.new(ntuples) do |i|
-            { {% for j in (0...n) %} types[{{j}}].as_cast( decode_value(res,i,{{j}}) ), {% end %} }
+            { {% for j in (0...n) %} types[{{j}}].cast( decode_value(res,i,{{j}}) ), {% end %} }
           end
         end
       {% end %}
