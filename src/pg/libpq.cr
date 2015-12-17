@@ -47,6 +47,19 @@ module PG
     fun getlength = PQgetlength(res : PGresult, row_number : Int, column_number : Int) : Int
     fun getisnull = PQgetisnull(res : PGresult, row_number : Int, column_number : Int) : Bool
 
+    fun socket = PQsocket(conn : PGconn) : Int
+    fun send_query = PQsendQuery(conn : PGconn, query : CStr) : Int
+    fun send_query_params = PQsendQueryParams(
+                                   conn : PGconn,
+                                   query : CStr,
+                                   n_params : Int,
+                                   param_types : Oid*,
+                                   param_values : CStr*,
+                                   param_lengths : Int*,
+                                   param_formats : Int*,
+                                   result_format : Int) : Int
+    fun get_result = PQgetResult(conn : PGconn) : PGresult
+
     fun freemem = PQfreemem(ptr : Void*) : Void
   end
 end

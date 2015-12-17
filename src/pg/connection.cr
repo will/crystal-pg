@@ -1,4 +1,5 @@
 require "./error"
+require "../core_ext/scheduler"
 
 module PG
   class Connection
@@ -58,7 +59,9 @@ module PG
     end
 
     def exec(types, query : String, params)
-      Result.new(types, libpq_exec(query, params))
+      libpq_exec_params(query, params) do |res|
+        return Result.new(types, res)
+      end.not_nil!
     end
 
     def exec_all(query : String)
@@ -117,7 +120,7 @@ module PG
 
     private getter raw
 
-    private def libpq_exec(query, params)
+    private def libpq_exec_params(query, params)
       encoded_params = params.map { |v| Param.encode(v) }
       n_params = params.size
       param_types = Pointer(LibPQ::Int).null # have server infer types
@@ -126,7 +129,7 @@ module PG
       param_formats = encoded_params.map &.format
       result_format = 1 # text vs. binary
 
-      res = LibPQ.exec_params(
+      ret = LibPQ.send_query_params(
         raw,
         query,
         n_params,
@@ -136,18 +139,49 @@ module PG
         param_formats,
         result_format
       )
-      check_status(res)
-      res
+      if ret == 0
+        raise Error.new(String.new(LibPQ.error_message(raw)))
+      end
+
+      libpq_get_results { |res| yield res }
     end
 
-    private def check_status(res)
+    private def libpq_get_results
+      loop do
+        wait_readable
+        res = LibPQ.get_result(raw)
+        break if res == Pointer(Void).null
+        check_status(res, clear_results: true)
+        yield res
+      end
+    ensure
+      libpq_clear_results
+    end
+
+    private def wait_readable
+      read_event = @read_event ||= Scheduler.create_resume_event_on_read(Fiber.current, LibPQ.socket(raw))
+      read_event.add
+      Scheduler.reschedule
+    end
+
+    private def check_status(res, clear_results = false)
       status = LibPQ.result_status(res)
       return if (status == LibPQ::ExecStatusType::PGRES_TUPLES_OK ||
                 status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
                 status == LibPQ::ExecStatusType::PGRES_COMMAND_OK)
+      libpq_clear_results if clear_results
       error = ResultError.new(res, status)
       Result.clear_res(res)
       raise error
+    end
+
+    private def libpq_clear_results
+      loop do
+        res = LibPQ.get_result(raw)
+        return if res == Pointer(Void).null
+        LibPQ.clear(res)
+        wait_readable
+      end
     end
 
     private def extract_escaped_result(escaped)
