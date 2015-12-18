@@ -179,12 +179,12 @@ module PG
         return
       end
 
-      # TODO: add a timeout (?)
-      read_event = @read_event ||= Scheduler.create_resume_event_on_read(Fiber.current, LibPQ.socket(raw))
+      # NOTE: no memoization: fiber is likely to change
+      read_event = Scheduler.create_resume_event_on_read(Fiber.current, LibPQ.socket(raw))
       read_event.add
-
-      # FIXME: will sometimes never resume the fiber
       Scheduler.reschedule
+    ensure
+      read_event.free if read_event
     end
 
     private def check_status(res, clear_results = false)
