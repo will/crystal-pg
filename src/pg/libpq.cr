@@ -60,6 +60,9 @@ module PG
                                    result_format : Int) : Int
     fun get_result = PQgetResult(conn : PGconn) : PGresult
 
+    fun consume_input = PQconsumeInput(conn : PGconn) : Int
+    fun is_busy = PQisBusy(conn : PGconn) : Int
+
     fun freemem = PQfreemem(ptr : Void*) : Void
   end
 end

@@ -38,6 +38,10 @@ module PG
       end
     end
 
+    def finalize
+      finish
+    end
+
     # `#initialize` Connect to the server with values of Hash.
     #
     #     PG::Connection.new({ "host": "localhost", "user": "postgres",
@@ -59,9 +63,7 @@ module PG
     end
 
     def exec(types, query : String, params)
-      libpq_exec_params(query, params) do |res|
-        return Result.new(types, res)
-      end.not_nil!
+      Result.new(types, libpq_exec(query, params))
     end
 
     def exec_all(query : String)
@@ -70,6 +72,10 @@ module PG
     end
 
     def finish
+      if read_event = @read_event
+        read_event.free
+        @read_event = nil
+      end
       LibPQ.finish(raw)
       @raw = nil
     end
@@ -120,7 +126,7 @@ module PG
 
     private getter raw
 
-    private def libpq_exec_params(query, params)
+    private def libpq_exec(query, params)
       encoded_params = params.map { |v| Param.encode(v) }
       n_params = params.size
       param_types = Pointer(LibPQ::Int).null # have server infer types
@@ -139,28 +145,45 @@ module PG
         param_formats,
         result_format
       )
-      if ret == 0
+      if ret != 1
         raise Error.new(String.new(LibPQ.error_message(raw)))
       end
 
-      libpq_get_results { |res| yield res }
+      libpq_get_result
     end
 
-    private def libpq_get_results
+    private def libpq_get_result
+      res = nil
+
       loop do
         wait_readable
-        res = LibPQ.get_result(raw)
-        break if res == Pointer(Void).null
-        check_status(res, clear_results: true)
-        yield res
+
+        ret = LibPQ.get_result(raw)
+        if ret == Pointer(Void).null
+          break
+        else
+          check_status(res = ret, clear_results: true)
+        end
       end
+
+      res.not_nil!
     ensure
       libpq_clear_results
     end
 
     private def wait_readable
+      if LibPQ.consume_input(raw) != 1
+        raise Error.new(String.new(LibPQ.error_message(raw)))
+      end
+      if LibPQ.is_busy(raw) == 0
+        return
+      end
+
+      # TODO: add a timeout (?)
       read_event = @read_event ||= Scheduler.create_resume_event_on_read(Fiber.current, LibPQ.socket(raw))
       read_event.add
+
+      # FIXME: will sometimes never resume the fiber
       Scheduler.reschedule
     end
 
