@@ -1,5 +1,7 @@
 upcoming
 ========
+* Adds Result#each which allows to map a PG result to a struct or class,
+  avoiding temporary memory structures (thanks @ysbaddaden)
 
 v0.4.3    2015-10-21
 ====================
