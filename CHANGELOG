@@ -1,5 +1,8 @@
 upcoming
 ========
+
+v0.5.0    2015-12-21
+====================
 * Adds Result#each which allows to map a PG result to a struct or class,
   avoiding temporary memory structures (thanks @ysbaddaden)
 * Connection#exec is now async (thanks @ysbaddaden)
