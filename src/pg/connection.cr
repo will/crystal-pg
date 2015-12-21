@@ -1,4 +1,5 @@
 require "./error"
+require "../core_ext/scheduler"
 
 module PG
   class Connection
@@ -37,6 +38,10 @@ module PG
       end
     end
 
+    def finalize
+      finish
+    end
+
     # `#initialize` Connect to the server with values of Hash.
     #
     #     PG::Connection.new({ "host": "localhost", "user": "postgres",
@@ -67,6 +72,10 @@ module PG
     end
 
     def finish
+      if read_event = @read_event
+        read_event.free
+        @read_event = nil
+      end
       LibPQ.finish(raw)
       @raw = nil
     end
@@ -126,7 +135,7 @@ module PG
       param_formats = encoded_params.map &.format
       result_format = 1 # text vs. binary
 
-      res = LibPQ.exec_params(
+      ret = LibPQ.send_query_params(
         raw,
         query,
         n_params,
@@ -136,18 +145,66 @@ module PG
         param_formats,
         result_format
       )
-      check_status(res)
-      res
+      if ret != 1
+        raise Error.new(String.new(LibPQ.error_message(raw)))
+      end
+
+      libpq_get_result
     end
 
-    private def check_status(res)
+    private def libpq_get_result
+      res = nil
+
+      loop do
+        wait_readable
+
+        ret = LibPQ.get_result(raw)
+        if ret == Pointer(Void).null
+          break
+        else
+          check_status(res = ret, clear_results: true)
+        end
+      end
+
+      res.not_nil!
+    ensure
+      libpq_clear_results
+    end
+
+    private def wait_readable
+      if LibPQ.consume_input(raw) != 1
+        raise Error.new(String.new(LibPQ.error_message(raw)))
+      end
+      if LibPQ.is_busy(raw) == 0
+        return
+      end
+
+      # NOTE: no memoization: fiber is likely to change
+      read_event = Scheduler.create_resume_event_on_read(Fiber.current, LibPQ.socket(raw))
+      read_event.add
+      Scheduler.reschedule
+    ensure
+      read_event.free if read_event
+    end
+
+    private def check_status(res, clear_results = false)
       status = LibPQ.result_status(res)
       return if (status == LibPQ::ExecStatusType::PGRES_TUPLES_OK ||
                 status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
                 status == LibPQ::ExecStatusType::PGRES_COMMAND_OK)
+      libpq_clear_results if clear_results
       error = ResultError.new(res, status)
       LibPQ.clear(res)
       raise error
+    end
+
+    private def libpq_clear_results
+      loop do
+        res = LibPQ.get_result(raw)
+        return if res == Pointer(Void).null
+        LibPQ.clear(res)
+        wait_readable
+      end
     end
 
     private def extract_escaped_result(escaped)
