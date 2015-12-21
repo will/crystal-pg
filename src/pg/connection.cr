@@ -30,9 +30,9 @@ module PG
     end
 
     def initialize(conninfo : String)
-      @raw = LibPQ.connect(conninfo)
-      unless LibPQ.status(raw) == LibPQ::ConnStatusType::CONNECTION_OK
-        error = ConnectionError.new(@raw)
+      @conn_ptr = LibPQ.connect(conninfo)
+      unless LibPQ.status(conn_ptr) == LibPQ::ConnStatusType::CONNECTION_OK
+        error = ConnectionError.new(@conn_ptr)
         finish
         raise error
       end
@@ -67,7 +67,7 @@ module PG
     end
 
     def exec_all(query : String)
-      res = LibPQ.exec(raw, query)
+      res = LibPQ.exec(conn_ptr, query)
       check_status(res)
     end
 
@@ -76,8 +76,8 @@ module PG
         read_event.free
         @read_event = nil
       end
-      LibPQ.finish(raw)
-      @raw = nil
+      LibPQ.finish(conn_ptr)
+      @conn_ptr = nil
     end
 
     def version
@@ -96,7 +96,7 @@ module PG
     # Note that it is not necessary nor correct to do escaping when a data
     # value is passed as a separate parameter in `#exec`
     def escape_literal(str)
-      escaped = LibPQ.escape_literal(raw, str, str.size)
+      escaped = LibPQ.escape_literal(conn_ptr, str, str.size)
       extract_escaped_result(escaped)
     end
 
@@ -120,11 +120,11 @@ module PG
     # identifier might contain upper case characters whose case should be
     # preserved.
     def escape_identifier(str)
-      escaped = LibPQ.escape_identifier(raw, str, str.size)
+      escaped = LibPQ.escape_identifier(conn_ptr, str, str.size)
       extract_escaped_result(escaped)
     end
 
-    private getter raw
+    private getter conn_ptr
 
     private def libpq_exec(query, params)
       encoded_params = params.map { |v| Param.encode(v) }
@@ -136,7 +136,7 @@ module PG
       result_format = 1 # text vs. binary
 
       ret = LibPQ.send_query_params(
-        raw,
+        conn_ptr,
         query,
         n_params,
         param_types,
@@ -146,7 +146,7 @@ module PG
         result_format
       )
       if ret != 1
-        raise Error.new(String.new(LibPQ.error_message(raw)))
+        raise Error.new(String.new(LibPQ.error_message(conn_ptr)))
       end
 
       libpq_get_result
@@ -158,7 +158,7 @@ module PG
       loop do
         wait_readable
 
-        ret = LibPQ.get_result(raw)
+        ret = LibPQ.get_result(conn_ptr)
         if ret == Pointer(Void).null
           break
         else
@@ -172,15 +172,15 @@ module PG
     end
 
     private def wait_readable
-      if LibPQ.consume_input(raw) != 1
-        raise Error.new(String.new(LibPQ.error_message(raw)))
+      if LibPQ.consume_input(conn_ptr) != 1
+        raise Error.new(String.new(LibPQ.error_message(conn_ptr)))
       end
-      if LibPQ.is_busy(raw) == 0
+      if LibPQ.is_busy(conn_ptr) == 0
         return
       end
 
       # NOTE: no memoization: fiber is likely to change
-      read_event = Scheduler.create_resume_event_on_read(Fiber.current, LibPQ.socket(raw))
+      read_event = Scheduler.create_resume_event_on_read(Fiber.current, LibPQ.socket(conn_ptr))
       read_event.add
       Scheduler.reschedule
     ensure
@@ -200,7 +200,7 @@ module PG
 
     private def libpq_clear_results
       loop do
-        res = LibPQ.get_result(raw)
+        res = LibPQ.get_result(conn_ptr)
         return if res == Pointer(Void).null
         LibPQ.clear(res)
         wait_readable
@@ -209,7 +209,7 @@ module PG
 
     private def extract_escaped_result(escaped)
       if escaped.null?
-        error = ConnectionError.new(raw)
+        error = ConnectionError.new(conn_ptr)
         raise error
       else
         result = String.new(escaped)
