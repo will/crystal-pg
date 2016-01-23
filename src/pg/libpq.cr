@@ -18,8 +18,7 @@ module PG
     fun finish = PQfinish(conn : PGconn) : Void
     fun error_message = PQerrorMessage(conn : PGconn) : CStr
     fun exec = PQexec(conn : PGconn, query : CStr) : PGresult
-    fun exec_params = PQexecParams(
-                                   conn : PGconn,
+    fun exec_params = PQexecParams(conn : PGconn,
                                    query : CStr,
                                    n_params : Int,
                                    param_types : Oid*,
@@ -49,15 +48,14 @@ module PG
 
     fun socket = PQsocket(conn : PGconn) : Int
     fun send_query = PQsendQuery(conn : PGconn, query : CStr) : Int
-    fun send_query_params = PQsendQueryParams(
-                                   conn : PGconn,
-                                   query : CStr,
-                                   n_params : Int,
-                                   param_types : Oid*,
-                                   param_values : CStr*,
-                                   param_lengths : Int*,
-                                   param_formats : Int*,
-                                   result_format : Int) : Int
+    fun send_query_params = PQsendQueryParams(conn : PGconn,
+                                              query : CStr,
+                                              n_params : Int,
+                                              param_types : Oid*,
+                                              param_values : CStr*,
+                                              param_lengths : Int*,
+                                              param_formats : Int*,
+                                              result_format : Int) : Int
     fun get_result = PQgetResult(conn : PGconn) : PGresult
 
     fun consume_input = PQconsumeInput(conn : PGconn) : Int
