@@ -26,7 +26,7 @@ result = DB.exec({String}, "select $1::text || ' ' || $2::text", ["hello", "worl
 result.rows #=> [{"hello world"}]
 ```
 
-Out of the box, crystal-pg supports 1-32 types. If you need more, you can reopen `PG::Result` and use the `generate_gather_rows` macro. If your field can return nil, you should use `PG::Nilable{{Type}}` for the type, which is a union of the type and `Nil`.
+Out of the box, crystal-pg supports 1-32 types. If you need more, you can reopen `PG::Result` and use the `generate_gather_rows` macro. If your field can return nil, you should use `Int32|Nil` for example, which is a union of the type and `Nil`.
 
 ### untyped querying
 
