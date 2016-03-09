@@ -6,9 +6,20 @@ A Postgres driver for Crystal
 
 ## usage
 
+### shards
+
+Add this to your `shard.yml` and run `crystal deps`
+
+``` yml
+dependencies:
+  pg:
+    github: will/crystal-pg
+```
+
 ### connecting
 
 ``` crystal
+require "pg"
 DB = PG.connect("postgres://...")
 ```
 
