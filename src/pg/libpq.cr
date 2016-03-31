@@ -62,5 +62,8 @@ module PG
     fun is_busy = PQisBusy(conn : PGconn) : Int
 
     fun freemem = PQfreemem(ptr : Void*) : Void
+
+    fun set_notice_receiver  = PQsetNoticeReceiver(conn : PGconn, receiver : (Void*, PGresult) -> Nil, arg: Void*)
+    fun set_notice_processor = PQsetNoticeProcessor(conn : PGconn, processor : (Void*, CStr) -> Nil, arg: Void*)
   end
 end
