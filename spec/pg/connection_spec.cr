@@ -115,13 +115,13 @@ describe PG::Connection, "#setup_notice_processor" do
     end
 
     DB.exec_all <<-SQL
+    SET client_min_messages TO notice;
     DO language plpgsql $$
     BEGIN
       RAISE NOTICE 'hello, world!';
     END
     $$;
     SQL
-
     last_notice.should eq("NOTICE:  hello, world!\n")
   end
 end
