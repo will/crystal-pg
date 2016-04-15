@@ -106,3 +106,22 @@ describe PG::Connection, "#escape_identifier" do
     expect_raises(PG::ConnectionError) { DB.escape_identifier("\u{F4}") }
   end
 end
+
+describe PG::Connection, "#setup_notice_processor" do
+  it "sends notices to on_notice" do
+    last_notice = nil
+    DB.on_notice do |notice|
+      last_notice = notice
+    end
+
+    DB.exec_all <<-SQL
+    DO language plpgsql $$
+    BEGIN
+      RAISE WARNING 'hello, world!';
+    END
+    $$;
+    SQL
+
+    last_notice.should eq("WARNING:  hello, world!\n")
+  end
+end

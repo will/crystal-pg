@@ -36,6 +36,28 @@ module PG
         finish
         raise error
       end
+
+      setup_notice_processor
+    end
+
+    def on_notice(&on_notice_proc : String -> Void)
+      @on_notice_proc = on_notice_proc
+    end
+
+    protected def process_notice(msg : String)
+      if on_notice_proc = @on_notice_proc
+        on_notice_proc.call msg
+      end
+    end
+
+    private def setup_notice_processor
+      notice_processor = ->(pCrystalConnection : Void*, message : Pointer(LibPQ::CChar)) {
+        crystal_connection = pCrystalConnection as PG::Connection
+
+        crystal_connection.process_notice(String.new(message))
+        nil
+      }
+      LibPQ.set_notice_processor(conn_ptr, notice_processor, self as Void*)
     end
 
     def finalize
