@@ -117,11 +117,11 @@ describe PG::Connection, "#setup_notice_processor" do
     DB.exec_all <<-SQL
     DO language plpgsql $$
     BEGIN
-      RAISE NOTICE 'hello, world!';
+      RAISE WARNING 'hello, world!';
     END
     $$;
     SQL
 
-    last_notice.should eq("NOTICE:  hello, world!\n")
+    last_notice.should eq("WARNING:  hello, world!\n")
   end
 end
