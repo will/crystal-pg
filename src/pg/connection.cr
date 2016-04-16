@@ -94,10 +94,6 @@ module PG
     end
 
     def finish
-      if read_event = @read_event
-        read_event.free
-        @read_event = nil
-      end
       LibPQ.finish(conn_ptr)
       @conn_ptr = nil
     end
