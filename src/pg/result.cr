@@ -1,7 +1,7 @@
 module PG
   class Result(T)
-    struct Row
-      def initialize(@result, @row)
+    struct Row(T)
+      def initialize(@result : PG::Result(T), @row : Int32)
       end
 
       def each
@@ -42,13 +42,13 @@ module PG
     end
 
     def fields
-      @fields ||= Array.new(nfields) do |i|
+      Array.new(nfields) do |i|
         Field.new_from_res(res, i)
       end
     end
 
     def rows
-      @rows ||= gather_rows(@types)
+      gather_rows(@types)
     end
 
     def any?
