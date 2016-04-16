@@ -15,7 +15,7 @@ module PG
       property name
       property oid
 
-      def initialize(@name, @oid)
+      def initialize(@name : String, @oid : Int32)
       end
 
       def self.new_from_res(res, col)
@@ -30,7 +30,7 @@ module PG
       end
     end
 
-    def initialize(@types : T, @res)
+    def initialize(@types : T, @res : LibPQ::PGresult)
     end
 
     def finalize

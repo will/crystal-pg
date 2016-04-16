@@ -4,7 +4,7 @@ require "../core_ext/scheduler"
 module PG
   class Connection
     # :nodoc:
-    record Param, slice, format do # Internal wrapper to represent an encoded parameter
+    record Param, slice : Slice(UInt8), format : Int32 do # Internal wrapper to represent an encoded parameter
       delegate to_unsafe, slice
       delegate size, slice
 
