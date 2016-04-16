@@ -1,5 +1,6 @@
 upcoming
 ========
+* Adds Adds on_notice callback (thanks @radiospiel)
 
 v0.5.0    2015-12-21
 ====================
