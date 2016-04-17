@@ -56,4 +56,12 @@ describe PG::Decoder do
 
   test_decode "date", "'2015-02-03'::date",
     Time.new(2015, 2, 3, 0, 0, 0, 0, Time::Kind::Utc)
+
+  it "numeric" do
+    x = ->(q : String) do
+      DB.exec({PG::Numeric}, "select '#{q}'::numeric").rows.first.first
+    end
+    x.call("1.3").to_f.should eq(1.3)
+    x.call("nan").nan?.should be_true
+  end
 end

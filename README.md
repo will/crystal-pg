@@ -55,7 +55,7 @@ result.rows #=> [["hello world"]]
 
 ## Requirements
 
-Crystal-pg is [tested on](https://travis-ci.org/will/crystal-pg) Postgres versions 9.1 through 9.4. Since it is based on libpq, older versions probably also work but are not guaranteed.
+Crystal-pg is [tested on](https://travis-ci.org/will/crystal-pg) Postgres versions 9.1 through 9.4 and developed on 9.5 (travis does not currently have 9.5 support). Since it is based on libpq, older versions probably also work but are not guaranteed.
 
 Linking requires that the `pg_config` binary is in your `$PATH` and returns correct results for `pg_config --includedir` and `pg_config --libdir`.
 
@@ -67,6 +67,11 @@ Linking requires that the `pg_config` binary is in your `$PATH` and returns corr
 - float4, float8
 - timestamptz, date, timestamp (but no one should use ts when tstz exists!)
 - json and jsonb
+- uuid
+- bytea
+- numeric/decimal*
+
+* A note on numeric: In postgres this type has arbitrary percision. In this driver, it is represented as a `PG::Numeric` which retians all precision, but if you need to do any math on it, you will probably need to cast it to a float first.
 
 
 ## Todo

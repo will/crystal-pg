@@ -1,7 +1,7 @@
 require "json"
 
 module PG
-  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Type
+  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Type | PG::Numeric
 
   module Decoder
     abstract class Decoder
@@ -147,6 +147,21 @@ module PG
       end
     end
 
+    class NumericDecoder < Decoder
+      def decode(bytes)
+        ndigits = i16 bytes[0, 2]
+        weight = i16 bytes[2, 2]
+        sign = i16 bytes[4, 2]
+        dscale = i16 bytes[6, 2]
+        digits = (0...ndigits).map { |i| i16 bytes[i*2 + 8, 2] }
+        PG::Numeric.new(ndigits, weight, sign, dscale, digits)
+      end
+
+      private def i16(bytes)
+        swap16(bytes).to_i16
+      end
+    end
+
     @@decoders = Hash(Int32, PG::Decoder::Decoder).new(DefaultDecoder.new)
 
     def self.from_oid(oid)
@@ -158,20 +173,21 @@ module PG
     end
 
     # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
-    register_decoder BoolDecoder.new, 16     # bool
-    register_decoder ByteaDecoder.new, 17    # bytea
-    register_decoder Int8Decoder.new, 20     # int8 (bigint)
-    register_decoder Int2Decoder.new, 21     # int2 (smallint)
-    register_decoder IntDecoder.new, 23      # int4 (integer)
-    register_decoder DefaultDecoder.new, 25  # text
-    register_decoder JsonDecoder.new, 114    # json
-    register_decoder JsonbDecoder.new, 3802  # jsonb
-    register_decoder Float32Decoder.new, 700 # float4
-    register_decoder Float64Decoder.new, 701 # float8
-    register_decoder DefaultDecoder.new, 705 # unknown
-    register_decoder DateDecoder.new, 1082   # date
-    register_decoder TimeDecoder.new, 1114   # timestamp
-    register_decoder TimeDecoder.new, 1184   # timestamptz
-    register_decoder UuidDecoder.new, 2950   # uuid
+    register_decoder BoolDecoder.new, 16      # bool
+    register_decoder ByteaDecoder.new, 17     # bytea
+    register_decoder Int8Decoder.new, 20      # int8 (bigint)
+    register_decoder Int2Decoder.new, 21      # int2 (smallint)
+    register_decoder IntDecoder.new, 23       # int4 (integer)
+    register_decoder DefaultDecoder.new, 25   # text
+    register_decoder JsonDecoder.new, 114     # json
+    register_decoder JsonbDecoder.new, 3802   # jsonb
+    register_decoder Float32Decoder.new, 700  # float4
+    register_decoder Float64Decoder.new, 701  # float8
+    register_decoder DefaultDecoder.new, 705  # unknown
+    register_decoder DateDecoder.new, 1082    # date
+    register_decoder TimeDecoder.new, 1114    # timestamp
+    register_decoder NumericDecoder.new, 1700 # numeric
+    register_decoder TimeDecoder.new, 1184    # timestamptz
+    register_decoder UuidDecoder.new, 2950    # uuid
   end
 end
