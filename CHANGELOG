@@ -1,6 +1,7 @@
 upcoming
 ========
 * Adds Adds on_notice callback (thanks @radiospiel)
+* Adds PG::Numeric for numeric/decimal support
 
 v0.5.0    2015-12-21
 ====================
