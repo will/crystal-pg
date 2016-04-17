@@ -1,7 +1,12 @@
 require "../spec_helper"
+require "../../src/pg_ext/big_rational"
 
 private def n(nd, w, s, ds, d)
   PG::Numeric.new(nd.to_i16, w.to_i16, s.to_i16, ds.to_i16, d.map(&.to_i16))
+end
+
+private def br(n, d)
+  BigRational.new(n, d)
 end
 
 private def ex(which)
@@ -55,6 +60,25 @@ describe PG::Numeric do
       {"0.0...9", 0.0000000000000000000000000000000000009999999_f64},
     ].each do |x|
       ex(x[0]).to_f.should be_close(x[1], 1e-50)
+    end
+  end
+
+  it "#to_big_r" do
+    [
+      {"nan", br(0, 1)},
+      {"0", br(0, 1)},
+      {"0.0", br(0, 1)},
+      {"1", br(1, 1)},
+      {"-1", br(-1, 1)}, {"1.3", br(13, 10)},
+      {"1.30", br(13, 10)},
+      {"12345.6789123", br(123456789123, 10000000)},
+      {"-0.00009", br(-9, 100000)},
+      {"-0.000009", br(-9, 1000000)},
+      {"-0.0000009", br(-9, 10000000)},
+      {"-0.00000009", br(-9, 100000000)},
+      {"0.0...9", br(BigInt.new(9999999), BigInt.new(10)**43)},
+    ].each do |x|
+      ex(x[0]).to_big_r.should eq(x[1])
     end
   end
 

@@ -84,9 +84,11 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 - numeric/decimal*
 
 * A note on numeric: In postgres this type has arbitrary percision. In this
-  driver, it is represented as a `PG::Numeric` which retians all precision, but
-  if you need to do any math on it, you will probably need to cast it to a
-    float first.
+    driver, it is represented as a `PG::Numeric` which retians all precision, but
+    if you need to do any math on it, you will probably need to cast it to a
+    float first. If you need true abitrary percision, you can optionally
+    require `pg_ext/big_rational` which adds `#to_big_r`, but requires that you
+    have LibGMP installed.
 
 
 ## Connection Pooling

@@ -1,6 +1,11 @@
 module PG
   # The Postgres numeric type has arbitrary precision, and can be NaN, "not a
   # number".
+  #
+  # The default version of `Numeric` in this driver only has `#to_f` which
+  # provides approximate conversion. To get true arbitrary precision, there is
+  # an optional extension `pg_ext/big_rational`, however LibGMP must be
+  # installed.
   struct Numeric
     # :nodoc:
     enum Sign

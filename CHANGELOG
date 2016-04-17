@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* Adds optional BigRational extension to PG::Numeric
 * bugfixes in protocol
 
 v0.6.0     2016-05-05
