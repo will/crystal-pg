@@ -74,6 +74,10 @@ Linking requires that the `pg_config` binary is in your `$PATH` and returns corr
 * A note on numeric: In postgres this type has arbitrary percision. In this driver, it is represented as a `PG::Numeric` which retians all precision, but if you need to do any math on it, you will probably need to cast it to a float first.
 
 
+## Connection Pooling
+
+If you would like a connection pool, check out [ysbaddaden/pool](https://github.com/ysbaddaden/pool)
+
 ## Todo
 
 - more datatypes (ranges, hstore)
