@@ -19,10 +19,8 @@ module PG
       end
 
       def self.new_from_res(res, col)
-        new(
-          String.new(LibPQ.fname(res, col)),
-          LibPQ.ftype(res, col)
-        )
+        f = res.fields[col]
+        new(f.name, f.type_oid)
       end
 
       def decoder
@@ -33,26 +31,46 @@ module PG
     def initialize(@types : T, @res : LibPQ::PGresult)
     end
 
-    def finalize
-      LibPQ.clear(res)
+    def rows
+      a = [first]
+      each(@types) { |r| a << r }
+      a
+    end
+
+    private def first
+      each { |row| return row }
+      raise "this should be unreachable"
     end
 
     def each
-      ntuples.times { |i| yield Row.new(self, i) }
+      each(@types) { |row| yield row }
     end
+
+    private def each(types : Array(PGValue))
+      res.get_data { |row| yield row.map_with_index { |data, col| decode(data, col) } }
+    end
+
+    macro generate_private_each(from, to)
+      {% for n in (from..to) %}
+        private def each(types : Tuple({% for i in (1...n) %}Class, {% end %} Class))
+          res.get_data do |row|
+            yield ({
+              {% for j in (0...n) %}
+                types[{{j}}].cast(
+                  decode( row[{{j}}], {{j}}) ),
+              {% end %}
+            })
+          end
+        end
+      {% end %}
+    end
+
+    generate_private_each(1, 32)
 
     def fields
       @fields ||= Array.new(nfields) do |i|
         Field.new_from_res(res, i)
       end
-    end
-
-    def rows
-      @rows ||= gather_rows(@types)
-    end
-
-    def any?
-      ntuples > 0
     end
 
     def to_hash
@@ -69,41 +87,15 @@ module PG
 
     private getter res
 
-    private def ntuples
-      LibPQ.ntuples(res)
-    end
-
     private def nfields
-      LibPQ.nfields(res)
+      res.fields.size
     end
 
-    private def gather_rows(types : Array(PGValue))
-      Array.new(ntuples) do |i|
-        Array.new(nfields) do |j|
-          decode_value(i, j)
-        end
-      end
-    end
-
-    macro generate_gather_rows(from, to)
-      {% for n in (from..to) %}
-        private def gather_rows(types : Tuple({% for i in (1...n) %}Class, {% end %} Class))
-          Array.new(ntuples) do |i|
-            { {% for j in (0...n) %} types[{{j}}].cast( decode_value(i, {{j}}) ), {% end %} }
-          end
-        end
-      {% end %}
-    end
-
-    generate_gather_rows(1, 32)
-
-    protected def decode_value(row, col)
-      val_ptr = LibPQ.getvalue(res, row, col)
-      if val_ptr.value == 0 && LibPQ.getisnull(res, row, col)
-        nil
+    protected def decode(data, col)
+      if data
+        fields[col].decoder.decode(data)
       else
-        size = LibPQ.getlength(res, row, col)
-        fields[col].decoder.decode(val_ptr.to_slice(size))
+        nil
       end
     end
   end

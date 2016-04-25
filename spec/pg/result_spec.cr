@@ -73,14 +73,14 @@ struct FooBarBaz
   def initialize(@foo, @bar, @baz)
   end
 
-  def self.from_pg(row : PG::Result::Row)
+  def self.from_pg(row)
     foo = bar = baz = nil
 
     row.each do |field_name, value|
       case field_name
-      when "foo" then foo = value as String
-      when "bar" then bar = value as Bool
-      when "baz" then baz = value as Int32
+      when "foo" then foo = value as String?
+      when "bar" then bar = value as Bool?
+      when "baz" then baz = value as Int32?
       end
     end
 

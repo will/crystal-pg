@@ -1,5 +1,5 @@
+require "../pq/*"
 require "./error"
-require "../core_ext/scheduler"
 
 module PG
   class Connection
@@ -12,7 +12,7 @@ module PG
       # If more types need special cases, there should be an encoder
       def self.encode(val)
         if val.nil?
-          binary Pointer(LibPQ::CChar).null.to_slice(0)
+          binary Pointer(UInt8).null.to_slice(0)
         elsif val.is_a? Slice
           binary val
         else
@@ -21,23 +21,25 @@ module PG
       end
 
       def self.binary(slice)
-        new slice, 1
+        new slice, 1_i16
       end
 
       def self.text(slice)
-        new slice, 0
+        new slice, 0_i16
       end
     end
 
     def initialize(conninfo : String)
-      @conn_ptr = LibPQ.connect(conninfo)
-      unless LibPQ.status(conn_ptr) == LibPQ::ConnStatusType::CONNECTION_OK
-        error = ConnectionError.new(@conn_ptr)
-        finish
-        raise error
-      end
+      # @conn_ptr = LibPQ.connect(conninfo)
+      # unless LibPQ.status(conn_ptr) == LibPQ::ConnStatusType::CONNECTION_OK
+      #  error = ConnectionError.new(@conn_ptr)
+      #  finish
+      #  raise error
+      # end
 
-      setup_notice_processor
+      # setup_notice_processor
+      @pq_conn = PQ::Connection.new
+      @pq_conn.connect
     end
 
     def on_notice(&on_notice_proc : String -> Void)
@@ -85,16 +87,15 @@ module PG
     end
 
     def exec(types, query : String, params)
-      Result.new(types, libpq_exec(query, params))
+      Result.new(types, extended_query(query, params))
     end
 
     def exec_all(query : String)
-      res = LibPQ.exec(conn_ptr, query)
-      check_status(res)
+      # todo simple query
     end
 
     def finish
-      LibPQ.finish(conn_ptr)
+      # todo close conection
       @conn_ptr = nil
     end
 
@@ -114,8 +115,7 @@ module PG
     # Note that it is not necessary nor correct to do escaping when a data
     # value is passed as a separate parameter in `#exec`
     def escape_literal(str)
-      escaped = LibPQ.escape_literal(conn_ptr, str, str.size)
-      extract_escaped_result(escaped)
+      # todo reimpliment
     end
 
     # `#escape_literal` escapes binary data suitable for use with the BYTEA type.
@@ -138,102 +138,15 @@ module PG
     # identifier might contain upper case characters whose case should be
     # preserved.
     def escape_identifier(str)
-      escaped = LibPQ.escape_identifier(conn_ptr, str, str.size)
-      extract_escaped_result(escaped)
+      # todo reimpliment
     end
 
     private getter conn_ptr
 
-    private def libpq_exec(query, params)
+    def extended_query(query, params)
       encoded_params = params.map { |v| Param.encode(v) }
-      n_params = params.size
-      param_types = Pointer(LibPQ::Int).null # have server infer types
-      param_values = encoded_params.map &.to_unsafe
-      param_lengths = encoded_params.map &.size
-      param_formats = encoded_params.map &.format
-      result_format = 1 # text vs. binary
-
-      ret = LibPQ.send_query_params(
-        conn_ptr,
-        query,
-        n_params,
-        param_types,
-        param_values,
-        param_lengths,
-        param_formats,
-        result_format
-      )
-      if ret != 1
-        raise Error.new(String.new(LibPQ.error_message(conn_ptr)))
-      end
-
-      libpq_get_result
-    end
-
-    private def libpq_get_result
-      res = nil
-
-      loop do
-        wait_readable
-
-        ret = LibPQ.get_result(conn_ptr)
-        if ret == Pointer(Void).null
-          break
-        else
-          check_status(res = ret, clear_results: true)
-        end
-      end
-
-      res.not_nil!
-    ensure
-      libpq_clear_results
-    end
-
-    private def wait_readable
-      if LibPQ.consume_input(conn_ptr) != 1
-        raise Error.new(String.new(LibPQ.error_message(conn_ptr)))
-      end
-      if LibPQ.is_busy(conn_ptr) == 0
-        return
-      end
-
-      # NOTE: no memoization: fiber is likely to change
-      read_event = Scheduler.create_resume_event_on_read(Fiber.current, LibPQ.socket(conn_ptr))
-      read_event.add
-      Scheduler.reschedule
-    ensure
-      read_event.free if read_event
-    end
-
-    private def check_status(res, clear_results = false)
-      status = LibPQ.result_status(res)
-      return if (status == LibPQ::ExecStatusType::PGRES_TUPLES_OK ||
-                status == LibPQ::ExecStatusType::PGRES_SINGLE_TUPLE ||
-                status == LibPQ::ExecStatusType::PGRES_COMMAND_OK)
-      libpq_clear_results if clear_results
-      error = ResultError.new(res, status)
-      LibPQ.clear(res)
-      raise error
-    end
-
-    private def libpq_clear_results
-      loop do
-        res = LibPQ.get_result(conn_ptr)
-        return if res == Pointer(Void).null
-        LibPQ.clear(res)
-        wait_readable
-      end
-    end
-
-    private def extract_escaped_result(escaped)
-      if escaped.null?
-        error = ConnectionError.new(conn_ptr)
-        raise error
-      else
-        result = String.new(escaped)
-        LibPQ.freemem(escaped as Pointer(Void))
-        result
-      end
+      eq = PQ::ExtendedQuery.new(@pq_conn, query, encoded_params)
+      return eq
     end
   end
 end
