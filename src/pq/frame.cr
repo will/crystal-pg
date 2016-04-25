@@ -4,16 +4,18 @@ module PQ
 
     def self.new(type : Char, bytes : Slice(UInt8))
       k = case type
-          when 'R' then AuthenticationOK
-          when 'S' then ParameterStatus
-          when 'K' then BackendKeyData
           when 'Z' then ReadyForQuery
           when 'E' then ErrorResponse
           when 'T' then RowDescription
+          when 'n' then NoData
+          when 'N' then NoticeResponse
             # when 'D' then DataRow
           when 'C' then CommandComplete
           when '1' then ParseComplete
           when '2' then BindComplete
+          when 'S' then ParameterStatus
+          when 'K' then BackendKeyData
+          when 'R' then AuthenticationOK
           end
       k ? k.new(bytes) : Unknown.new(type, bytes)
     end
@@ -88,7 +90,7 @@ module PQ
       end
     end
 
-    struct ErrorResponse < Frame
+    struct ErrorNoticeFrame < Frame
       record Field, name : Symbol, message : String, code : UInt8 do
         def inspect(io)
           io << name << ": " << message
@@ -132,6 +134,12 @@ module PQ
       end
     end
 
+    struct ErrorResponse < ErrorNoticeFrame
+    end
+
+    struct NoticeResponse < ErrorNoticeFrame
+    end
+
     struct RowDescription < Frame
       getter nfields : Int16
       getter fields : Array(Field)
@@ -162,6 +170,9 @@ module PQ
     #      end
     #    end
     #  end
+
+    struct NoData < Frame
+    end
 
     struct CommandComplete < Frame
     end

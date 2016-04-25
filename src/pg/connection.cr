@@ -4,28 +4,27 @@ require "./error"
 module PG
   class Connection
     # :nodoc:
-    record Param, slice : Slice(UInt8), format : Int32 do # Internal wrapper to represent an encoded parameter
+    record Param, slice : Slice(UInt8), size : Int32, format : Int16 do # Internal wrapper to represent an encoded parameter
       delegate to_unsafe, slice
-      delegate size, slice
 
       # The only special case is nil->null and slice.
       # If more types need special cases, there should be an encoder
       def self.encode(val)
         if val.nil?
-          binary Pointer(UInt8).null.to_slice(0)
+          binary Pointer(UInt8).null.to_slice(0), -1
         elsif val.is_a? Slice
-          binary val
+          binary val, val.size
         else
           text val.to_s.to_slice
         end
       end
 
-      def self.binary(slice)
-        new slice, 1_i16
+      def self.binary(slice, size)
+        new slice, size, 1_i16
       end
 
       def self.text(slice)
-        new slice, 0_i16
+        new slice, slice.size, 0_i16
       end
     end
 

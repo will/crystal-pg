@@ -59,7 +59,6 @@ module PQ
       ncols = read_i16
       row = Array(Slice(UInt8)?).new(ncols.to_i32) do
         col_size = read_i32
-
         if col_size == -1
           nil
         else
@@ -127,7 +126,11 @@ module PQ
     end
 
     def expect_frame(frame_class, type = nil)
-      f = type ? read(type) : read
+      f = nil
+      loop do
+        f = type ? read(type) : read
+        break unless f.is_a?(Frame::NoticeResponse)
+      end
       raise "Expected #{frame_class} but got #{f}" unless frame_class === f
       frame_class.cast(f)
     end
@@ -152,7 +155,9 @@ module PQ
 
     def send_bind_message(params)
       nparams = params.size
-      total_size = params.reduce(0) { |acc, p| acc + 4 + p.size }
+      total_size = params.reduce(0) do |acc, p|
+        acc + 4 + (p.size == -1 ? 0 : p.size)
+      end
 
       write_chr 'B'
       write_i32 4 + 1 + 1 + 2 + (2*nparams) + 2 + total_size + 2 + 2
@@ -161,9 +166,9 @@ module PQ
       write_i16 nparams # number of params format codes to follow
       params.each { |p| write_i16 p.format }
       write_i16 nparams # number of params to follow
-      params.each do |s|
-        write_i32 s.size
-        s.slice.each { |byte| write_byte byte }
+      params.each do |p|
+        write_i32 p.size
+        p.slice.each { |byte| write_byte byte }
       end
       write_i16 1 # number of following return types (1 means apply next for all)
       write_i16 1 # all results as binary
