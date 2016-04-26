@@ -91,24 +91,7 @@ describe PG::Connection, "#exec_all" do
   end
 
   it "raises on bad queries" do
-    expect_raises(PG::ResultError) { DB.exec_all("select 1; select nocolumn from notable;") }
-  end
-end
-
-describe PG::Connection, "#escape_literal" do
-  assert { DB.escape_literal(%(foo)).should eq(%('foo')) }
-  assert { DB.escape_literal(%(some"thing)).should eq(%('some\"thing')) }
-  assert { DB.escape_literal(%(foo).to_slice).should eq(%('\\x666f6f')) }
-  it "raises on invalid strings" do
-    expect_raises(PG::ConnectionError) { DB.escape_literal("\u{F4}") }
-  end
-end
-
-describe PG::Connection, "#escape_identifier" do
-  assert { DB.escape_identifier(%(foo)).should eq(%("foo")) }
-  assert { DB.escape_identifier(%(someTHING)).should eq(%("someTHING")) }
-  it "raises on invalid strings" do
-    expect_raises(PG::ConnectionError) { DB.escape_identifier("\u{F4}") }
+    expect_raises(PQ::PQError) { DB.exec_all("select 1; select nocolumn from notable;") }
   end
 end
 

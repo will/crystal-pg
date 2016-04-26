@@ -105,41 +105,6 @@ module PG
       {major: version[0], minor: version[1], patch: version[2]}
     end
 
-    # `#escape_literal` escapes a string for use within an SQL command. This is
-    # useful when inserting data values as literal constants in SQL commands.
-    # Certain characters (such as quotes and backslashes) must be escaped to
-    # prevent them from being interpreted specially by the SQL parser.
-    # PQescapeLiteral performs this operation.
-    #
-    # Note that it is not necessary nor correct to do escaping when a data
-    # value is passed as a separate parameter in `#exec`
-    def escape_literal(str)
-      # todo reimpliment
-    end
-
-    # `#escape_literal` escapes binary data suitable for use with the BYTEA type.
-    def escape_literal(slice : Slice(UInt8))
-      ssize = slice.size * 2 + 4
-      String.new(ssize) do |buffer|
-        buffer[0] = '\''.ord.to_u8
-        buffer[1] = '\\'.ord.to_u8
-        buffer[2] = 'x'.ord.to_u8
-        slice.hexstring(buffer + 3)
-        buffer[ssize - 1] = '\''.ord.to_u8
-        {ssize, ssize}
-      end
-    end
-
-    # `#escape_identifier` escapes a string for use as an SQL identifier, such
-    # as a table, column, or function name. This is useful when a user-supplied
-    # identifier might contain special characters that would otherwise not be
-    # interpreted as part of the identifier by the SQL parser, or when the
-    # identifier might contain upper case characters whose case should be
-    # preserved.
-    def escape_identifier(str)
-      # todo reimpliment
-    end
-
     private getter conn_ptr
 
     def extended_query(query, params)
