@@ -1,3 +1,4 @@
+require "uri"
 require "socket"
 require "socket/tcp_socket"
 
@@ -7,8 +8,8 @@ module PQ
   class Connection
     getter soc
 
-    def initialize
-      @soc = TCPSocket.new("localhost", 5432)
+    def initialize(@conninfo : ConnInfo)
+      @soc = TCPSocket.new(@conninfo.host, @conninfo.port)
       @soc.sync = false
     end
 
@@ -88,7 +89,15 @@ module PQ
     end
 
     def connect
-      startup %w(user will database will application_name crystal client_encoding utf8)
+      startup_args = [
+        "user", @conninfo.user,
+        "database", @conninfo.database,
+        "application_name", "crystal",
+        "client_encoding", "utf8",
+      ]
+
+      startup startup_args
+
       while !(Frame::ReadyForQuery === read)
       end
     end

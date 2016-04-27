@@ -28,17 +28,26 @@ module PG
       end
     end
 
-    def initialize(conninfo : String)
-      # @conn_ptr = LibPQ.connect(conninfo)
-      # unless LibPQ.status(conn_ptr) == LibPQ::ConnStatusType::CONNECTION_OK
-      #  error = ConnectionError.new(@conn_ptr)
-      #  finish
-      #  raise error
-      # end
+    def initialize
+      initialize(PQ::ConnInfo.new)
+    end
 
+    def initialize(conninfo : PQ::ConnInfo)
       # setup_notice_processor
-      @pq_conn = PQ::Connection.new
+      @pq_conn = PQ::Connection.new(conninfo)
       @pq_conn.connect
+    end
+
+    def initialize(conninfo : String)
+      initialize PQ::ConnInfo.new(conninfo)
+    end
+
+    # `#initialize` Connect to the server with values of Hash.
+    #
+    #     PG::Connection.new({ "host": "localhost", "user": "postgres",
+    #       "password":"password", "db_name": "test_db", "port": "5432" })
+    def initialize(params : Hash)
+      initialize PQ::ConnInfo.new(params)
     end
 
     def on_notice(&on_notice_proc : String -> Void)
@@ -63,14 +72,6 @@ module PG
 
     def finalize
       finish
-    end
-
-    # `#initialize` Connect to the server with values of Hash.
-    #
-    #     PG::Connection.new({ "host": "localhost", "user": "postgres",
-    #       "password":"password", "db_name": "test_db", "port": "5432" })
-    def initialize(parameters : Hash)
-      initialize(parameters.map { |param, value| "#{param}=#{value}" }.join(" "))
     end
 
     def exec(query : String)
