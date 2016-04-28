@@ -29,11 +29,10 @@ module PG
     end
 
     def initialize
-      initialize(PQ::ConnInfo.new)
+      @pq_conn = initialize(PQ::ConnInfo.new)
     end
 
     def initialize(conninfo : PQ::ConnInfo)
-      # setup_notice_processor
       @pq_conn = PQ::Connection.new(conninfo)
       @pq_conn.connect
     end
@@ -50,24 +49,8 @@ module PG
       initialize PQ::ConnInfo.new(params)
     end
 
-    def on_notice(&on_notice_proc : String -> Void)
-      @on_notice_proc = on_notice_proc
-    end
-
-    protected def process_notice(msg : String)
-      if on_notice_proc = @on_notice_proc
-        on_notice_proc.call msg
-      end
-    end
-
-    private def setup_notice_processor
-      notice_processor = ->(pCrystalConnection : Void*, message : Pointer(LibPQ::CChar)) {
-        crystal_connection = pCrystalConnection as PG::Connection
-
-        crystal_connection.process_notice(String.new(message))
-        nil
-      }
-      LibPQ.set_notice_processor(conn_ptr, notice_processor, self as Void*)
+    def on_notice(&on_notice_proc : PQ::Notice ->)
+      @pq_conn.notice_handler = on_notice_proc
     end
 
     def finalize
@@ -91,12 +74,12 @@ module PG
     end
 
     def exec_all(query : String)
-      # todo simple query
+      PQ::SimpleQuery.new(@pq_conn, query)
+      nil
     end
 
     def finish
       # todo close conection
-      @conn_ptr = nil
     end
 
     def version
@@ -110,8 +93,7 @@ module PG
 
     def extended_query(query, params)
       encoded_params = params.map { |v| Param.encode(v) }
-      eq = PQ::ExtendedQuery.new(@pq_conn, query, encoded_params)
-      return eq
+      PQ::ExtendedQuery.new(@pq_conn, query, encoded_params)
     end
   end
 end

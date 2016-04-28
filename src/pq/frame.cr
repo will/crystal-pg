@@ -61,7 +61,7 @@ module PQ
 
       def initialize(bytes)
         pos, @key = find_next_string(0, bytes)
-        @value = String.new(bytes[pos + 1, bytes.size - pos - 2])
+        @value = String.new(bytes[pos, bytes.size - pos - 1])
       end
     end
 
@@ -90,7 +90,7 @@ module PQ
       end
     end
 
-    struct ErrorNoticeFrame < Frame
+    abstract struct ErrorNoticeFrame < Frame
       record Field, name : Symbol, message : String, code : UInt8 do
         def inspect(io)
           io << name << ": " << message
@@ -108,6 +108,10 @@ module PQ
           pos, message = find_next_string(pos, bytes)
           @fields << Field.new(name_from_code(code), message, code)
         end
+      end
+
+      def as_notice : Notice
+        Notice.new(fields)
       end
 
       private def name_from_code(code)

@@ -7,8 +7,10 @@ DEBUG = ENV["DEBUG"]?
 module PQ
   class Connection
     getter soc
+    property notice_handler : Notice ->
 
     def initialize(@conninfo : ConnInfo)
+      @notice_handler = Proc(Notice, Void).new { }
       @soc = TCPSocket.new(@conninfo.host, @conninfo.port)
       @soc.sync = false
     end
@@ -71,21 +73,37 @@ module PQ
     end
 
     def read
-      read(soc.read_char)
+      f = read(soc.read_char)
     end
 
     def read(frame_type)
       size = read_i32
       slice = read_bytes(size - 4)
-      Frame.new(frame_type.not_nil!, slice).tap do |f|
-        p f if DEBUG
-        handle_error(f) if f.is_a?(Frame::ErrorResponse)
+      frame = Frame.new(frame_type.not_nil!, slice).tap { |f| p f if DEBUG }
+
+      handle_error_and_notice(frame) ? read : frame
+    end
+
+    private def handle_error_and_notice(frame)
+      if frame.is_a?(Frame::ErrorResponse)
+        handle_error frame
+        true
+      elsif frame.is_a?(Frame::NoticeResponse)
+        handle_notice frame
+        true
+      else
+        false
       end
     end
 
     private def handle_error(error_frame : Frame::ErrorResponse)
       expect_frame Frame::ReadyForQuery
+      notice_handler.call(error_frame.as_notice)
       raise PQError.new(error_frame.fields)
+    end
+
+    private def handle_notice(notice_frame : Frame::NoticeResponse)
+      notice_handler.call(notice_frame.as_notice)
     end
 
     def connect
@@ -102,15 +120,6 @@ module PQ
       end
     end
 
-    def simple_query(query) # , &block : Int16, Slice(UInt8) ->)
-      send_query_message(query)
-      row_description = expect_frame Frame::RowDescription
-
-      read_all_data_rows { |row| yield row }
-
-      expect_frame Frame::ReadyForQuery
-    end
-
     def read_all_data_rows
       type = soc.read_char
       loop do
@@ -121,25 +130,8 @@ module PQ
       expect_frame Frame::CommandComplete, type
     end
 
-    def extended_query(query, params)
-      send_parse_message query
-      send_bind_message params
-      send_describe_portal_message
-      send_execute_message
-      send_sync_message
-      expect_frame Frame::ParseComplete
-      expect_frame Frame::BindComplete
-      row_description = expect_frame Frame::RowDescription
-      read_all_data_rows { |row| yield row }
-      expect_frame Frame::ReadyForQuery
-    end
-
     def expect_frame(frame_class, type = nil)
-      f = nil
-      loop do
-        f = type ? read(type) : read
-        break unless f.is_a?(Frame::NoticeResponse)
-      end
+      f = type ? read(type) : read
       raise "Expected #{frame_class} but got #{f}" unless frame_class === f
       frame_class.cast(f)
     end

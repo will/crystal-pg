@@ -110,6 +110,7 @@ describe PG::Connection, "#setup_notice_processor" do
     END
     $$;
     SQL
-    last_notice.should eq("NOTICE:  hello, world!\n")
+    last_notice.should_not eq(nil)
+    last_notice.to_s.should eq("NOTICE:  hello, world!\n")
   end
 end
