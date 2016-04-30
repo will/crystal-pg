@@ -2,7 +2,12 @@ module PQ
   class ExtendedQuery
     getter conn, query, params, fields
 
-    def initialize(@conn : Connection, @query : String, @params : Array(PG::Connection::Param))
+    def initialize(conn, query, params)
+      encoded_params = params.map { |v| Param.encode(v) }
+      initialize(conn, query, encoded_params)
+    end
+
+    def initialize(@conn : Connection, @query : String, @params : Array(Param))
       conn.send_parse_message query
       conn.send_bind_message params
       conn.send_describe_portal_message
