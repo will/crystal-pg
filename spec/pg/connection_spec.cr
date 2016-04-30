@@ -23,12 +23,26 @@ end
 describe PG::Connection, "#exec untyped" do
   it "returns a Result" do
     res = DB.exec("select 1")
-    res.rows # todo do something about not reading rows
+    # res.rows # todo do something about not reading rows
     res.class.should eq(PG::Result(Array(PG::PGValue)))
   end
 
   it "raises on bad queries" do
     expect_raises(PQ::PQError) { DB.exec("select nocolumn from notable") }
+  end
+
+  it "can stream results" do
+    query = "select v as x, v*2 as y from generate_series(1,100) v"
+    x = y = 0
+    fields = nil
+    DB.exec(query) do |row, f|
+      fields = f
+      x += row[0] as Int32
+      y += row[1] as Int32
+    end.should eq(nil)
+    x.should eq(5050)
+    y.should eq(10100)
+    fields.not_nil!.map(&.name).should eq(%w(x y))
   end
 
   it "returns a Result when create table" do
@@ -41,8 +55,22 @@ end
 describe PG::Connection, "#exec typed" do
   it "returns a Result" do
     res = DB.exec({Int32}, "select 1")
-    res.rows # todo fix no reads
+    # res.rows # todo fix no reads
     res.class.should eq(PG::Result({Int32.class}))
+  end
+
+  it "can stream results" do
+    query = "select v as x, v*2 as y from generate_series(1,100) v"
+    x = y = 0
+    fields = nil
+    DB.exec({Int32, Int32}, query) do |row, f|
+      fields = f
+      x += row[0]
+      y += row[1]
+    end.should eq(nil)
+    x.should eq(5050)
+    y.should eq(10100)
+    fields.not_nil!.map(&.name).should eq(%w(x y))
   end
 
   it "raises on bad queries" do
@@ -53,8 +81,22 @@ end
 describe PG::Connection, "#exec typed with params" do
   it "returns a Result" do
     res = DB.exec({Float64}, "select $1::float * $2::float ", [3.4, -2])
-    res.rows # todo fix when you don't take results
+    # res.rows # todo fix when you don't take results
     res.class.should eq(PG::Result({Float64.class}))
+  end
+
+  it "can stream results" do
+    query = "select v as x, v*2 as y from generate_series(1,$1) v"
+    x = y = 0
+    fields = nil
+    DB.exec({Int32, Int32}, query, [100]) do |row, f|
+      fields = f
+      x += row[0]
+      y += row[1]
+    end.should eq(nil)
+    x.should eq(5050)
+    y.should eq(10100)
+    fields.not_nil!.map(&.name).should eq(%w(x y))
   end
 
   it "raises on bad queries" do
@@ -65,8 +107,22 @@ end
 describe PG::Connection, "#exec untyped with params" do
   it "returns a Result" do
     res = DB.exec("select $1::text, $2::text, $3::text", ["hello", "", "world"])
-    res.rows # todo fix when you don't take results
+    # res.rows # todo fix when you don't take results
     res.class.should eq(PG::Result(Array(PG::PGValue)))
+  end
+
+  it "can stream results" do
+    query = "select v as x, v*2 as y from generate_series(1,$1) v"
+    x = y = 0
+    fields = nil
+    DB.exec(query, [100]) do |row, f|
+      fields = f
+      x += row[0] as Int32
+      y += row[1] as Int32
+    end.should eq(nil)
+    x.should eq(5050)
+    y.should eq(10100)
+    fields.not_nil!.map(&.name).should eq(%w(x y))
   end
 
   it "raises on bad queries" do

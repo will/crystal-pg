@@ -57,23 +57,47 @@ module PG
       finish
     end
 
-    def exec(query : String)
+    def exec(query : String) : Result
       exec([] of PG::PGValue, query, [] of PG::PGValue)
     end
 
-    def exec(query : String, params)
+    def exec(query : String, params) : Result
       exec([] of PG::PGValue, query, params)
     end
 
-    def exec(types, query : String)
+    def exec(types, query : String) : Result
       exec(types, query, [] of PG::PGValue)
     end
 
-    def exec(types, query : String, params)
+    def exec(types, query : String, params) : Result
       Result.new(types, extended_query(query, params))
     end
 
-    def exec_all(query : String)
+    def exec(query : String) : Nil
+      exec([] of PG::PGValue, query, [] of PG::PGValue) do |row, fields|
+        yield row, fields
+      end
+    end
+
+    def exec(query : String, params) : Nil
+      exec([] of PG::PGValue, query, params) do |row, fields|
+        yield row, fields
+      end
+    end
+
+    def exec(types, query : String) : Nil
+      exec(types, query, [] of PG::PGValue) do |row, fields|
+        yield row, fields
+      end
+    end
+
+    def exec(types, query : String, params) : Nil
+      Result.stream(types, extended_query(query, params)) do |row, fields|
+        yield row, fields
+      end
+    end
+
+    def exec_all(query : String) : Nil
       PQ::SimpleQuery.new(@pq_conn, query)
       nil
     end
@@ -89,9 +113,7 @@ module PG
       {major: version[0], minor: version[1], patch: version[2]}
     end
 
-    private getter conn_ptr
-
-    def extended_query(query, params)
+    private def extended_query(query, params)
       encoded_params = params.map { |v| Param.encode(v) }
       PQ::ExtendedQuery.new(@pq_conn, query, encoded_params)
     end

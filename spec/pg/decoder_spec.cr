@@ -9,7 +9,7 @@ private def test_decode(name, select, expected, file = __FILE__, line = __LINE__
   end
 end
 
-describe PG::Decoder do
+describe PG::Decoders do
   #           name,             sql,              result
   test_decode "undefined    ", "'what'       ", "what"
   test_decode "text         ", "'what'::text ", "what"

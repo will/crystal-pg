@@ -4,7 +4,7 @@ describe PG::Result, "#fields" do
   it "is empty on empty results" do
     if Helper.db_version_gte(9, 4)
       result = DB.exec("select")
-      result.rows # todo fix no reads
+      # result.rows # todo fix no reads
 
       result.fields.size.should eq(0)
     end
@@ -12,10 +12,10 @@ describe PG::Result, "#fields" do
 
   it "is is a list of the fields" do
     result = DB.exec("select 1 as one, 2 as two, 3 as three")
-    result.rows # todo fix no reads
+    # result.rows # todo fix no reads
     fields = result.fields
     fields.map(&.name).should eq(["one", "two", "three"])
-    fields.map(&.oid).should eq([23, 23, 23])
+    fields.map(&.type_oid).should eq([23, 23, 23])
   end
 end
 
@@ -66,7 +66,7 @@ describe PG::Result, "#to_hash" do
   it "raises if there are columns with the same name" do
     res = DB.exec("select 'a' as foo, 'b' as foo, 'c' as bar")
     expect_raises { res.to_hash }
-    res.rows # todo fix no reads
+    # res.rows # todo fix no reads
   end
 end
 
@@ -78,14 +78,15 @@ struct FooBarBaz
   def initialize(@foo, @bar, @baz)
   end
 
-  def self.from_pg(row)
+  def self.from_pg(row, fields)
     foo = bar = baz = nil
 
-    row.each do |field_name, value|
-      case field_name
-      when "foo" then foo = value as String?
-      when "bar" then bar = value as Bool?
-      when "baz" then baz = value as Int32?
+    row.zip(fields).each do |pair|
+      value = pair.first
+      case pair.last.name
+      when "foo" then foo = value as String
+      when "bar" then bar = value as Bool
+      when "baz" then baz = value as Int32
       end
     end
 
@@ -94,13 +95,32 @@ struct FooBarBaz
 end
 
 describe PG::Result, "#each" do
-  it "iterates rows and fields" do
-    result = DB.exec(
-      "select 'a' as foo, true as bar, 10 as baz
-      union all select '', false, 20"
-    )
+  it "iterates rows and passes fields" do
+    query = "select 'a' as foo, true as bar, 10 as baz
+             union all select '', false, 20"
     data = [] of FooBarBaz
-    result.each { |row| data << FooBarBaz.from_pg(row) }
+    result = DB.exec(query)
+    result.each { |row, fields| data << FooBarBaz.from_pg(row, fields) }
+
+    data.should eq [
+      FooBarBaz.new("a", true, 10),
+      FooBarBaz.new("", false, 20),
+    ]
+    typeof(data[0].foo).to_s.should match(/String/)
+    typeof(data[0].bar).to_s.should match(/Bool/)
+    typeof(data[0].baz).to_s.should match(/Int32/)
+  end
+end
+
+describe PG::Result, ".stream" do
+  it "iterates rows and fields" do
+    data = [] of FooBarBaz
+    query = "select 'a' as foo, true as bar, 10 as baz
+             union all select '', false, 20"
+
+    result = DB.exec(query) do |row, fields|
+      data << FooBarBaz.from_pg(row, fields)
+    end
 
     data.should eq [
       FooBarBaz.new("a", true, 10),

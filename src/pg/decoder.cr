@@ -3,7 +3,7 @@ require "json"
 module PG
   alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Type | PG::Numeric
 
-  module Decoder
+  module Decoders
     abstract class Decoder
       abstract def decode(bytes)
 
@@ -162,7 +162,7 @@ module PG
       end
     end
 
-    @@decoders = Hash(Int32, PG::Decoder::Decoder).new(DefaultDecoder.new)
+    @@decoders = Hash(Int32, PG::Decoders::Decoder).new(DefaultDecoder.new)
 
     def self.from_oid(oid)
       @@decoders[oid]
