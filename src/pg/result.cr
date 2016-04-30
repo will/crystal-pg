@@ -1,7 +1,7 @@
 module PG
   class Result(T)
-    struct Row
-      def initialize(@result, @row)
+    struct Row(T)
+      def initialize(@result : PG::Result(T), @row : Int32)
       end
 
       def each
@@ -15,7 +15,7 @@ module PG
       property name
       property oid
 
-      def initialize(@name, @oid)
+      def initialize(@name : String, @oid : Int32)
       end
 
       def self.new_from_res(res, col)
@@ -30,7 +30,7 @@ module PG
       end
     end
 
-    def initialize(@types : T, @res)
+    def initialize(@types : T, @res : LibPQ::PGresult)
     end
 
     def finalize
@@ -42,13 +42,13 @@ module PG
     end
 
     def fields
-      @fields ||= Array.new(nfields) do |i|
+      Array.new(nfields) do |i|
         Field.new_from_res(res, i)
       end
     end
 
     def rows
-      @rows ||= gather_rows(@types)
+      gather_rows(@types)
     end
 
     def any?

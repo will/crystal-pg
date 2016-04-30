@@ -10,7 +10,7 @@ module PG
   end
 
   class ResultError < Error
-    def initialize(raw_result, @status)
+    def initialize(raw_result, @status : LibPQ::ExecStatusType)
       msg = String.new(LibPQ.result_error_message(raw_result))
       super(msg)
     end

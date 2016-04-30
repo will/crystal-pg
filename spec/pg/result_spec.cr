@@ -66,7 +66,9 @@ describe PG::Result, "#to_hash" do
 end
 
 struct FooBarBaz
-  property foo, bar, baz
+  property foo : String?
+  property bar : Bool?
+  property baz : Int32?
 
   def initialize(@foo, @bar, @baz)
   end
