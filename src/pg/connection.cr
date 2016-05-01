@@ -28,10 +28,6 @@ module PG
       @pq_conn.notice_handler = on_notice_proc
     end
 
-    def finalize
-      finish
-    end
-
     def exec(query : String) : Result
       exec([] of PG::PGValue, query, [] of PG::PGValue)
     end
@@ -77,8 +73,12 @@ module PG
       nil
     end
 
+    def finalize
+      finish
+    end
+
     def finish
-      # todo close conection
+      @pq_conn.close
     end
 
     def version

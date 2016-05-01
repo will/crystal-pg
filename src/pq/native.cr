@@ -19,6 +19,11 @@ module PQ
       end
     end
 
+    def close
+      send_terminate_message
+      @soc.close
+    end
+
     private def write_i32(i : Int32)
       soc.write_bytes i, IO::ByteFormat::NetworkEndian
     end
@@ -201,6 +206,11 @@ module PQ
       write_i32 4
       soc.flush
       puts ">> sync" if DEBUG
+    end
+
+    def send_terminate_message
+      write_chr 'X'
+      write_i32 4
     end
   end
 end
