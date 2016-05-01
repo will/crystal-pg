@@ -1,3 +1,15 @@
+upcoming: native driver changes
+=====================
+new features
+  * 100% crystal, using crystal's native async io (no longer using libpq)
+  * each Connection#exec form can take a block, and stream the rows as they
+      come in. This does not store any rows in memory and is very fast.
+
+incompatable changes:
+  * Result.each now yields the entire row and an array of fields
+  * The notice callback now yields an entire
+  * Error classes have changed
+
 v0.6.0    2016-05-04
 ====================
 * Adds Adds on_notice callback (thanks @radiospiel)
