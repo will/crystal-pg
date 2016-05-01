@@ -15,15 +15,15 @@ describe PG::Connection, "#initialize" do
   end
 
   it "raises on bad connections" do
-    # todo pending
-    # expect_raises(PG::ConnectionError) { PG::Connection.new("whatever") }
+    expect_raises(PQ::ConnectionError) {
+      PG::Connection.new("postgres://localhost:5433")
+    }
   end
 end
 
 describe PG::Connection, "#exec untyped" do
   it "returns a Result" do
     res = DB.exec("select 1")
-    # res.rows # todo do something about not reading rows
     res.class.should eq(PG::Result(Array(PG::PGValue)))
   end
 
@@ -55,7 +55,6 @@ end
 describe PG::Connection, "#exec typed" do
   it "returns a Result" do
     res = DB.exec({Int32}, "select 1")
-    # res.rows # todo fix no reads
     res.class.should eq(PG::Result({Int32.class}))
   end
 
@@ -81,7 +80,6 @@ end
 describe PG::Connection, "#exec typed with params" do
   it "returns a Result" do
     res = DB.exec({Float64}, "select $1::float * $2::float ", [3.4, -2])
-    # res.rows # todo fix when you don't take results
     res.class.should eq(PG::Result({Float64.class}))
   end
 
@@ -107,7 +105,6 @@ end
 describe PG::Connection, "#exec untyped with params" do
   it "returns a Result" do
     res = DB.exec("select $1::text, $2::text, $3::text", ["hello", "", "world"])
-    # res.rows # todo fix when you don't take results
     res.class.should eq(PG::Result(Array(PG::PGValue)))
   end
 
@@ -159,12 +156,12 @@ describe PG::Connection, "#setup_notice_processor" do
     end
 
     DB.exec_all <<-SQL
-    SET client_min_messages TO notice;
-    DO language plpgsql $$
-    BEGIN
-      RAISE NOTICE 'hello, world!';
-    END
-    $$;
+      SET client_min_messages TO notice;
+      DO language plpgsql $$
+      BEGIN
+        RAISE NOTICE 'hello, world!';
+      END
+      $$;
     SQL
     last_notice.should_not eq(nil)
     last_notice.to_s.should eq("NOTICE:  hello, world!\n")

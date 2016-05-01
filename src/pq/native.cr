@@ -11,8 +11,12 @@ module PQ
 
     def initialize(@conninfo : ConnInfo)
       @notice_handler = Proc(Notice, Void).new { }
-      @soc = TCPSocket.new(@conninfo.host, @conninfo.port)
-      @soc.sync = false
+      begin
+        @soc = TCPSocket.new(@conninfo.host, @conninfo.port)
+        @soc.sync = false
+      rescue e
+        raise ConnectionError.new("Cannot establish connection", cause: e)
+      end
     end
 
     private def write_i32(i : Int32)

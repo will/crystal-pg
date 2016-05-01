@@ -1,4 +1,7 @@
 module PQ
+  class ConnectionError < Exception
+  end
+
   class PQError < Exception
     getter fields : Array(Frame::ErrorResponse::Field)
 
