@@ -1,3 +1,5 @@
+require "uri"
+
 module PQ
   struct ConnInfo
     getter host : String
@@ -6,7 +8,7 @@ module PQ
     getter user : String
     getter password : String?
 
-    def initialize(host = nil, database = nil, user = nil, @password = nil, port = 5432)
+    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, @password : String? = nil, port : Int | String? = 5432)
       @host = default_host host
       db = default_database database
       @database = db.starts_with?('/') ? db[1..-1] : db
@@ -15,16 +17,22 @@ module PQ
     end
 
     # initialize with either "postgres://" urls or postgres "key=value" pairs
-    def initialize(conninfo : String)
+    def self.from_conninfo_string(conninfo : String)
       if conninfo.starts_with?("postgres://") || conninfo.starts_with?("postgresql://")
-        initialize(URI.parse(conninfo))
+        new(URI.parse(conninfo))
       else
+        return new if conninfo == ""
+
         args = Hash(String, String).new
         conninfo.split(' ').each do |pair|
-          k, v = pair.split('=')
-          args[k] = v
+          begin
+            k, v = pair.split('=')
+            args[k] = v
+          rescue IndexError
+            raise ArgumentError.new("invalid paramater: #{pair}")
+          end
         end
-        initialize(args)
+        new(args)
       end
     end
 
@@ -42,7 +50,11 @@ module PQ
     end
 
     private def default_database(db)
-      db || `whoami`.chomp
+      if db && db != "/"
+        db
+      else
+        `whoami`.chomp
+      end
     end
 
     private def default_user(u)

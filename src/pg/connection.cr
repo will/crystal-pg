@@ -4,7 +4,7 @@ require "./error"
 module PG
   class Connection
     def initialize
-      @pq_conn = initialize(PQ::ConnInfo.new)
+      initialize(PQ::ConnInfo.new)
     end
 
     def initialize(conninfo : PQ::ConnInfo)
@@ -13,7 +13,7 @@ module PG
     end
 
     def initialize(conninfo : String)
-      initialize PQ::ConnInfo.new(conninfo)
+      initialize PQ::ConnInfo.from_conninfo_string(conninfo)
     end
 
     # `#initialize` Connect to the server with values of Hash.
