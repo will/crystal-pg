@@ -1,6 +1,7 @@
 require "uri"
 require "socket"
 require "socket/tcp_socket"
+require "crypto/md5"
 
 DEBUG = ENV["DEBUG"]?
 
@@ -10,6 +11,7 @@ module PQ
     property notice_handler : Notice ->
 
     def initialize(@conninfo : ConnInfo)
+      @established = false
       @notice_handler = Proc(Notice, Void).new { }
       begin
         @soc = TCPSocket.new(@conninfo.host, @conninfo.port)
@@ -106,7 +108,7 @@ module PQ
     end
 
     private def handle_error(error_frame : Frame::ErrorResponse)
-      expect_frame Frame::ReadyForQuery
+      expect_frame Frame::ReadyForQuery if @established
       notice_handler.call(error_frame.as_notice)
       raise PQError.new(error_frame.fields)
     end
@@ -125,8 +127,44 @@ module PQ
 
       startup startup_args
 
+      auth_frame = expect_frame Frame::Authentication
+      handle_auth auth_frame
+
       while !(Frame::ReadyForQuery === read)
       end
+      @established = true
+    end
+
+    private def handle_auth(auth_frame)
+      case auth_frame.type
+      when Frame::Authentication::Type::OK
+        # no op
+      when Frame::Authentication::Type::CleartextPassword
+        handle_auth_cleartext
+      when Frame::Authentication::Type::MD5Password
+        handle_auth_md5 auth_frame.body
+      else
+        raise ConnectionError.new(
+          "unsupported authentication method: #{auth_frame.type}"
+        )
+      end
+    end
+
+    private def handle_auth_cleartext
+      send_password_message @conninfo.password
+      expect_frame Frame::Authentication
+    end
+
+    private def handle_auth_md5(salt)
+      inner = Crypto::MD5.hex_digest("#{@conninfo.password}#{@conninfo.user}")
+
+      c = Crypto::MD5::Context.new
+      c.update(inner.to_unsafe, inner.bytesize.to_u32)
+      c.update(salt.to_unsafe, salt.bytesize.to_u32)
+      c.final
+
+      send_password_message "md5#{c.hex}"
+      expect_frame Frame::Authentication
     end
 
     def read_all_data_rows
@@ -143,6 +181,18 @@ module PQ
       f = type ? read(type) : read
       raise "Expected #{frame_class} but got #{f}" unless frame_class === f
       frame_class.cast(f)
+    end
+
+    def send_password_message(password)
+      write_chr 'p'
+      if password
+        write_i32 password.size + 4 + 1
+        soc << password
+      else
+        write_i32 4 + 1
+      end
+      write_null
+      soc.flush
     end
 
     def send_query_message(query)

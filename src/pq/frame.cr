@@ -15,7 +15,7 @@ module PQ
           when '2' then BindComplete
           when 'S' then ParameterStatus
           when 'K' then BackendKeyData
-          when 'R' then AuthenticationOK
+          when 'R' then Authentication
           end
       k ? k.new(bytes) : Unknown.new(type, bytes)
     end
@@ -52,7 +52,25 @@ module PQ
       end
     end
 
-    struct AuthenticationOK < Frame
+    struct Authentication < Frame
+      enum Type : Int32
+        OK                = 0
+        KerberosV5        = 2
+        CleartextPassword = 3
+        MD5Password       = 5
+        SCMCredential     = 6
+        GSS               = 7
+        GSSContinue       = 8
+      end
+
+      getter type : Type
+      getter body : Slice(UInt8)
+
+      def initialize(bytes)
+        pos, t = i32(0, bytes)
+        @type = Type.from_value t
+        @body = bytes + pos
+      end
     end
 
     struct ParameterStatus < Frame
