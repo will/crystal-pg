@@ -1,14 +1,15 @@
 require "uri"
+require "crypto/md5"
 require "socket"
 require "socket/tcp_socket"
 require "socket/unix_socket"
-require "crypto/md5"
+require "openssl/openssl"
 
 DEBUG = ENV["DEBUG"]?
 
 module PQ
   class Connection
-    getter soc
+    getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket
     property notice_handler : Notice ->
 
     def initialize(@conninfo : ConnInfo)
@@ -16,13 +17,33 @@ module PQ
       @notice_handler = Proc(Notice, Void).new { }
       begin
         if @conninfo.host[0] == '/'
-          @soc = UNIXSocket.new(@conninfo.host)
+          soc = UNIXSocket.new(@conninfo.host)
         else
-          @soc = TCPSocket.new(@conninfo.host, @conninfo.port)
+          soc = TCPSocket.new(@conninfo.host, @conninfo.port)
         end
-        @soc.sync = false
+        soc.sync = false
       rescue e
         raise ConnectionError.new("Cannot establish connection", cause: e)
+      end
+
+      @soc = soc
+      negotiate_ssl if @soc.is_a?(TCPSocket)
+    end
+
+    private def negotiate_ssl
+      write_i32 8
+      write_i32 80877103
+      @soc.flush
+      serv_ssl = case c = @soc.read_char
+                 when 'S' then true
+                 when 'N' then false
+                 else
+                   raise ConnectionError.new(
+                     "Unexpected SSL response from server: #{c.inspect}")
+                 end
+
+      if serv_ssl
+        @soc = OpenSSL::SSL::Socket.new(@soc, sync_close: true)
       end
     end
 
