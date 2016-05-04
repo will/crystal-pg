@@ -52,7 +52,7 @@ module PG
     # ditto
     def to_f64 : Float64
       num = digits.reduce(0_u64) { |a, i| a*10_000_u64 + i.to_u64 }
-      den = 10_000_u64**(ndigits - 1 - weight)
+      den = 10_000_f64**(ndigits - 1 - weight)
       quot = num.to_f64 / den.to_f64
       neg? ? -quot : quot
     end
