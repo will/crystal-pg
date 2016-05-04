@@ -1,6 +1,7 @@
 require "uri"
 require "socket"
 require "socket/tcp_socket"
+require "socket/unix_socket"
 require "crypto/md5"
 
 DEBUG = ENV["DEBUG"]?
@@ -14,7 +15,11 @@ module PQ
       @established = false
       @notice_handler = Proc(Notice, Void).new { }
       begin
-        @soc = TCPSocket.new(@conninfo.host, @conninfo.port)
+        if @conninfo.host[0] == '/'
+          @soc = UNIXSocket.new(@conninfo.host)
+        else
+          @soc = TCPSocket.new(@conninfo.host, @conninfo.port)
+        end
         @soc.sync = false
       rescue e
         raise ConnectionError.new("Cannot establish connection", cause: e)

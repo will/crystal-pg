@@ -2,7 +2,7 @@ require "spec"
 require "../../src/pq/conninfo"
 
 private def assert_default_params(ci)
-  ci.host.should eq("localhost")
+  (PQ::ConnInfo::SOCKET_SEARCH + ["localhost"]).should contain(ci.host)
   ci.database.should_not eq(nil)
   ci.user.should_not eq(nil)
   ci.database.should eq(ci.user)

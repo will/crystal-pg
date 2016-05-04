@@ -2,6 +2,7 @@ require "uri"
 
 module PQ
   struct ConnInfo
+    SOCKET_SEARCH = %w(/run/postgresql/.s.PGSQL.5432 /tmp/.s.PGSQL.5432 /var/run/postgresql/.s.PGSQL.5432)
     getter host : String
     getter port : Int32
     getter database : String
@@ -46,7 +47,13 @@ module PQ
     end
 
     private def default_host(h)
-      h || "localhost"
+      return h if h
+
+      SOCKET_SEARCH.each do |s|
+        return s if File.exists?(s)
+      end
+
+      "localhost"
     end
 
     private def default_database(db)

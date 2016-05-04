@@ -13,7 +13,7 @@ describe PQ::Connection, "nologin role" do
     DB.exec("drop role if exists crystal_test")
     DB.exec("create role crystal_test nologin")
     expect_raises(PQ::PQError) {
-      PG::Connection.new("user=crystal_test")
+      PG::Connection.new("host=localhost user=crystal_test")
     }
     DB.exec("drop role if exists crystal_test")
   end
@@ -24,7 +24,7 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
     it "works when given the correct password" do
       DB.exec("drop role if exists crystal_pass")
       DB.exec("create role crystal_pass login encrypted password 'pass'")
-      conn = PG::Connection.new("user=crystal_pass password=pass")
+      conn = PG::Connection.new("host=localhost user=crystal_pass password=pass")
       conn.exec("select 1").rows.first.first.should eq(1)
       DB.exec("drop role if exists crystal_pass")
     end
@@ -34,11 +34,11 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       DB.exec("create role crystal_pass login encrypted password 'pass'")
 
       expect_raises(PQ::PQError) {
-        PG::Connection.new("user=crystal_pass password=bad")
+        PG::Connection.new("host=localhost user=crystal_pass password=bad")
       }
 
       expect_raises(PQ::PQError) {
-        PG::Connection.new("user=crystal_pass")
+        PG::Connection.new("host=localhost user=crystal_pass")
       }
 
       DB.exec("drop role if exists crystal_pass")
@@ -49,7 +49,7 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
     it "works when given the correct password" do
       DB.exec("drop role if exists crystal_md5")
       DB.exec("create role crystal_md5 login encrypted password 'pass'")
-      conn = PG::Connection.new("user=crystal_md5 password=pass")
+      conn = PG::Connection.new("host=localhost user=crystal_md5 password=pass")
       conn.exec("select 1").rows.first.first.should eq(1)
       DB.exec("drop role if exists crystal_md5")
     end
@@ -59,11 +59,11 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       DB.exec("create role crystal_md5 login encrypted password 'pass'")
 
       expect_raises(PQ::PQError) {
-        PG::Connection.new("user=crystal_md5 password=bad")
+        PG::Connection.new("host=localhost user=crystal_md5 password=bad")
       }
 
       expect_raises(PQ::PQError) {
-        PG::Connection.new("user=crystal_md5")
+        PG::Connection.new("host=localhost user=crystal_md5")
       }
 
       DB.exec("drop role if exists crystal_md5")
