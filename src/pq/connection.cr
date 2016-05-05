@@ -5,19 +5,23 @@ require "socket/tcp_socket"
 require "socket/unix_socket"
 require "openssl/openssl"
 
-DEBUG = ENV["DEBUG"]?
+# DEBUG = ENV["DEBUG"]?
 
 module PQ
+  record Notification, pid : Int32, channel : String, payload : String
+
   class Connection
     getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket
     getter server_parameters : Hash(String, String)
     property notice_handler : Notice ->
+    property notification_handler : Notification ->
     getter pid : Int32, secret : Int32
 
     def initialize(@conninfo : ConnInfo)
       @server_parameters = Hash(String, String).new
       @established = false
       @notice_handler = Proc(Notice, Void).new { }
+      @notification_handler = Proc(Notification, Void).new { }
       @pid = uninitialized Int32
       @secret = uninitialized Int32
 
@@ -122,7 +126,7 @@ module PQ
     def read(frame_type)
       size = read_i32
       slice = read_bytes(size - 4)
-      frame = Frame.new(frame_type.not_nil!, slice).tap { |f| p f if DEBUG }
+      frame = Frame.new(frame_type.not_nil!, slice) # .tap { |f| p f if DEBUG }
 
       handle_async_frames(frame) ? read : frame
     end
@@ -131,6 +135,8 @@ module PQ
       if frame.is_a?(Frame::ErrorResponse)
         handle_error frame
         true
+      elsif frame.is_a?(Frame::NotificationResponse)
+        handle_notification frame
       elsif frame.is_a?(Frame::NoticeResponse)
         handle_notice frame
         true
@@ -150,6 +156,10 @@ module PQ
 
     private def handle_notice(frame : Frame::NoticeResponse)
       notice_handler.call(frame.as_notice)
+    end
+
+    private def handle_notification(frame : Frame::NotificationResponse)
+      notification_handler.call(frame.as_notification)
     end
 
     private def handle_parameter(frame : Frame::ParameterStatus)
@@ -265,7 +275,6 @@ module PQ
       soc << query
       write_i16 0 # don't give any param types
       write_null
-      puts ">> parse" if DEBUG
     end
 
     def send_bind_message(params)
@@ -287,8 +296,6 @@ module PQ
       end
       write_i16 1 # number of following return types (1 means apply next for all)
       write_i16 1 # all results as binary
-
-      puts ">> my new bind" if DEBUG
     end
 
     def send_describe_portal_message
@@ -303,14 +310,12 @@ module PQ
       write_i32 4 + 1 + 4
       write_null  # unnamed portal
       write_i32 0 # unlimited maximum rows
-      puts ">> exec" if DEBUG
     end
 
     def send_sync_message
       write_chr 'S'
       write_i32 4
       soc.flush
-      puts ">> sync" if DEBUG
     end
 
     def send_terminate_message

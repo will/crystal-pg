@@ -148,7 +148,7 @@ describe PG::Connection, "#exec_all" do
   end
 end
 
-describe PG::Connection, "#setup_notice_processor" do
+describe PG::Connection, "#on_notice" do
   it "sends notices to on_notice" do
     last_notice = nil
     DB.on_notice do |notice|
@@ -165,5 +165,18 @@ describe PG::Connection, "#setup_notice_processor" do
     SQL
     last_notice.should_not eq(nil)
     last_notice.to_s.should eq("NOTICE:  hello, world!\n")
+  end
+end
+
+describe PG::Connection, "#on_notification" do
+  it "does listen/notify" do
+    last_note = nil
+    DB.on_notification { |note| last_note = note }
+
+    DB.exec("listen somechannel")
+    DB.exec("notify somechannel, 'do a thing'")
+
+    last_note.not_nil!.channel.should eq("somechannel")
+    last_note.not_nil!.payload.should eq("do a thing")
   end
 end

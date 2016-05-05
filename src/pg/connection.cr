@@ -28,6 +28,10 @@ module PG
       @pq_conn.notice_handler = on_notice_proc
     end
 
+    def on_notification(&on_notification_proc : PQ::Notification ->)
+      @pq_conn.notification_handler = on_notification_proc
+    end
+
     def exec(query : String) : Result
       exec([] of PG::PGValue, query, [] of PG::PGValue)
     end

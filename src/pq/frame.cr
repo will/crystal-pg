@@ -4,15 +4,16 @@ module PQ
 
     def self.new(type : Char, bytes : Slice(UInt8))
       k = case type
-          when 'Z' then ReadyForQuery
-          when 'E' then ErrorResponse
-          when 'T' then RowDescription
-          when 'n' then NoData
-          when 'N' then NoticeResponse
-            # when 'D' then DataRow
           when 'C' then CommandComplete
+          when 'Z' then ReadyForQuery
           when '1' then ParseComplete
           when '2' then BindComplete
+          when 'T' then RowDescription
+          when 'A' then NotificationResponse
+          when 'E' then ErrorResponse
+          when 'N' then NoticeResponse
+          when 'n' then NoData
+            # when 'D' then DataRow
           when 'S' then ParameterStatus
           when 'K' then BackendKeyData
           when 'R' then Authentication
@@ -153,6 +154,23 @@ module PQ
         when 'R' then :routine
         else          :unknown
         end
+      end
+    end
+
+    struct NotificationResponse < Frame
+      getter pid : Int32
+      getter channel : String
+      getter payload : String
+
+      def initialize(bytes)
+        pos = 0
+        pos, @pid = i32 pos, bytes
+        pos, @channel = find_next_string(pos, bytes)
+        pos, @payload = find_next_string(pos, bytes)
+      end
+
+      def as_notification : PQ::Notification
+        PQ::Notification.new(pid, channel, payload)
       end
     end
 

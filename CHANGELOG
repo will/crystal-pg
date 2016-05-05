@@ -4,6 +4,7 @@ new features
   * 100% crystal, using crystal's native async io (no longer using libpq)
   * each Connection#exec form can take a block, and stream the rows as they
       come in. This does not store any rows in memory and is very fast.
+  * adds #on_notification for listen/notify support
 
 incompatable changes:
   * Result.each now yields the entire row and an array of fields

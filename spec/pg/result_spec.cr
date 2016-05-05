@@ -4,7 +4,6 @@ describe PG::Result, "#fields" do
   it "is empty on empty results" do
     if Helper.db_version_gte(9, 4)
       result = DB.exec("select")
-      # result.rows # todo fix no reads
 
       result.fields.size.should eq(0)
     end
@@ -12,7 +11,6 @@ describe PG::Result, "#fields" do
 
   it "is is a list of the fields" do
     result = DB.exec("select 1 as one, 2 as two, 3 as three")
-    # result.rows # todo fix no reads
     fields = result.fields
     fields.map(&.name).should eq(["one", "two", "three"])
     fields.map(&.type_oid).should eq([23, 23, 23])
@@ -66,7 +64,6 @@ describe PG::Result, "#to_hash" do
   it "raises if there are columns with the same name" do
     res = DB.exec("select 'a' as foo, 'b' as foo, 'c' as bar")
     expect_raises { res.to_hash }
-    # res.rows # todo fix no reads
   end
 end
 
