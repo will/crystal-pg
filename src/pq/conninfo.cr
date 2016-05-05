@@ -3,13 +3,29 @@ require "uri"
 module PQ
   struct ConnInfo
     SOCKET_SEARCH = %w(/run/postgresql/.s.PGSQL.5432 /tmp/.s.PGSQL.5432 /var/run/postgresql/.s.PGSQL.5432)
+
+    # The host. If starts with a / it is assumed to be a local Unix socket.
     getter host : String
+
+    # The port, defaults to 5432. It is ignored for local Unix sockets.
     getter port : Int32
+
+    # The database name.
     getter database : String
+
+    # The user.
     getter user : String
+
+    # The password. Optional.
     getter password : String?
+
+    # SSLmode, either :prefer or :require
+    #
+    # If set to `:prefer`, ssl is attempted. If it is `:require` and ssl is not
+    # established, an error is raised
     getter sslmode : Symbol
 
+    # Create a new ConnInfo from all parts
     def initialize(host : String? = nil, database : String? = nil, user : String? = nil, @password : String? = nil, port : Int | String? = 5432, sslmode : String | Symbol? = nil)
       @host = default_host host
       db = default_database database
@@ -19,7 +35,7 @@ module PQ
       @sslmode = default_sslmode sslmode
     end
 
-    # initialize with either "postgres://" urls or postgres "key=value" pairs
+    # Initialize with either "postgres://" urls or postgres "key=value" pairs
     def self.from_conninfo_string(conninfo : String)
       if conninfo.starts_with?("postgres://") || conninfo.starts_with?("postgresql://")
         new(URI.parse(conninfo))
@@ -39,6 +55,7 @@ module PQ
       end
     end
 
+    # Initializes with a `URI`
     def initialize(uri : URI)
       sslmode = nil
       if q = uri.query
@@ -51,9 +68,13 @@ module PQ
       initialize(uri.host, uri.path, uri.user, uri.password, uri.port, sslmode)
     end
 
+    # Initialize with a `Hash`
+    #
+    # Valid keys match Postgres "conninfo" keys and are `"host"`, `"dbname"`,
+    # `"user"`, `"password"`, `"port"`, and `"sslmode"`
     def initialize(params : Hash)
-      initialize(params["host"]?, params["db_name"]?,
-        params["user"]?, params["password"]?, params["port"]?, params["sslmode"]?)
+      initialize(params["host"]?, params["dbname"]?, params["user"]?,
+        params["password"]?, params["port"]?, params["sslmode"]?)
     end
 
     private def default_host(h)

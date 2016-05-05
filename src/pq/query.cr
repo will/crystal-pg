@@ -1,4 +1,5 @@
 module PQ
+  # :nodoc:
   class ExtendedQuery
     getter conn, query, params, fields
 
@@ -41,6 +42,7 @@ module PQ
     end
   end
 
+  # :nodoc:
   class SimpleQuery
     getter conn, query
 

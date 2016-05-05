@@ -1,4 +1,4 @@
-upcoming: native driver changes
+v0.6.0     2016-05-05
 =====================
 new features
   * 100% crystal, using crystal's native async io (no longer using libpq)
@@ -9,7 +9,8 @@ new features
 incompatable changes:
   * Result.each now yields the entire row and an array of fields
   * The notice callback now yields an entire
-  * Error classes have changed
+  * Error classes have changed, some removed
+  * "db_name" changed to "dbname" in hash #initialize to match postgres
 
 v0.6.0    2016-05-04
 ====================

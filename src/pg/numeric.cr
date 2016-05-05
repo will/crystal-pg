@@ -2,6 +2,7 @@ module PG
   # The Postgres numeric type has arbitrary precision, and can be NaN, "not a
   # number".
   struct Numeric
+    # :nodoc:
     enum Sign
       Pos =  0x0000
       Neg =  0x4000

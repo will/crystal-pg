@@ -50,7 +50,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
 
   it "parses libpq style strings" do
     ci = PQ::ConnInfo.from_conninfo_string(
-      "host=host db_name=db user=user password=pass port=5555 sslmode=require")
+      "host=host dbname=db user=user password=pass port=5555 sslmode=require")
     assert_custom_params ci
 
     ci = PQ::ConnInfo.from_conninfo_string("host=host")

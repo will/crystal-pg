@@ -10,6 +10,7 @@ require "openssl/openssl"
 module PQ
   record Notification, pid : Int32, channel : String, payload : String
 
+  # :nodoc:
   class Connection
     getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket
     getter server_parameters : Hash(String, String)

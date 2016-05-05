@@ -1,4 +1,5 @@
 module PQ
+  # :nodoc:
   abstract struct Frame
     getter bytes
 

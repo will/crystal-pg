@@ -1,8 +1,9 @@
 module PQ
   # :nodoc:
-  # Internal wrapper to represent an encoded parameter
   record Param, slice : Slice(UInt8), size : Int32, format : Int16 do
     delegate to_unsafe, slice
+
+    #  Internal wrapper to represent an encoded parameter
 
     # The only special case is nil->null and slice.
     # If more types need special cases, there should be an encoder
