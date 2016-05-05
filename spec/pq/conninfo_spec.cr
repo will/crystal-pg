@@ -8,6 +8,7 @@ private def assert_default_params(ci)
   ci.database.should eq(ci.user)
   ci.password.should eq(nil)
   ci.port.should eq(5432)
+  ci.sslmode.should eq(:prefer)
 end
 
 private def assert_custom_params(ci)
@@ -16,6 +17,7 @@ private def assert_custom_params(ci)
   ci.user.should eq("user")
   ci.password.should eq("pass")
   ci.port.should eq(5555)
+  ci.sslmode.should eq(:require)
 end
 
 describe PQ::ConnInfo, "parts" do
@@ -25,7 +27,7 @@ describe PQ::ConnInfo, "parts" do
   end
 
   it "can take settings" do
-    ci = PQ::ConnInfo.new("host", "db", "user", "pass", 5555)
+    ci = PQ::ConnInfo.new("host", "db", "user", "pass", 5555, :require)
     assert_custom_params ci
   end
 end
@@ -38,21 +40,18 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
 
   it "parses postgres urls" do
     ci = PQ::ConnInfo.from_conninfo_string(
-      "postgres://user:pass@host:5555/db")
+      "postgres://user:pass@host:5555/db?sslmode=require&otherparam=ignore")
     assert_custom_params ci
 
     ci = PQ::ConnInfo.from_conninfo_string(
-      "postgresql://user:pass@host:5555/db")
+      "postgresql://user:pass@host:5555/db?sslmode=require")
     assert_custom_params ci
   end
 
   it "parses libpq style strings" do
     ci = PQ::ConnInfo.from_conninfo_string(
-      "host=host db_name=db user=user password=pass port=5555")
+      "host=host db_name=db user=user password=pass port=5555 sslmode=require")
     assert_custom_params ci
-
-    ci = PQ::ConnInfo.from_conninfo_string("host=host")
-    ci.host.should eq("host")
 
     ci = PQ::ConnInfo.from_conninfo_string("host=host")
     ci.host.should eq("host")

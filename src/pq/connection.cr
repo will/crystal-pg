@@ -55,6 +55,11 @@ module PQ
       if serv_ssl
         @soc = OpenSSL::SSL::Socket.new(@soc, sync_close: true)
       end
+
+      if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket)
+        close
+        raise ConnectionError.new("sslmode=require and server did not establish SSL")
+      end
     end
 
     def close
