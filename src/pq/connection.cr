@@ -10,11 +10,17 @@ DEBUG = ENV["DEBUG"]?
 module PQ
   class Connection
     getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket
+    getter server_parameters : Hash(String, String)
     property notice_handler : Notice ->
+    getter pid : Int32, secret : Int32
 
     def initialize(@conninfo : ConnInfo)
+      @server_parameters = Hash(String, String).new
       @established = false
       @notice_handler = Proc(Notice, Void).new { }
+      @pid = uninitialized Int32
+      @secret = uninitialized Int32
+
       begin
         if @conninfo.host[0] == '/'
           soc = UNIXSocket.new(@conninfo.host)
@@ -118,15 +124,18 @@ module PQ
       slice = read_bytes(size - 4)
       frame = Frame.new(frame_type.not_nil!, slice).tap { |f| p f if DEBUG }
 
-      handle_error_and_notice(frame) ? read : frame
+      handle_async_frames(frame) ? read : frame
     end
 
-    private def handle_error_and_notice(frame)
+    private def handle_async_frames(frame)
       if frame.is_a?(Frame::ErrorResponse)
         handle_error frame
         true
       elsif frame.is_a?(Frame::NoticeResponse)
         handle_notice frame
+        true
+      elsif frame.is_a?(Frame::ParameterStatus)
+        handle_parameter frame
         true
       else
         false
@@ -139,8 +148,24 @@ module PQ
       raise PQError.new(error_frame.fields)
     end
 
-    private def handle_notice(notice_frame : Frame::NoticeResponse)
-      notice_handler.call(notice_frame.as_notice)
+    private def handle_notice(frame : Frame::NoticeResponse)
+      notice_handler.call(frame.as_notice)
+    end
+
+    private def handle_parameter(frame : Frame::ParameterStatus)
+      @server_parameters[frame.key] = frame.value
+      case frame.key
+      when "client_encoding"
+        if frame.value != "UTF8"
+          raise ConnectionError.new(
+            "Only UTF8 is supported for client_encoding, got: #{frame.value.inspect}")
+        end
+      when "integer_datetimes"
+        if frame.value != "on"
+          raise ConnectionError.new(
+            "Only on is supported for integer_datetimes, got: #{frame.value.inspect}")
+        end
+      end
     end
 
     def connect
@@ -156,8 +181,12 @@ module PQ
       auth_frame = expect_frame Frame::Authentication
       handle_auth auth_frame
 
-      while !(Frame::ReadyForQuery === read)
-      end
+      key_data = expect_frame Frame::BackendKeyData
+      @pid = key_data.pid
+      @secret = key_data.secret
+
+      expect_frame Frame::ReadyForQuery
+
       @established = true
     end
 
