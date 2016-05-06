@@ -1,3 +1,7 @@
+v?.?.?     upcoming
+=====================
+* bugfixes in protocol
+
 v0.6.0     2016-05-05
 =====================
 new features
@@ -11,6 +15,7 @@ incompatable changes:
   * The notice callback now yields an entire
   * Error classes have changed, some removed
   * "db_name" changed to "dbname" in hash #initialize to match postgres
+  * on_notice callback gets an object instead of just a string
 
 v0.6.0    2016-05-04
 ====================

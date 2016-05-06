@@ -14,6 +14,7 @@ module PQ
           when 'E' then ErrorResponse
           when 'N' then NoticeResponse
           when 'n' then NoData
+          when 'I' then EmptyQueryResponse
             # when 'D' then DataRow
           when 'S' then ParameterStatus
           when 'K' then BackendKeyData
@@ -222,6 +223,9 @@ module PQ
     end
 
     struct BindComplete < Frame
+    end
+
+    struct EmptyQueryResponse < Frame
     end
   end
 end

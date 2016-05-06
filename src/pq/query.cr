@@ -23,7 +23,7 @@ module PQ
         @has_data = true
       elsif frame.is_a?(Frame::NoData)
         @fields = [] of PQ::Field
-        conn.expect_frame Frame::CommandComplete
+        conn.expect_frame Frame::CommandComplete | Frame::EmptyQueryResponse
         conn.expect_frame Frame::ReadyForQuery
         @has_data = false
       else
