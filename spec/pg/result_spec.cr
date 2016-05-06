@@ -26,6 +26,11 @@ describe PG::Result, "#rows" do
     end
   end
 
+  it "is an empty array on a no row result set" do
+    rows = DB.exec("select 'hi' where false").rows
+    rows.size.should eq(0)
+  end
+
   it "can handle several types and several rows" do
     rows = DB.exec(
       {String, String | Nil, Bool, Int32},
