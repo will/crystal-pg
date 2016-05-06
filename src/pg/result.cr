@@ -19,9 +19,9 @@ module PG
     end
 
     def rows
-      a = [first]
+      a = [] of typeof(first)
       each(@types) { |r| a << r }
-      a[1..-1]
+      a
     end
 
     private def first

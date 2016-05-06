@@ -37,6 +37,12 @@ describe PG::Result, "#rows" do
     (rows[0][2] && !rows[1][2]).should be_true
     (rows[0][3] < rows[1][3]).should be_true
   end
+
+  it "can handle no rows" do
+    rows = DB.exec("select 1 where 1=0;").rows
+    rows.size.should eq(0)
+    rows.first?.should eq(nil)
+  end
 end
 
 describe PG::Result, "#to_hash" do
