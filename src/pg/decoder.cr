@@ -47,7 +47,7 @@ module PG
       end
     end
 
-    class DefaultDecoder < Decoder
+    class StringDecoder < Decoder
       def decode(bytes)
         String.new(bytes)
       end
@@ -163,7 +163,7 @@ module PG
       end
     end
 
-    @@decoders = Hash(Int32, PG::Decoders::Decoder).new(DefaultDecoder.new)
+    @@decoders = Hash(Int32, PG::Decoders::Decoder).new(ByteaDecoder.new)
 
     def self.from_oid(oid)
       @@decoders[oid]
@@ -179,12 +179,12 @@ module PG
     register_decoder Int8Decoder.new, 20      # int8 (bigint)
     register_decoder Int2Decoder.new, 21      # int2 (smallint)
     register_decoder IntDecoder.new, 23       # int4 (integer)
-    register_decoder DefaultDecoder.new, 25   # text
+    register_decoder StringDecoder.new, 25    # text
     register_decoder JsonDecoder.new, 114     # json
     register_decoder JsonbDecoder.new, 3802   # jsonb
     register_decoder Float32Decoder.new, 700  # float4
     register_decoder Float64Decoder.new, 701  # float8
-    register_decoder DefaultDecoder.new, 705  # unknown
+    register_decoder StringDecoder.new, 705   # unknown
     register_decoder DateDecoder.new, 1082    # date
     register_decoder TimeDecoder.new, 1114    # timestamp
     register_decoder NumericDecoder.new, 1700 # numeric

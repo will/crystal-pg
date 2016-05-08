@@ -1,13 +1,20 @@
+#!/usr/bin/env crystal
+require "readline"
 require "../src/pg"
 
-DB = PG.connect(ARGV[0])
+DB = PG.connect(ARGV[0]? || "")
 
 loop do
-  print "# "
-  query = gets.not_nil!.chomp
+  query = Readline.readline("# ", true) || ""
   puts
-  DB.exec(query) do |row|
-    p row
+  begin
+    DB.exec(query) do |row|
+      p row
+    end
+  rescue e : PQ::PQError
+    p e.fields
+  rescue e
+    p e
   end
   puts
 end

@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* (breaking) unknown oids decoded as byte slices instead of string
 * Adds optional BigRational extension to PG::Numeric
 * bugfixes in protocol
 
