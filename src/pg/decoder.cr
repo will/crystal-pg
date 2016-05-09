@@ -185,10 +185,12 @@ module PG
     register_decoder Float32Decoder.new, 700  # float4
     register_decoder Float64Decoder.new, 701  # float8
     register_decoder StringDecoder.new, 705   # unknown
+    register_decoder StringDecoder.new, 1043  # varchar
     register_decoder DateDecoder.new, 1082    # date
     register_decoder TimeDecoder.new, 1114    # timestamp
     register_decoder NumericDecoder.new, 1700 # numeric
     register_decoder TimeDecoder.new, 1184    # timestamptz
+    register_decoder IntDecoder.new, 2206     # regtype
     register_decoder UuidDecoder.new, 2950    # uuid
   end
 end
