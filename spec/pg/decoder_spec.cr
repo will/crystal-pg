@@ -66,4 +66,14 @@ describe PG::Decoders do
     x.call("1.3").to_f.should eq(1.3)
     x.call("nan").nan?.should be_true
   end
+
+  PG::Decoders.register_geo
+  test_decode "point", "'(1.2,3.4)'::point", {1.2, 3.4}
+  test_decode "line ", "'(1,2,3,4)'::line ", {1, -1, 1}
+  test_decode "line ", "'1,2,3'::circle   ", {1, 2, 3}
+  test_decode "lseg ", "'(1,2,3,4)'::lseg ", { {1, 2}, {3, 4} }
+  test_decode "box  ", "'(1,2,3,4)'::box  ", { {3, 4}, {1, 2} }
+  test_decode "path ", "'(1,2,3,4)'::path ", {:closed, [{1, 2}, {3, 4}]}
+  test_decode "path ", "'[1,2,3,4,5,6]'::path", {:open, [{1, 2}, {3, 4}, {5, 6}]}
+  test_decode "polygon", "'1,2,3,4,5,6'::polygon", [{1, 2}, {3, 4}, {5, 6}]
 end

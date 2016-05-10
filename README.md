@@ -81,14 +81,18 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 - json and jsonb
 - uuid
 - bytea
-- numeric/decimal*
+- numeric/decimal (1)
+- varchar
+- regtype
+- geo types: point, box, path, lseg, polygon, circle, line (2)
 
-* A note on numeric: In postgres this type has arbitrary percision. In this
+1: A note on numeric: In postgres this type has arbitrary percision. In this
     driver, it is represented as a `PG::Numeric` which retians all precision, but
     if you need to do any math on it, you will probably need to cast it to a
     float first. If you need true abitrary percision, you can optionally
     require `pg_ext/big_rational` which adds `#to_big_r`, but requires that you
     have LibGMP installed.
+2: Not included by default, use `PG::Decoders.register_geo` to use
 
 
 ## Connection Pooling

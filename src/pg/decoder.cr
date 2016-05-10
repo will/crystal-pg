@@ -99,6 +99,78 @@ module PG
       end
     end
 
+    class PointDecoder < Decoder
+      def decode(bytes)
+        x = swap64(bytes)
+        y = swap64(bytes + 8)
+
+        {
+          (pointerof(x) as Float64*).value,
+          (pointerof(y) as Float64*).value,
+        }
+      end
+    end
+
+    class PathDecoder < Decoder
+      def initialize
+        @polygon = PolygonDecoder.new
+      end
+
+      def decode(bytes)
+        status = (bytes[0] == 1_u8 ? :closed : :open)
+        {status, @polygon.decode(bytes + 1)}
+      end
+    end
+
+    class PolygonDecoder < Decoder
+      def decode(bytes)
+        c = swap32(bytes)
+        count = (pointerof(c) as Int32*).value
+
+        Array(Tuple(Float64, Float64)).new(count) do |i|
+          offset = i*16 + 4
+          x = swap64(bytes + offset)
+          y = swap64(bytes + (offset + 8))
+
+          {
+            (pointerof(x) as Float64*).value,
+            (pointerof(y) as Float64*).value,
+          }
+        end
+      end
+    end
+
+    class BoxDecoder < Decoder
+      def decode(bytes)
+        x1 = swap64(bytes)
+        y1 = swap64(bytes + 8)
+        x2 = swap64(bytes + 16)
+        y2 = swap64(bytes + 24)
+
+        { {
+          (pointerof(x1) as Float64*).value,
+          (pointerof(y1) as Float64*).value,
+        }, {
+          (pointerof(x2) as Float64*).value,
+          (pointerof(y2) as Float64*).value,
+        } }
+      end
+    end
+
+    class LineDecoder < Decoder
+      def decode(bytes)
+        a = swap64(bytes)
+        b = swap64(bytes + 8)
+        c = swap64(bytes + 16)
+
+        {
+          (pointerof(a) as Float64*).value,
+          (pointerof(b) as Float64*).value,
+          (pointerof(c) as Float64*).value,
+        }
+      end
+    end
+
     class JsonDecoder < Decoder
       def decode(bytes)
         JSON.parse(String.new(bytes))
@@ -192,5 +264,16 @@ module PG
     register_decoder TimeDecoder.new, 1184    # timestamptz
     register_decoder IntDecoder.new, 2206     # regtype
     register_decoder UuidDecoder.new, 2950    # uuid
+
+
+    def self.register_geo
+      register_decoder PointDecoder.new, 600   # point
+      register_decoder BoxDecoder.new, 601     # lseg
+      register_decoder PathDecoder.new, 602    # path
+      register_decoder BoxDecoder.new, 603     # box
+      register_decoder PolygonDecoder.new, 604 # polygon
+      register_decoder LineDecoder.new, 628    # line
+      register_decoder LineDecoder.new, 718    # circle
+    end
   end
 end
