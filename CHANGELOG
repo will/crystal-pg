@@ -19,6 +19,10 @@ incompatable changes:
   * "db_name" changed to "dbname" in hash #initialize to match postgres
   * on_notice callback gets an object instead of just a string
 
+v0.6.1    2016-06-15
+====================
+* fix shard.yml
+
 v0.6.0    2016-05-04
 ====================
 * Adds Adds on_notice callback (thanks @radiospiel)
