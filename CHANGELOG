@@ -1,10 +1,15 @@
 v?.?.?     upcoming
 =====================
+
+v0.7.1     2016-05-15
+=====================
 * (breaking) unknown oids decoded as byte slices instead of string
+* fix shard.yml
 * Adds optional BigRational extension to PG::Numeric
 * bugfixes in protocol
+* adds geo types
 
-v0.6.0     2016-05-05
+v0.7.0     2016-05-05
 =====================
 new features
   * 100% crystal, using crystal's native async io (no longer using libpq)
@@ -19,7 +24,7 @@ incompatable changes:
   * "db_name" changed to "dbname" in hash #initialize to match postgres
   * on_notice callback gets an object instead of just a string
 
-v0.6.1    2016-06-15
+v0.6.1    2016-05-15
 ====================
 * fix shard.yml
 
