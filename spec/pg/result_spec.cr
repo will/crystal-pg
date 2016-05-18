@@ -86,9 +86,9 @@ struct FooBarBaz
     row.zip(fields).each do |pair|
       value = pair.first
       case pair.last.name
-      when "foo" then foo = value as String
-      when "bar" then bar = value as Bool
-      when "baz" then baz = value as Int32
+      when "foo" then foo = value.as(String)
+      when "bar" then bar = value.as(Bool)
+      when "baz" then baz = value.as(Int32)
       end
     end
 

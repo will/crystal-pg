@@ -88,14 +88,14 @@ module PG
       # byte swapped in the same way as int4
       def decode(bytes)
         u32 = swap32(bytes)
-        (pointerof(u32) as Float32*).value
+        (pointerof(u32).as(Float32*)).value
       end
     end
 
     class Float64Decoder < Decoder
       def decode(bytes)
         u64 = swap64(bytes)
-        (pointerof(u64) as Float64*).value
+        (pointerof(u64).as(Float64*)).value
       end
     end
 
@@ -105,8 +105,8 @@ module PG
         y = swap64(bytes + 8)
 
         {
-          (pointerof(x) as Float64*).value,
-          (pointerof(y) as Float64*).value,
+          (pointerof(x).as(Float64*)).value,
+          (pointerof(y).as(Float64*)).value,
         }
       end
     end
@@ -125,7 +125,7 @@ module PG
     class PolygonDecoder < Decoder
       def decode(bytes)
         c = swap32(bytes)
-        count = (pointerof(c) as Int32*).value
+        count = (pointerof(c).as(Int32*)).value
 
         Array(Tuple(Float64, Float64)).new(count) do |i|
           offset = i*16 + 4
@@ -133,8 +133,8 @@ module PG
           y = swap64(bytes + (offset + 8))
 
           {
-            (pointerof(x) as Float64*).value,
-            (pointerof(y) as Float64*).value,
+            (pointerof(x).as(Float64*)).value,
+            (pointerof(y).as(Float64*)).value,
           }
         end
       end
@@ -148,11 +148,11 @@ module PG
         y2 = swap64(bytes + 24)
 
         { {
-          (pointerof(x1) as Float64*).value,
-          (pointerof(y1) as Float64*).value,
+          (pointerof(x1).as(Float64*)).value,
+          (pointerof(y1).as(Float64*)).value,
         }, {
-          (pointerof(x2) as Float64*).value,
-          (pointerof(y2) as Float64*).value,
+          (pointerof(x2).as(Float64*)).value,
+          (pointerof(y2).as(Float64*)).value,
         } }
       end
     end
@@ -164,9 +164,9 @@ module PG
         c = swap64(bytes + 16)
 
         {
-          (pointerof(a) as Float64*).value,
-          (pointerof(b) as Float64*).value,
-          (pointerof(c) as Float64*).value,
+          (pointerof(a).as(Float64*)).value,
+          (pointerof(b).as(Float64*)).value,
+          (pointerof(c).as(Float64*)).value,
         }
       end
     end

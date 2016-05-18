@@ -6,11 +6,11 @@ describe PG::Connection, "#initialize" do
 
     uri = URI.parse(DB_URL)
     info = {} of String => String
-    info["host"] = uri.host as String if uri.host
-    info["user"] = uri.user as String if uri.user
-    info["password"] = uri.password as String if uri.password
+    info["host"] = uri.host.as(String) if uri.host
+    info["user"] = uri.user.as(String) if uri.user
+    info["password"] = uri.password.as(String) if uri.password
     info["port"] = "#{uri.port}" if uri.port
-    info["dbname"] = (uri.path as String).delete('/') if uri.path
+    info["dbname"] = (uri.path.as(String)).delete('/') if uri.path
     PG::Connection.new(info)
   end
 
@@ -37,8 +37,8 @@ describe PG::Connection, "#exec untyped" do
     fields = nil
     DB.exec(query) do |row, f|
       fields = f
-      x += row[0] as Int32
-      y += row[1] as Int32
+      x += row[0].as(Int32)
+      y += row[1].as(Int32)
     end.should eq(nil)
     x.should eq(5050)
     y.should eq(10100)
@@ -114,8 +114,8 @@ describe PG::Connection, "#exec untyped with params" do
     fields = nil
     DB.exec(query, [100]) do |row, f|
       fields = f
-      x += row[0] as Int32
-      y += row[1] as Int32
+      x += row[0].as(Int32)
+      y += row[1].as(Int32)
     end.should eq(nil)
     x.should eq(5050)
     y.should eq(10100)
