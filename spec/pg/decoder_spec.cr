@@ -67,6 +67,8 @@ describe PG::Decoders do
     x.call("nan").nan?.should be_true
   end
 
+  test_decode "xml", "'<json>false</json>'::xml", "<json>false</json>"
+
   PG::Decoders.register_geo
   test_decode "point", "'(1.2,3.4)'::point", {1.2, 3.4}
   test_decode "line ", "'(1,2,3,4)'::line ", {1, -1, 1}

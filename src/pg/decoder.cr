@@ -253,6 +253,7 @@ module PG
     register_decoder IntDecoder.new, 23       # int4 (integer)
     register_decoder StringDecoder.new, 25    # text
     register_decoder JsonDecoder.new, 114     # json
+    register_decoder StringDecoder.new, 142   # xml
     register_decoder JsonbDecoder.new, 3802   # jsonb
     register_decoder Float32Decoder.new, 700  # float4
     register_decoder Float64Decoder.new, 701  # float8
