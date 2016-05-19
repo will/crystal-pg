@@ -68,6 +68,11 @@ describe PG::Decoders do
   end
 
   test_decode "xml", "'<json>false</json>'::xml", "<json>false</json>"
+  test_decode "char", %('c'::"char"), 'c'
+  test_decode "bpchar", %('c'::char), "c"
+  test_decode "bpchar", %('c'::char(5)), "c    "
+  test_decode "name", %('hi'::name), "hi"
+  test_decode "oid", %(2147483648::oid), 2147483648_u32
 
   PG::Decoders.register_geo
   test_decode "point", "'(1.2,3.4)'::point", {1.2, 3.4}
