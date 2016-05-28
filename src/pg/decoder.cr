@@ -159,12 +159,16 @@ module PG
     end
 
     class UuidDecoder < Decoder
-      def decode(io : IO)
-        [4, 2, 2, 2, 6].map do |n|
-          part = Slice(UInt8).new n
-          io.read_fully part
-          part.hexstring
-        end.join '-'
+      def decode(bytes : Slice(UInt8))
+        String.new(36) do |buffer|
+          buffer[8] = buffer[13] = buffer[18] = buffer[23] = 45_u8
+          bytes[0, 4].hexstring(buffer + 0)
+          bytes[4, 2].hexstring(buffer + 9)
+          bytes[6, 2].hexstring(buffer + 14)
+          bytes[8, 2].hexstring(buffer + 19)
+          bytes[10, 6].hexstring(buffer + 24)
+          {36, 36}
+        end
       end
     end
 
