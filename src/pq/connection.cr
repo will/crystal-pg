@@ -143,6 +143,7 @@ module PQ
         true
       elsif frame.is_a?(Frame::NotificationResponse)
         handle_notification frame
+        true
       elsif frame.is_a?(Frame::NoticeResponse)
         handle_notice frame
         true
