@@ -3,7 +3,7 @@ require "crypto/md5"
 require "socket"
 require "socket/tcp_socket"
 require "socket/unix_socket"
-require "openssl/openssl"
+require "openssl"
 
 # DEBUG = ENV["DEBUG"]?
 
@@ -12,7 +12,7 @@ module PQ
 
   # :nodoc:
   class Connection
-    getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket
+    getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket::Client
     getter server_parameters : Hash(String, String)
     property notice_handler : Notice ->
     property notification_handler : Notification ->
@@ -54,10 +54,10 @@ module PQ
                  end
 
       if serv_ssl
-        @soc = OpenSSL::SSL::Socket.new(@soc, sync_close: true)
+        @soc = OpenSSL::SSL::Socket::Client.new(@soc, sync_close: true)
       end
 
-      if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket)
+      if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
         close
         raise ConnectionError.new("sslmode=require and server did not establish SSL")
       end

@@ -1,7 +1,7 @@
 module PQ
   # :nodoc:
   record Param, slice : Slice(UInt8), size : Int32, format : Int16 do
-    delegate to_unsafe, slice
+    delegate to_unsafe, to: slice
 
     #  Internal wrapper to represent an encoded parameter
 
