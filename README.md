@@ -84,7 +84,7 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 - numeric/decimal (1)
 - varchar
 - regtype
-- geo types: point, box, path, lseg, polygon, circle, line (2)
+- geo types: point, box, path, lseg, polygon, circle, line
 
 1: A note on numeric: In postgres this type has arbitrary percision. In this
     driver, it is represented as a `PG::Numeric` which retians all precision, but
@@ -92,7 +92,6 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
     float first. If you need true abitrary percision, you can optionally
     require `pg_ext/big_rational` which adds `#to_big_r`, but requires that you
     have LibGMP installed.
-2: Not included by default, use `PG::Decoders.register_geo` to use
 
 
 ## Connection Pooling
