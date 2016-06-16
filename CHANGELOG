@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* (breaking) geo points now all have own types (thanks @asterite)
 
 v0.7.1     2016-05-15
 =====================
