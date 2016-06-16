@@ -116,10 +116,10 @@ module PG
         x = swap64(bytes)
         y = swap64(bytes + 8)
 
-        {
+        Geo::Point.new(
           (pointerof(x).as(Float64*)).value,
           (pointerof(y).as(Float64*)).value,
-        }
+        )
       end
     end
 
@@ -129,8 +129,8 @@ module PG
       end
 
       def decode(bytes)
-        status = (bytes[0] == 1_u8 ? :closed : :open)
-        {status, @polygon.decode(bytes + 1)}
+        closed = bytes[0] == 1_u8
+        Geo::Path.new(@polygon.decode(bytes + 1), closed)
       end
     end
 
@@ -139,15 +139,15 @@ module PG
         c = swap32(bytes)
         count = (pointerof(c).as(Int32*)).value
 
-        Array(Tuple(Float64, Float64)).new(count) do |i|
+        Array.new(count) do |i|
           offset = i*16 + 4
           x = swap64(bytes + offset)
           y = swap64(bytes + (offset + 8))
 
-          {
+          Geo::Point.new(
             (pointerof(x).as(Float64*)).value,
             (pointerof(y).as(Float64*)).value,
-          }
+          )
         end
       end
     end
@@ -159,13 +159,28 @@ module PG
         x2 = swap64(bytes + 16)
         y2 = swap64(bytes + 24)
 
-        { {
+        Geo::Box.new(
           (pointerof(x1).as(Float64*)).value,
           (pointerof(y1).as(Float64*)).value,
-        }, {
           (pointerof(x2).as(Float64*)).value,
           (pointerof(y2).as(Float64*)).value,
-        } }
+        )
+      end
+    end
+
+    class LineSegmentDecoder < Decoder
+      def decode(bytes)
+        x1 = swap64(bytes)
+        y1 = swap64(bytes + 8)
+        x2 = swap64(bytes + 16)
+        y2 = swap64(bytes + 24)
+
+        Geo::LineSegment.new(
+          (pointerof(x1).as(Float64*)).value,
+          (pointerof(y1).as(Float64*)).value,
+          (pointerof(x2).as(Float64*)).value,
+          (pointerof(y2).as(Float64*)).value,
+        )
       end
     end
 
@@ -175,11 +190,25 @@ module PG
         b = swap64(bytes + 8)
         c = swap64(bytes + 16)
 
-        {
+        Geo::Line.new(
           (pointerof(a).as(Float64*)).value,
           (pointerof(b).as(Float64*)).value,
           (pointerof(c).as(Float64*)).value,
-        }
+        )
+      end
+    end
+
+    class CircleDecoder < Decoder
+      def decode(bytes)
+        a = swap64(bytes)
+        b = swap64(bytes + 8)
+        c = swap64(bytes + 16)
+
+        Geo::Circle.new(
+          (pointerof(a).as(Float64*)).value,
+          (pointerof(b).as(Float64*)).value,
+          (pointerof(c).as(Float64*)).value,
+        )
       end
     end
 
@@ -258,39 +287,35 @@ module PG
     end
 
     # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
-    register_decoder BoolDecoder.new, 16      # bool
-    register_decoder ByteaDecoder.new, 17     # bytea
-    register_decoder CharDecoder.new, 18      # "char" (internal type)
-    register_decoder StringDecoder.new, 19    # name (internal type)
-    register_decoder Int8Decoder.new, 20      # int8 (bigint)
-    register_decoder Int2Decoder.new, 21      # int2 (smallint)
-    register_decoder IntDecoder.new, 23       # int4 (integer)
-    register_decoder StringDecoder.new, 25    # text
-    register_decoder UIntDecoder.new, 26      # oid (internal type)
-    register_decoder JsonDecoder.new, 114     # json
-    register_decoder StringDecoder.new, 142   # xml
-    register_decoder JsonbDecoder.new, 3802   # jsonb
-    register_decoder Float32Decoder.new, 700  # float4
-    register_decoder Float64Decoder.new, 701  # float8
-    register_decoder StringDecoder.new, 705   # unknown
-    register_decoder StringDecoder.new, 1042  # blchar
-    register_decoder StringDecoder.new, 1043  # varchar
-    register_decoder DateDecoder.new, 1082    # date
-    register_decoder TimeDecoder.new, 1114    # timestamp
-    register_decoder NumericDecoder.new, 1700 # numeric
-    register_decoder TimeDecoder.new, 1184    # timestamptz
-    register_decoder IntDecoder.new, 2206     # regtype
-    register_decoder UuidDecoder.new, 2950    # uuid
-
-
-    def self.register_geo
-      register_decoder PointDecoder.new, 600   # point
-      register_decoder BoxDecoder.new, 601     # lseg
-      register_decoder PathDecoder.new, 602    # path
-      register_decoder BoxDecoder.new, 603     # box
-      register_decoder PolygonDecoder.new, 604 # polygon
-      register_decoder LineDecoder.new, 628    # line
-      register_decoder LineDecoder.new, 718    # circle
-    end
+    register_decoder BoolDecoder.new, 16         # bool
+    register_decoder ByteaDecoder.new, 17        # bytea
+    register_decoder CharDecoder.new, 18         # "char" (internal type)
+    register_decoder StringDecoder.new, 19       # name (internal type)
+    register_decoder Int8Decoder.new, 20         # int8 (bigint)
+    register_decoder Int2Decoder.new, 21         # int2 (smallint)
+    register_decoder IntDecoder.new, 23          # int4 (integer)
+    register_decoder StringDecoder.new, 25       # text
+    register_decoder UIntDecoder.new, 26         # oid (internal type)
+    register_decoder JsonDecoder.new, 114        # json
+    register_decoder StringDecoder.new, 142      # xml
+    register_decoder JsonbDecoder.new, 3802      # jsonb
+    register_decoder Float32Decoder.new, 700     # float4
+    register_decoder Float64Decoder.new, 701     # float8
+    register_decoder StringDecoder.new, 705      # unknown
+    register_decoder StringDecoder.new, 1042     # blchar
+    register_decoder StringDecoder.new, 1043     # varchar
+    register_decoder DateDecoder.new, 1082       # date
+    register_decoder TimeDecoder.new, 1114       # timestamp
+    register_decoder NumericDecoder.new, 1700    # numeric
+    register_decoder TimeDecoder.new, 1184       # timestamptz
+    register_decoder IntDecoder.new, 2206        # regtype
+    register_decoder UuidDecoder.new, 2950       # uuid
+    register_decoder PointDecoder.new, 600       # point
+    register_decoder LineSegmentDecoder.new, 601 # lseg
+    register_decoder PathDecoder.new, 602        # path
+    register_decoder BoxDecoder.new, 603         # box
+    register_decoder PolygonDecoder.new, 604     # polygon
+    register_decoder LineDecoder.new, 628        # line
+    register_decoder CircleDecoder.new, 718      # circle
   end
 end
