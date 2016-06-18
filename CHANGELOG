@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
+
+v0.8.0     2016-06-17
+=====================
 * (breaking) geo points now all have own types (thanks @asterite)
+* support crystal 0.18
 
 v0.7.1     2016-05-15
 =====================
