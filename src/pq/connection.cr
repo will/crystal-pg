@@ -54,7 +54,9 @@ module PQ
                  end
 
       if serv_ssl
-        @soc = OpenSSL::SSL::Socket::Client.new(@soc, sync_close: true)
+        ctx = OpenSSL::SSL::Context::Client.new
+        ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE # currently emulating sslmode 'require' not verify_ca or verify_full
+        @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true)
       end
 
       if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
