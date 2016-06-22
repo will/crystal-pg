@@ -14,4 +14,14 @@ module PG
       neg? ? -quot : quot
     end
   end
+
+  class ResultSet
+    def read(t : BigRational.class)
+      read(PG::Numeric).to_big_r
+    end
+
+    def read(t : BigRational?.class)
+      read(PG::Numeric?).try &.to_big_r
+    end
+  end
 end

@@ -10,63 +10,65 @@ require "../spec_helper"
 
 describe PQ::Connection, "nologin role" do
   it "raises" do
-    DB.exec("drop role if exists crystal_test")
-    DB.exec("create role crystal_test nologin")
+    PG_DB.exec("drop role if exists crystal_test")
+    PG_DB.exec("create role crystal_test nologin")
     expect_raises(PQ::PQError) {
-      PG::Connection.new("host=localhost user=crystal_test")
+      DB.open("postgres://crystal_test@localhost")
     }
-    DB.exec("drop role if exists crystal_test")
+    PG_DB.exec("drop role if exists crystal_test")
   end
 end
 
 if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
   describe PQ::Connection, "cleartext auth" do
     it "works when given the correct password" do
-      DB.exec("drop role if exists crystal_pass")
-      DB.exec("create role crystal_pass login encrypted password 'pass'")
-      conn = PG::Connection.new("host=localhost user=crystal_pass password=pass")
-      conn.exec("select 1").rows.first.first.should eq(1)
-      DB.exec("drop role if exists crystal_pass")
+      PG_DB.exec("drop role if exists crystal_pass")
+      PG_DB.exec("create role crystal_pass login encrypted password 'pass'")
+      DB.open("postgres://crystal_pass:pass@localhost") do |db|
+        db.query_one("select 1", &.read).should eq(1)
+      end
+      PG_DB.exec("drop role if exists crystal_pass")
     end
 
     it "fails when given the wrong password" do
-      DB.exec("drop role if exists crystal_pass")
-      DB.exec("create role crystal_pass login encrypted password 'pass'")
+      PG_DB.exec("drop role if exists crystal_pass")
+      PG_DB.exec("create role crystal_pass login encrypted password 'pass'")
 
       expect_raises(PQ::PQError) {
-        PG::Connection.new("host=localhost user=crystal_pass password=bad")
+        DB.open("postgres://crystal_pass:bad@localhost")
       }
 
       expect_raises(PQ::PQError) {
-        PG::Connection.new("host=localhost user=crystal_pass")
+        DB.open("postgres://crystal_pass@localhost")
       }
 
-      DB.exec("drop role if exists crystal_pass")
+      PG_DB.exec("drop role if exists crystal_pass")
     end
   end
 
   describe PQ::Connection, "cleartext auth" do
     it "works when given the correct password" do
-      DB.exec("drop role if exists crystal_md5")
-      DB.exec("create role crystal_md5 login encrypted password 'pass'")
-      conn = PG::Connection.new("host=localhost user=crystal_md5 password=pass")
-      conn.exec("select 1").rows.first.first.should eq(1)
-      DB.exec("drop role if exists crystal_md5")
+      PG_DB.exec("drop role if exists crystal_md5")
+      PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
+      DB.open("postgres://crystal_md5:pass@localhost") do |db|
+        db.query_one("select 1", &.read).should eq(1)
+      end
+      PG_DB.exec("drop role if exists crystal_md5")
     end
 
     it "fails when given the wrong password" do
-      DB.exec("drop role if exists crystal_md5")
-      DB.exec("create role crystal_md5 login encrypted password 'pass'")
+      PG_DB.exec("drop role if exists crystal_md5")
+      PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
 
       expect_raises(PQ::PQError) {
-        PG::Connection.new("host=localhost user=crystal_md5 password=bad")
+        DB.open("postgres://crystal_md5:bad@localhost")
       }
 
       expect_raises(PQ::PQError) {
-        PG::Connection.new("host=localhost user=crystal_md5")
+        DB.open("postgres://crystal_md5@localhost")
       }
 
-      DB.exec("drop role if exists crystal_md5")
+      PG_DB.exec("drop role if exists crystal_md5")
     end
   end
 else

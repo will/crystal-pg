@@ -6,120 +6,158 @@ module PG
   # :nodoc:
   module Decoders
     abstract class Decoder
-      abstract def decode(bytes)
+      abstract def decode(io, bytesize)
+      abstract def type
 
-      private def swap16(slice : Slice(UInt8))
-        swap16(slice.pointer(0))
+      def decode(bytes)
+        decode MemoryIO.new(bytes), bytes.size
       end
 
-      private def swap16(ptr : UInt8*) : UInt16
-        ((((0_u16
-          ) | ptr[0]) << 8
-          ) | ptr[1])
+      def read(io, type)
+        io.read_bytes(type, IO::ByteFormat::NetworkEndian)
       end
 
-      private def swap32(slice : Slice(UInt8))
-        swap32(slice.pointer(0))
+      def read_i16(io)
+        read(io, Int16)
       end
 
-      private def swap32(ptr : UInt8*) : UInt32
-        ((((((((0_u32
-          ) | ptr[0]) << 8
-          ) | ptr[1]) << 8
-          ) | ptr[2]) << 8
-          ) | ptr[3])
+      def read_i32(io)
+        read(io, Int32)
       end
 
-      private def swap64(slice : Slice(UInt8))
-        swap64(slice.pointer(0))
+      def read_i64(io)
+        read(io, Int64)
       end
 
-      private def swap64(ptr : UInt8*) : UInt64
-        ((((((((((((((((0_u64
-          ) | ptr[0]) << 8
-          ) | ptr[1]) << 8
-          ) | ptr[2]) << 8
-          ) | ptr[3]) << 8
-          ) | ptr[4]) << 8
-          ) | ptr[5]) << 8
-          ) | ptr[6]) << 8
-          ) | ptr[7])
+      def read_u32(io)
+        read(io, UInt32)
+      end
+
+      def read_u64(io)
+        read(io, UInt64)
       end
     end
 
     class StringDecoder < Decoder
-      def decode(bytes)
-        String.new(bytes)
+      def decode(io, bytesize)
+        String.new(bytesize) do |buffer|
+          io.read_fully(Slice.new(buffer, bytesize))
+          {bytesize, 0}
+        end
+      end
+
+      def type
+        String
       end
     end
 
     class CharDecoder < Decoder
-      def decode(bytes)
-        String.new(bytes)[0]
+      def decode(io, bytesize)
+        # TODO: can be done without creating an intermediate string
+        String.new(bytesize) do |buffer|
+          io.read_fully(Slice.new(buffer, bytesize))
+          {bytesize, 0}
+        end[0]
+      end
+
+      def type
+        Char
       end
     end
 
     class BoolDecoder < Decoder
-      def decode(bytes)
-        case bytes[0]
+      def decode(io, bytesize)
+        case byte = io.read_byte
         when 0
           false
         when 1
           true
         else
-          raise "bad boolean decode: #{bytes[0]}"
+          raise "bad boolean decode: #{byte}"
         end
+      end
+
+      def type
+        Bool
       end
     end
 
     class Int2Decoder < Decoder
-      def decode(bytes)
-        swap16(bytes).to_i16
+      def decode(io, bytesize)
+        read_i16(io)
+      end
+
+      def type
+        Int16
       end
     end
 
     class IntDecoder < Decoder
-      def decode(bytes)
-        swap32(bytes).to_i32
+      def decode(io, bytesize)
+        read_i32(io)
+      end
+
+      def type
+        Int32
       end
     end
 
     class UIntDecoder < Decoder
-      def decode(bytes)
-        swap32(bytes).to_u32
+      def decode(io, bytesize)
+        read_u32(io)
+      end
+
+      def type
+        UInt32
       end
     end
 
     class Int8Decoder < Decoder
-      def decode(bytes)
-        swap64(bytes).to_i64
+      def decode(io, bytesize)
+        read_u64(io).to_i64
+      end
+
+      def type
+        Int64
       end
     end
 
     class Float32Decoder < Decoder
       # byte swapped in the same way as int4
-      def decode(bytes)
-        u32 = swap32(bytes)
+      def decode(io, bytesize)
+        u32 = read_u32(io)
         (pointerof(u32).as(Float32*)).value
+      end
+
+      def type
+        Float32
       end
     end
 
     class Float64Decoder < Decoder
-      def decode(bytes)
-        u64 = swap64(bytes)
+      def decode(io, bytesize)
+        u64 = read_u64(io)
         (pointerof(u64).as(Float64*)).value
+      end
+
+      def type
+        Float64
       end
     end
 
     class PointDecoder < Decoder
-      def decode(bytes)
-        x = swap64(bytes)
-        y = swap64(bytes + 8)
+      def decode(io, bytesize)
+        x = read_u64(io)
+        y = read_u64(io)
 
         Geo::Point.new(
           (pointerof(x).as(Float64*)).value,
           (pointerof(y).as(Float64*)).value,
         )
+      end
+
+      def type
+        Geo::Point
       end
     end
 
@@ -128,21 +166,25 @@ module PG
         @polygon = PolygonDecoder.new
       end
 
-      def decode(bytes)
-        closed = bytes[0] == 1_u8
-        Geo::Path.new(@polygon.decode(bytes + 1), closed)
+      def decode(io, bytesize)
+        byte = io.read_byte.not_nil!
+        closed = byte == 1_u8
+        Geo::Path.new(@polygon.decode(io, bytesize - 1), closed)
+      end
+
+      def type
+        Geo::Path
       end
     end
 
     class PolygonDecoder < Decoder
-      def decode(bytes)
-        c = swap32(bytes)
+      def decode(io, bytesize)
+        c = read_u32(io)
         count = (pointerof(c).as(Int32*)).value
 
         Array.new(count) do |i|
-          offset = i*16 + 4
-          x = swap64(bytes + offset)
-          y = swap64(bytes + (offset + 8))
+          x = read_u64(io)
+          y = read_u64(io)
 
           Geo::Point.new(
             (pointerof(x).as(Float64*)).value,
@@ -150,14 +192,18 @@ module PG
           )
         end
       end
+
+      def type
+        Geo::Polygon
+      end
     end
 
     class BoxDecoder < Decoder
-      def decode(bytes)
-        x1 = swap64(bytes)
-        y1 = swap64(bytes + 8)
-        x2 = swap64(bytes + 16)
-        y2 = swap64(bytes + 24)
+      def decode(io, bytesize)
+        x1 = read_u64(io)
+        y1 = read_u64(io)
+        x2 = read_u64(io)
+        y2 = read_u64(io)
 
         Geo::Box.new(
           (pointerof(x1).as(Float64*)).value,
@@ -166,14 +212,18 @@ module PG
           (pointerof(y2).as(Float64*)).value,
         )
       end
+
+      def type
+        Geo::Box
+      end
     end
 
     class LineSegmentDecoder < Decoder
-      def decode(bytes)
-        x1 = swap64(bytes)
-        y1 = swap64(bytes + 8)
-        x2 = swap64(bytes + 16)
-        y2 = swap64(bytes + 24)
+      def decode(io, bytesize)
+        x1 = read_u64(io)
+        y1 = read_u64(io)
+        x2 = read_u64(io)
+        y2 = read_u64(io)
 
         Geo::LineSegment.new(
           (pointerof(x1).as(Float64*)).value,
@@ -182,13 +232,17 @@ module PG
           (pointerof(y2).as(Float64*)).value,
         )
       end
+
+      def type
+        Geo::LineSegment
+      end
     end
 
     class LineDecoder < Decoder
-      def decode(bytes)
-        a = swap64(bytes)
-        b = swap64(bytes + 8)
-        c = swap64(bytes + 16)
+      def decode(io, bytesize)
+        a = read_u64(io)
+        b = read_u64(io)
+        c = read_u64(io)
 
         Geo::Line.new(
           (pointerof(a).as(Float64*)).value,
@@ -196,13 +250,17 @@ module PG
           (pointerof(c).as(Float64*)).value,
         )
       end
+
+      def type
+        Geo::Line
+      end
     end
 
     class CircleDecoder < Decoder
-      def decode(bytes)
-        a = swap64(bytes)
-        b = swap64(bytes + 8)
-        c = swap64(bytes + 16)
+      def decode(io, bytesize)
+        a = read_u64(io)
+        b = read_u64(io)
+        c = read_u64(io)
 
         Geo::Circle.new(
           (pointerof(a).as(Float64*)).value,
@@ -210,69 +268,126 @@ module PG
           (pointerof(c).as(Float64*)).value,
         )
       end
+
+      def type
+        Geo::Circle
+      end
     end
 
     class JsonDecoder < Decoder
-      def decode(bytes)
-        JSON.parse(String.new(bytes))
+      def decode(io, bytesize)
+        string = String.new(bytesize) do |buffer|
+          io.read_fully(Slice.new(buffer, bytesize))
+          {bytesize, 0}
+        end
+        JSON.parse(string)
+      end
+
+      def type
+        JSON::Any
       end
     end
 
     class JsonbDecoder < Decoder
-      def decode(bytes)
-        # move past single 0x01 byte at the start of jsonb
-        JSON.parse(String.new(bytes + 1))
+      def decode(io, bytesize)
+        io.read_byte
+
+        string = String.new(bytesize - 1) do |buffer|
+          io.read_fully(Slice.new(buffer, bytesize - 1))
+          {bytesize, 0}
+        end
+        JSON.parse(string)
+      end
+
+      def type
+        JSON::Any
       end
     end
 
     JAN_1_2K_TICKS = Time.new(2000, 1, 1, kind: Time::Kind::Utc).ticks
 
     class DateDecoder < Decoder
-      def decode(bytes)
-        v = swap32(bytes).to_i32
+      def decode(io, bytesize)
+        v = read_i32(io)
         Time.new(JAN_1_2K_TICKS + (Time::Span::TicksPerDay * v), kind: Time::Kind::Utc)
+      end
+
+      def type
+        Time
       end
     end
 
     class TimeDecoder < Decoder
-      def decode(bytes)
-        v = swap64(bytes).to_i64 / 1000
+      def decode(io, bytesize)
+        v = read_i64(io) / 1000
         Time.new(JAN_1_2K_TICKS + (Time::Span::TicksPerMillisecond * v), kind: Time::Kind::Utc)
+      end
+
+      def type
+        Time
       end
     end
 
     class UuidDecoder < Decoder
-      def decode(bytes)
+      def decode(io, bytesize)
+        bytes = uninitialized UInt8[6]
+
         String.new(36) do |buffer|
           buffer[8] = buffer[13] = buffer[18] = buffer[23] = 45_u8
-          bytes[0, 4].hexstring(buffer + 0)
-          bytes[4, 2].hexstring(buffer + 9)
-          bytes[6, 2].hexstring(buffer + 14)
-          bytes[8, 2].hexstring(buffer + 19)
-          bytes[10, 6].hexstring(buffer + 24)
+
+          slice = bytes.to_slice[0, 4]
+
+          io.read(slice)
+          slice.hexstring(buffer + 0)
+
+          slice = bytes.to_slice[0, 2]
+
+          io.read(slice)
+          slice.hexstring(buffer + 9)
+
+          io.read(slice)
+          slice.hexstring(buffer + 14)
+
+          io.read(slice)
+          slice.hexstring(buffer + 19)
+
+          slice = bytes.to_slice
+          io.read(slice)
+          slice.hexstring(buffer + 24)
+
           {36, 36}
         end
+      end
+
+      def type
+        String
       end
     end
 
     class ByteaDecoder < Decoder
-      def decode(bytes)
-        bytes
+      def decode(io, bytesize)
+        slice = Bytes.new(bytesize)
+        io.read_fully(slice)
+        slice
+      end
+
+      def type
+        Bytes
       end
     end
 
     class NumericDecoder < Decoder
-      def decode(bytes)
-        ndigits = i16 bytes[0, 2]
-        weight = i16 bytes[2, 2]
-        sign = i16 bytes[4, 2]
-        dscale = i16 bytes[6, 2]
-        digits = (0...ndigits).map { |i| i16 bytes[i*2 + 8, 2] }
+      def decode(io, bytesize)
+        ndigits = read_i16(io)
+        weight = read_i16(io)
+        sign = read_i16(io)
+        dscale = read_i16(io)
+        digits = (0...ndigits).map { |i| read_i16(io) }
         PG::Numeric.new(ndigits, weight, sign, dscale, digits)
       end
 
-      private def i16(bytes)
-        swap16(bytes).to_i16
+      def type
+        PG::Numeric
       end
     end
 

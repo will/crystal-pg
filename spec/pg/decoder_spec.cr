@@ -2,10 +2,8 @@ require "../spec_helper"
 
 private def test_decode(name, select, expected, file = __FILE__, line = __LINE__)
   it name, file, line do
-    rows = DB.exec("select #{select}").rows
-    rows.size.should eq(1), file, line
-    rows.first.size.should eq(1), file, line
-    rows.first.first.should eq(expected), file, line
+    value = PG_DB.query_one "select #{select}", &.read
+    value.should eq(expected), file, line
   end
 end
 
@@ -61,7 +59,7 @@ describe PG::Decoders do
 
   it "numeric" do
     x = ->(q : String) do
-      DB.exec({PG::Numeric}, "select '#{q}'::numeric").rows.first.first
+      PG_DB.query_one "select '#{q}'::numeric", &.read(PG::Numeric)
     end
     x.call("1.3").to_f.should eq(1.3)
     x.call("nan").nan?.should be_true

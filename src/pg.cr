@@ -1,3 +1,4 @@
+require "db"
 require "./pg/*"
 
 module PG

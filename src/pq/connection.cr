@@ -91,16 +91,23 @@ module PQ
     private def write_chr(chr : Char)
       soc.write_byte chr.ord.to_u8
     end
-    private def read_i32
+
+    def read_i32
       soc.read_bytes(Int32, IO::ByteFormat::NetworkEndian)
     end
-    private def read_i16
+
+    def read_i16
       soc.read_bytes(Int16, IO::ByteFormat::NetworkEndian)
     end
-    private def read_bytes(count)
+
+    def read_bytes(count)
       data = Slice(UInt8).new(count)
       soc.read_fully(data)
       data
+    end
+
+    def skip_bytes(count)
+      soc.skip(count)
     end
 
     def startup(args)
@@ -128,7 +135,7 @@ module PQ
     end
 
     def read
-      f = read(soc.read_char)
+      read(soc.read_char)
     end
 
     def read(frame_type)
@@ -239,6 +246,16 @@ module PQ
 
       send_password_message "md5#{c.hex}"
       expect_frame Frame::Authentication
+    end
+
+    def read_next_row_start
+      type = soc.read_char
+      if type == 'D'
+        true
+      else
+        expect_frame Frame::CommandComplete, type
+        false
+      end
     end
 
     def read_all_data_rows
