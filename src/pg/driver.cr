@@ -5,3 +5,4 @@ class PG::Driver < ::DB::Driver
 end
 
 DB.register_driver "postgres", PG::Driver
+DB.register_driver "postgresql", PG::Driver
