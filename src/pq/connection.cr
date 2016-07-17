@@ -271,7 +271,7 @@ module PQ
 
     def send_query_message(query)
       write_chr 'Q'
-      write_i32 query.size + 4 + 1
+      write_i32 query.bytesize + 4 + 1
       soc << query
       write_null
       soc.flush
@@ -279,7 +279,7 @@ module PQ
 
     def send_parse_message(query)
       write_chr 'P'
-      write_i32 query.size + 4 + 1 + 2 + 1
+      write_i32 query.bytesize + 4 + 1 + 2 + 1
       write_null # prepared statment name
       soc << query
       write_i16 0 # don't give any param types

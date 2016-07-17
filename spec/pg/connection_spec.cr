@@ -23,7 +23,7 @@ end
 
 describe PG::Connection, "#exec untyped" do
   it "returns a Result" do
-    res = DB.exec("select 1")
+    res = DB.exec("select '酒'")
     res.class.should eq(PG::Result(Array(PG::PGValue)))
   end
 
@@ -139,7 +139,7 @@ end
 
 describe PG::Connection, "#exec_all" do
   it "returns nil" do
-    res = DB.exec_all("select 1; select 2;")
+    res = DB.exec_all("select 1; select 2; select '酒'")
     res.class.should eq(Nil)
   end
 
