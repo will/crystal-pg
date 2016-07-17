@@ -134,7 +134,7 @@ module PQ
     def read(frame_type)
       size = read_i32
       slice = read_bytes(size - 4)
-      frame = Frame.new(frame_type.not_nil!, slice) # .tap { |f| p f if DEBUG }
+      frame = Frame.new(frame_type.not_nil!, slice) # .tap { |f| p f }
 
       handle_async_frames(frame) ? read : frame
     end
@@ -214,7 +214,7 @@ module PQ
       when Frame::Authentication::Type::OK
         # no op
       when Frame::Authentication::Type::CleartextPassword
-        handle_auth_cleartext
+        raise "Cleartext auth is not supported"
       when Frame::Authentication::Type::MD5Password
         handle_auth_md5 auth_frame.body
       else
@@ -222,11 +222,6 @@ module PQ
           "unsupported authentication method: #{auth_frame.type}"
         )
       end
-    end
-
-    private def handle_auth_cleartext
-      send_password_message @conninfo.password
-      expect_frame Frame::Authentication
     end
 
     private def handle_auth_md5(salt)

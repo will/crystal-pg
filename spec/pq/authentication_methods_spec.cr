@@ -2,7 +2,6 @@ require "../spec_helper"
 
 # The following specs requires specific lines in the local pg_hba.conf file
 #   * crystal_md5 user with md5 method
-#   * crystal_pass user with pass method
 #   * and if the line is trust for everything, it needs to be restricted to
 #     just your user
 # Because of this, most of these specs are disabled by default. To enable them
@@ -20,32 +19,7 @@ describe PQ::Connection, "nologin role" do
 end
 
 if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
-  describe PQ::Connection, "cleartext auth" do
-    it "works when given the correct password" do
-      DB.exec("drop role if exists crystal_pass")
-      DB.exec("create role crystal_pass login encrypted password 'pass'")
-      conn = PG::Connection.new("host=localhost user=crystal_pass password=pass")
-      conn.exec("select 1").rows.first.first.should eq(1)
-      DB.exec("drop role if exists crystal_pass")
-    end
-
-    it "fails when given the wrong password" do
-      DB.exec("drop role if exists crystal_pass")
-      DB.exec("create role crystal_pass login encrypted password 'pass'")
-
-      expect_raises(PQ::PQError) {
-        PG::Connection.new("host=localhost user=crystal_pass password=bad")
-      }
-
-      expect_raises(PQ::PQError) {
-        PG::Connection.new("host=localhost user=crystal_pass")
-      }
-
-      DB.exec("drop role if exists crystal_pass")
-    end
-  end
-
-  describe PQ::Connection, "cleartext auth" do
+  describe PQ::Connection, "md5 auth" do
     it "works when given the correct password" do
       DB.exec("drop role if exists crystal_md5")
       DB.exec("create role crystal_md5 login encrypted password 'pass'")
