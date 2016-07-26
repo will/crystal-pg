@@ -1,6 +1,11 @@
 v?.?.?     upcoming
 =====================
 
+v0.9.0     upcoming
+=====================
+* remove support for plaintext auth to prevent dowgrade mitm attacks
+* fix for multibyte characters in query strings
+
 v0.8.0     2016-06-17
 =====================
 * (breaking) geo points now all have own types (thanks @asterite)
