@@ -1,2 +1,7 @@
 name: pg
 version: 0.8.0
+
+dependencies:
+  db:
+    github: crystal-lang/crystal-db
+    branch: master
