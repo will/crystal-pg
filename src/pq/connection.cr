@@ -19,6 +19,7 @@ module PQ
     getter pid : Int32, secret : Int32
 
     def initialize(@conninfo : ConnInfo)
+      @mutex = Mutex.new
       @server_parameters = Hash(String, String).new
       @established = false
       @notice_handler = Proc(Notice, Void).new { }
@@ -68,6 +69,10 @@ module PQ
     def close
       send_terminate_message
       @soc.close
+    end
+
+    def synchronize
+      @mutex.synchronize { yield }
     end
 
     private def write_i32(i : Int32)

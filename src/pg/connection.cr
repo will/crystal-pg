@@ -62,7 +62,9 @@ module PG
 
     # Execute a typed query with parameters and store the results in memory.
     def exec(types, query : String, params) : Result
-      Result.new(types, extended_query(query, params))
+      @pq_conn.synchronize do
+        Result.new(types, extended_query(query, params))
+      end
     end
 
     # Execute an untyped query and stream the results.
@@ -88,8 +90,10 @@ module PG
 
     # Execute an typed query with parameters and stream the results.
     def exec(types, query : String, params) : Nil
-      Result.stream(types, extended_query(query, params)) do |row, fields|
-        yield row, fields
+      @pq_conn.synchronize do
+        Result.stream(types, extended_query(query, params)) do |row, fields|
+          yield row, fields
+        end
       end
     end
 
