@@ -67,6 +67,15 @@ describe PG::Decoders do
     x.call("nan").nan?.should be_true
   end
 
+  test_decode "array", "ARRAY[1]", [1]
+  test_decode "array", "ARRAY[1,2]", [1,2]
+  test_decode "array", "ARRAY[ARRAY[9,8],ARRAY[7,6]] ", [[1,2],[3,4]]
+  test_decode "array", "'{{{1,2},{3,3}},{{2,5},{4,3}}}'::integer[]", [[1,2],[3,4]]
+  exit
+  test_decode "array", "ARRAY[1, null] ", [1, nil]
+  test_decode "array", "('[10:12]={1,2,3}'::integer[])", 10
+#  test_decode "int array ", "ARRAY[1,2,3,4,5,6,7]", [1, 2, 3, 4, 5, 6, 7]
+
   test_decode "xml", "'<json>false</json>'::xml", "<json>false</json>"
   test_decode "char", %('c'::"char"), 'c'
   test_decode "bpchar", %('c'::char), "c"
