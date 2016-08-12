@@ -111,6 +111,57 @@ module PG
       end
     end
 
+    alias PGInt32Array = Int32? | Array(PGInt32Array)
+
+    class ArrayDecoder < Decoder
+      def decode(bytes)
+        puts
+        dimensions = swap32(bytes).to_i
+        has_null = swap32(bytes + 4) == 1 ? true : false
+        oid = swap32(bytes + 8)
+        dim_info = Array(NamedTuple(dim: UInt32, lbound: UInt32)).new(dimensions) do |i|
+          offset = 12 + (8*i)
+          {
+            dim: swap32(bytes + offset),
+            lbound: swap32(bytes + (offset + 4))
+          }
+        end
+        data_start = (8*dimensions)+8+4
+        puts [bytes.size, (bytes+data_start).size]
+
+
+        p [dimensions, has_null, oid, dim_info]
+        p bytes
+
+        # using any other offset here, such as +1 or -1 avoids the segfualt
+        puts (bytes + (data_start )).hexdump
+
+        #but the hexdump itself is not segfualting, these next two prints make it
+        p bytes
+        puts "ok"
+
+
+        #Array(PGInt32Array).new(dim_info[0][:dim].to_i) do |i|
+        #  get_element(bytes, dim_info, 0, i)
+        #end
+
+        # the segfault includes the type of the result here
+        # ["hi"]  # [4344595745] *Array(String)@Object#inspect:String +33
+        # vs
+        [3]  # [4315101473] *Array(Int32)@Object#inspect:String +33
+      end
+
+      def get_element(bytes, dim_info, depth, pos)
+        if depth == (dim_info.size-1)
+          0
+        else
+          1
+        end
+      end
+
+
+    end
+
     class PointDecoder < Decoder
       def decode(bytes)
         x = swap64(bytes)
@@ -317,5 +368,7 @@ module PG
     register_decoder PolygonDecoder.new, 604     # polygon
     register_decoder LineDecoder.new, 628        # line
     register_decoder CircleDecoder.new, 718      # circle
+
+    register_decoder ArrayDecoder.new, 1007 # arary
   end
 end
