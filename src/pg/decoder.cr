@@ -5,9 +5,7 @@ module PG
 
   # :nodoc:
   module Decoders
-    abstract class Decoder
-      abstract def decode(bytes)
-
+    module SwapHelpers
       private def swap16(slice : Slice(UInt8))
         swap16(slice.pointer(0))
       end
@@ -45,6 +43,11 @@ module PG
           ) | ptr[6]) << 8
           ) | ptr[7])
       end
+    end
+
+    abstract class Decoder
+      include SwapHelpers
+      abstract def decode(bytes)
     end
 
     class StringDecoder < Decoder
@@ -110,6 +113,7 @@ module PG
         (pointerof(u64).as(Float64*)).value
       end
     end
+
 
     class PointDecoder < Decoder
       def decode(bytes)
@@ -319,3 +323,5 @@ module PG
     register_decoder CircleDecoder.new, 718      # circle
   end
 end
+
+require "./decoders/*"

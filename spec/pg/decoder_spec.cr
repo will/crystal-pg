@@ -1,14 +1,5 @@
 require "../spec_helper"
 
-private def test_decode(name, query, expected, file = __FILE__, line = __LINE__)
-  it name, file, line do
-    rows = DB.exec("select #{query}").rows
-    rows.size.should eq(1), file, line
-    rows.first.size.should eq(1), file, line
-    rows.first.first.should eq(expected), file, line
-  end
-end
-
 describe PG::Decoders do
   #           name,             sql,              result
   test_decode "undefined    ", "'what'       ", "what"
@@ -66,6 +57,7 @@ describe PG::Decoders do
     x.call("1.3").to_f.should eq(1.3)
     x.call("nan").nan?.should be_true
   end
+
 
   test_decode "xml", "'<json>false</json>'::xml", "<json>false</json>"
   test_decode "char", %('c'::"char"), 'c'
