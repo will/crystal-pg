@@ -1,7 +1,8 @@
 module PG
-  module Decoders
-    alias PGInt32Array = Int32? | Array(PGInt32Array)
+  alias Int32Array = Int32? | Array(Int32Array)
+  alias StringArray = String? | Array(StringArray)
 
+  module Decoders
     class ArrayDecoder(T, A, D) < Decoder
       class DataExtractor(D)
         include SwapHelpers
@@ -81,6 +82,7 @@ module PG
       end
     end
 
-    register_decoder ArrayDecoder(Int32, PGInt32Array, IntDecoder).new, 1007 # int4 arary
+    register_decoder ArrayDecoder(Int32, Int32Array, IntDecoder).new, 1007 # int4 arary
+    register_decoder ArrayDecoder(String, StringArray, StringDecoder).new, 1009
   end
 end

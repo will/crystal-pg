@@ -27,4 +27,6 @@ describe PG::Decoders do
       DB.exec("select '[-2:-0]={1,2,3}'::integer[]").rows
     end
   end
+
+  test_decode "textarray", "$${hello, world}$$::text[]", ["hello", "world"]
 end
