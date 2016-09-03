@@ -1,8 +1,8 @@
 require "../spec_helper"
 
-private def test_decode(name, select, expected, file = __FILE__, line = __LINE__)
+private def test_decode(name, query, expected, file = __FILE__, line = __LINE__)
   it name, file, line do
-    rows = DB.exec("select #{select}").rows
+    rows = DB.exec("select #{query}").rows
     rows.size.should eq(1), file, line
     rows.first.size.should eq(1), file, line
     rows.first.first.should eq(expected), file, line
