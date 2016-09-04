@@ -3,10 +3,9 @@ module PG
     class ArrayDecoder(T, A, D) < Decoder
       class DataExtractor(D)
         include SwapHelpers
-        @data : Slice(UInt8)
-        @pos : Int32
 
-        def initialize(@data, @pos)
+        def initialize(@data : Slice(UInt8))
+          @pos = 0
           @decoder = D.new
         end
 
@@ -27,7 +26,7 @@ module PG
       def decode(bytes)
         dimensions = swap32(bytes).to_i
         has_null = swap32(bytes + 4) == 1 ? true : false
-        oid = swap32(bytes + 8)
+        # oid = swap32(bytes + 8) # unused but in header
         dim_info = Array(NamedTuple(dim: Int32, lbound: Int32)).new(dimensions) do |i|
           offset = 12 + (8*i)
           {
@@ -35,20 +34,19 @@ module PG
             lbound: swap32(bytes + (offset + 4)).to_i,
           }
         end
-        data_start = (8*dimensions) + 8 + 4
-        data = bytes + data_start
+        data_start = (8*dimensions) + 8 + 4 # advance past end of header
 
-        # p [dimensions, has_null, oid, dim_info]
-        # puts data.hexdump
-        extractor = DataExtractor(D).new(data, 0)
+        extractor = DataExtractor(D).new(bytes + data_start)
 
         if dimensions == 1 && dim_info.first[:lbound] == 1
+          # allow casting down to unnested crystal arrays
           build_simple_array(has_null, extractor, dim_info.first[:dim])
         else
           if dim_info.any? { |di| di[:lbound] < 1 }
             raise PG::RuntimeError.new("Only lower-bounds >= 1 are supported")
           end
 
+          # recursively build nested array
           get_element(extractor, dim_info)
         end
       end
@@ -63,13 +61,9 @@ module PG
 
       def get_element(extractor, dim_info)
         if dim_info.size == 1
-          lbound = dim_info.first[:lbound] - 1
+          lbound = dim_info.first[:lbound] - 1 # in lower-bound is not 1
           Array(A).new(dim_info.first[:dim] + lbound) do |i|
-            if i < lbound
-              nil
-            else
-              extractor.get_next
-            end
+            i < lbound ? nil : extractor.get_next
           end
         else
           Array(A).new(dim_info.first[:dim]) do |i|
@@ -77,6 +71,7 @@ module PG
           end
         end
       end
+
     end
   end
 
