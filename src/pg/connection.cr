@@ -18,6 +18,7 @@ module PG
     def initialize(conninfo : PQ::ConnInfo)
       @pq_conn = PQ::Connection.new(conninfo)
       @pq_conn.connect
+      exec("SET extra_float_digits = 3")
     end
 
     # Connect with a `"postgres://"` URL or a Postgres "conninfo" string.
@@ -43,6 +44,11 @@ module PG
     # Set the callback block for notifications from Listen/Notify.
     def on_notification(&on_notification_proc : PQ::Notification ->)
       @pq_conn.notification_handler = on_notification_proc
+    end
+
+    # :nodoc:
+    def listen
+      spawn { @pq_conn.read_async_frame_loop }
     end
 
     # Execute an untyped query and store the results in memory.
@@ -123,6 +129,20 @@ module PG
 
     private def extended_query(query, params)
       PQ::ExtendedQuery.new(@pq_conn, query, params)
+    end
+  end
+
+  class ListenConnection
+    def initialize(conninfo, *channels : String, &blk : PQ::Notification ->)
+      @pg_conn = Connection.new(conninfo)
+      @pg_conn.on_notification(&blk)
+      channels.each {|c| @pg_conn.exec "LISTEN #{@pg_conn.escape_identifier c}" }
+      @pg_conn.listen
+    end
+
+    # Close the connection.
+    def close
+      @pg_conn.close
     end
   end
 end

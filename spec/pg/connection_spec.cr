@@ -180,3 +180,20 @@ describe PG::Connection, "#on_notification" do
     last_note.not_nil!.payload.should eq("do a thing")
   end
 end
+
+describe PG::ListenConnection do
+  it "opens a special listen only connection" do
+    got = false
+    l = PG.connect_listen(DB_URL, "foo") { got = true }
+    got.should eq(false)
+
+    DB.exec("notify wrong, 'hello'")
+    got.should eq(false)
+
+    DB.exec("notify foo, 'hello'")
+    sleep 0.0001
+    got.should eq(true)
+
+    l.close
+  end
+end

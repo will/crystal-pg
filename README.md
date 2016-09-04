@@ -61,7 +61,25 @@ result = DB.exec("select $1::text || ' ' || $2::text", ["hello", "world"])
 result.rows #=> [["hello world"]]
 ```
 
-### arrays
+### Listen/Notify
+
+There are two ways to listen for notifications. For docs on `NOTIFY`, please
+read <https://www.postgresql.org/docs/current/static/sql-notify.html>.
+
+1. Any connection can be given a callback to run on notifications. However they
+   are only received when other traffic is going on.
+2. A special listen-only connection can be established for instant notification
+   processing with `PG.connect_listen`.
+
+``` crystal
+# see full example in examples/listen_notify.cr
+PG.connect_listen("postgres:///", "a", "b") do |n| # connect and  listen on "a" and "b"
+  puts "    got: #{n.payload} on #{n.channel}"     # print notifications as they come in
+end
+```
+
+
+### Arrays
 
 Crystal-pg supports several popular array types. If you only need a 1
 dimensional array, you can cast down to the appropriate Crystal type:

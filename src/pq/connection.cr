@@ -67,8 +67,11 @@ module PQ
     end
 
     def close
-      send_terminate_message
-      @soc.close
+      synchronize do
+        return if @soc.closed?
+        send_terminate_message
+        @soc.close
+      end
     end
 
     def synchronize
@@ -133,15 +136,28 @@ module PQ
     end
 
     def read
-      f = read(soc.read_char)
+      read(soc.read_char)
     end
 
     def read(frame_type)
+      frame = read_one_frame(frame_type)
+      handle_async_frames(frame) ? read : frame
+    end
+
+    def read_async_frame_loop
+      loop do
+        begin
+          handle_async_frames(read_one_frame(soc.read_char))
+        rescue e : Errno
+          pp e.errno == Errno::EBADF && @soc.closed? ? break : raise e
+        end
+      end
+    end
+
+    private def read_one_frame(frame_type)
       size = read_i32
       slice = read_bytes(size - 4)
-      frame = Frame.new(frame_type.not_nil!, slice) # .tap { |f| p f }
-
-      handle_async_frames(frame) ? read : frame
+      Frame.new(frame_type.not_nil!, slice) # .tap { |f| p f }
     end
 
     private def handle_async_frames(frame)
