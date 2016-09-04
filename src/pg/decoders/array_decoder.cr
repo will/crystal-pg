@@ -1,7 +1,4 @@
 module PG
-  alias Int32Array = Int32? | Array(Int32Array)
-  alias StringArray = String? | Array(StringArray)
-
   module Decoders
     class ArrayDecoder(T, A, D) < Decoder
       class DataExtractor(D)
@@ -81,8 +78,15 @@ module PG
         end
       end
     end
-
-    register_decoder ArrayDecoder(Int32, Int32Array, IntDecoder).new, 1007 # int4 arary
-    register_decoder ArrayDecoder(String, StringArray, StringDecoder).new, 1009
   end
+
+  macro array_type(oid, t)
+    alias {{t}}Array = {{t}}? | Array({{t}}Array)
+    module Decoders
+      register_decoder ArrayDecoder({{t}}, {{t}}Array, {{t}}Decoder).new, {{oid}}
+    end
+  end
+
+  array_type 1007, Int32
+  array_type 1009, String
 end
