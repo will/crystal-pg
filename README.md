@@ -61,6 +61,21 @@ result = DB.exec("select $1::text || ' ' || $2::text", ["hello", "world"])
 result.rows #=> [["hello world"]]
 ```
 
+### arrays
+
+Crystal-pg supports several popular array types. If you only need a 1
+dimensional array, you can cast down to the appropriate Crystal type:
+
+``` crystal
+DB.exec({Array(Int32?)},
+  "select ARRAY[1, null, 3]"
+).rows.first # => {[1, nil, 3]}
+
+DB.exec({Array(String)},
+  "select '{hello, world}'::text[]"
+).rows.first # => {["hello", "world"]}
+```
+
 ## Requirements
 
 Crystal-pg is [tested on](https://travis-ci.org/will/crystal-pg) Postgres
@@ -75,7 +90,7 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 
 - text
 - boolean
-- int8, int2, int4
+- int8, int4, int2
 - float4, float8
 - timestamptz, date, timestamp (but no one should use ts when tstz exists!)
 - json and jsonb
@@ -85,6 +100,7 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 - varchar
 - regtype
 - geo types: point, box, path, lseg, polygon, circle, line
+- array types: int8, int4, int2, float8, float4, bool, text
 
 1: A note on numeric: In postgres this type has arbitrary percision. In this
     driver, it is represented as a `PG::Numeric` which retians all precision, but
@@ -97,9 +113,3 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 ## Connection Pooling
 
 If you would like a connection pool, check out [ysbaddaden/pool](https://github.com/ysbaddaden/pool)
-
-## Todo
-
-- more datatypes (ranges, hstore)
-- more info in postgres exceptions
-- transaction help

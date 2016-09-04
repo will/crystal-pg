@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
 
+v0.10.0     2016-09-03
+=====================
+* Adds support for array types
+
 v0.9.1     2016-08-23
 =====================
 * Wrap query execution in a mutext to prevent protocol desynchronization
