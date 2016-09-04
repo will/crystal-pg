@@ -2,14 +2,14 @@ module PG
   module Decoders
     alias PGInt32Array = Int32? | Array(PGInt32Array)
 
-    class ArrayDecoder < Decoder
-      class DataExtractor
+    class ArrayDecoder(T, A, D) < Decoder
+      class DataExtractor(D)
         include SwapHelpers
         @data : Slice(UInt8)
         @pos : Int32
 
         def initialize(@data, @pos)
-          @decoder = IntDecoder.new
+          @decoder = D.new
         end
 
         def get_next
@@ -42,7 +42,7 @@ module PG
 
         # p [dimensions, has_null, oid, dim_info]
         # puts data.hexdump
-        extractor = DataExtractor.new(data, 0)
+        extractor = DataExtractor(D).new(data, 0)
 
         if dimensions == 1 && dim_info.first[:lbound] == 1
           build_simple_array(has_null, extractor, dim_info.first[:dim])
@@ -57,16 +57,16 @@ module PG
 
       def build_simple_array(has_null, extractor, size)
         if has_null
-          Array(Int32?).new(size) { extractor.get_next }
+          Array(T?).new(size) { extractor.get_next }
         else
-          Array(Int32).new(size) { extractor.get_next.not_nil! }
+          Array(T).new(size) { extractor.get_next.not_nil! }
         end
       end
 
       def get_element(extractor, dim_info)
         if dim_info.size == 1
           lbound = dim_info.first[:lbound] - 1
-          Array(PGInt32Array).new(dim_info.first[:dim] + lbound) do |i|
+          Array(A).new(dim_info.first[:dim] + lbound) do |i|
             if i < lbound
               nil
             else
@@ -74,13 +74,13 @@ module PG
             end
           end
         else
-          Array(PGInt32Array).new(dim_info.first[:dim]) do |i|
+          Array(A).new(dim_info.first[:dim]) do |i|
             get_element(extractor, dim_info[1..-1])
           end
         end
       end
     end
 
-    register_decoder ArrayDecoder.new, 1007 # int4 arary
+    register_decoder ArrayDecoder(Int32, PGInt32Array, IntDecoder).new, 1007 # int4 arary
   end
 end
