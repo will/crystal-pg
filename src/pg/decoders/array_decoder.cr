@@ -87,6 +87,13 @@ module PG
     end
   end
 
+
+  array_type 1000, Bool
+  array_type 1002, Char
+  array_type 1005, Int16
   array_type 1007, Int32
   array_type 1009, String
+  array_type 1016, Int64
+  array_type 1021, Float32
+  array_type 1022, Float64
 end

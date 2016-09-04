@@ -28,5 +28,11 @@ describe PG::Decoders do
     end
   end
 
-  test_decode "textarray", "$${hello, world}$$::text[]", ["hello", "world"]
+  test_decode "bool array", "$${t,f,t}$$::bool[]", [true, false, true]
+  test_decode "char array", "$${a, b}$$::\"char\"[]", ['a', 'b']
+  test_decode "int2 array", "$${1,2}$$::int2[]", [1,2]
+  test_decode "text array", "$${hello, world}$$::text[]", ["hello", "world"]
+  test_decode "int8 array", "$${1,2}$$::int8[]", [1,2]
+  test_decode "float4 array", "$${1.1,2.2}$$::float4[]", [1.1_f32,2.2_f32]
+  test_decode "float8 array", "$${1.1,2.2}$$::float8[]", [1.1_f64,2.2_f64]
 end

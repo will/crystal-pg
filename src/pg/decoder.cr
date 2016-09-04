@@ -75,7 +75,7 @@ module PG
       end
     end
 
-    class Int2Decoder < Decoder
+    class Int16Decoder < Decoder
       def decode(bytes)
         swap16(bytes).to_i16
       end
@@ -93,7 +93,7 @@ module PG
       end
     end
 
-    class Int8Decoder < Decoder
+    class Int64Decoder < Decoder
       def decode(bytes)
         swap64(bytes).to_i64
       end
@@ -295,8 +295,8 @@ module PG
     register_decoder ByteaDecoder.new, 17        # bytea
     register_decoder CharDecoder.new, 18         # "char" (internal type)
     register_decoder StringDecoder.new, 19       # name (internal type)
-    register_decoder Int8Decoder.new, 20         # int8 (bigint)
-    register_decoder Int2Decoder.new, 21         # int2 (smallint)
+    register_decoder Int64Decoder.new, 20        # int8 (bigint)
+    register_decoder Int16Decoder.new, 21        # int2 (smallint)
     register_decoder Int32Decoder.new, 23        # int4 (integer)
     register_decoder StringDecoder.new, 25       # text
     register_decoder UIntDecoder.new, 26         # oid (internal type)
