@@ -3,7 +3,6 @@ addons:
 language: crystal
 crystal:
   - latest
-  - nightly
 env:
   - TRAVIS_POSTGRESQL_VERSION=9.4
   - TRAVIS_POSTGRESQL_VERSION=9.3
