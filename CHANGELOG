@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
 
+v0.11.0     2016-09-04
+=====================
+* Adds dedicated LISTEN connection
+
 v0.10.0     2016-09-03
 =====================
 * Adds support for array types
