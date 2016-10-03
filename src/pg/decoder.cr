@@ -36,6 +36,14 @@ module PG
       def read_u64(io)
         read(io, UInt64)
       end
+
+      def read_f32(io)
+        read(io, Float32)
+      end
+
+      def read_f64(io)
+        read(io, Float64)
+      end
     end
 
     class StringDecoder < Decoder
@@ -125,8 +133,7 @@ module PG
     class Float32Decoder < Decoder
       # byte swapped in the same way as int4
       def decode(io, bytesize)
-        u32 = read_u32(io)
-        (pointerof(u32).as(Float32*)).value
+        read_f32(io)
       end
 
       def type
@@ -136,8 +143,7 @@ module PG
 
     class Float64Decoder < Decoder
       def decode(io, bytesize)
-        u64 = read_u64(io)
-        (pointerof(u64).as(Float64*)).value
+        read_f64(io)
       end
 
       def type
@@ -147,13 +153,7 @@ module PG
 
     class PointDecoder < Decoder
       def decode(io, bytesize)
-        x = read_u64(io)
-        y = read_u64(io)
-
-        Geo::Point.new(
-          (pointerof(x).as(Float64*)).value,
-          (pointerof(y).as(Float64*)).value,
-        )
+        Geo::Point.new(read_f64(io), read_f64(io))
       end
 
       def type
@@ -178,18 +178,15 @@ module PG
     end
 
     class PolygonDecoder < Decoder
+      def initialize
+        @point_decoder = PointDecoder.new
+      end
+
       def decode(io, bytesize)
         c = read_u32(io)
         count = (pointerof(c).as(Int32*)).value
-
         Array.new(count) do |i|
-          x = read_u64(io)
-          y = read_u64(io)
-
-          Geo::Point.new(
-            (pointerof(x).as(Float64*)).value,
-            (pointerof(y).as(Float64*)).value,
-          )
+          @point_decoder.decode(io, 16)
         end
       end
 
@@ -200,17 +197,7 @@ module PG
 
     class BoxDecoder < Decoder
       def decode(io, bytesize)
-        x1 = read_u64(io)
-        y1 = read_u64(io)
-        x2 = read_u64(io)
-        y2 = read_u64(io)
-
-        Geo::Box.new(
-          (pointerof(x1).as(Float64*)).value,
-          (pointerof(y1).as(Float64*)).value,
-          (pointerof(x2).as(Float64*)).value,
-          (pointerof(y2).as(Float64*)).value,
-        )
+        Geo::Box.new(read_f64(io), read_f64(io), read_f64(io), read_f64(io))
       end
 
       def type
@@ -220,17 +207,7 @@ module PG
 
     class LineSegmentDecoder < Decoder
       def decode(io, bytesize)
-        x1 = read_u64(io)
-        y1 = read_u64(io)
-        x2 = read_u64(io)
-        y2 = read_u64(io)
-
-        Geo::LineSegment.new(
-          (pointerof(x1).as(Float64*)).value,
-          (pointerof(y1).as(Float64*)).value,
-          (pointerof(x2).as(Float64*)).value,
-          (pointerof(y2).as(Float64*)).value,
-        )
+        Geo::LineSegment.new(read_f64(io), read_f64(io), read_f64(io), read_f64(io))
       end
 
       def type
@@ -240,15 +217,7 @@ module PG
 
     class LineDecoder < Decoder
       def decode(io, bytesize)
-        a = read_u64(io)
-        b = read_u64(io)
-        c = read_u64(io)
-
-        Geo::Line.new(
-          (pointerof(a).as(Float64*)).value,
-          (pointerof(b).as(Float64*)).value,
-          (pointerof(c).as(Float64*)).value,
-        )
+        Geo::Line.new(read_f64(io), read_f64(io), read_f64(io))
       end
 
       def type
@@ -258,15 +227,7 @@ module PG
 
     class CircleDecoder < Decoder
       def decode(io, bytesize)
-        a = read_u64(io)
-        b = read_u64(io)
-        c = read_u64(io)
-
-        Geo::Circle.new(
-          (pointerof(a).as(Float64*)).value,
-          (pointerof(b).as(Float64*)).value,
-          (pointerof(c).as(Float64*)).value,
-        )
+        Geo::Circle.new(read_f64(io), read_f64(io), read_f64(io))
       end
 
       def type
