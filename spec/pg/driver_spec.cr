@@ -1,13 +1,5 @@
 require "../spec_helper"
 
-def sql(s : String)
-  "'#{s}'"
-end
-
-def sql(s)
-  "#{s}"
-end
-
 def assert_single_read(rs, value_type, value)
   rs.move_next.should be_true
   rs.read(value_type).should eq(value)

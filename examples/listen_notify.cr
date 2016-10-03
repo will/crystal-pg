@@ -4,13 +4,13 @@ PG.connect_listen("postgres:///", "a", "b") do |n| # connect and  listen on "a" 
   puts "    got: #{n.payload} on #{n.channel}"     # print notifications as they come in
 end
 
-DB = PG.connect("postgres:///")                    # make a normal connection
-spawn do                                           # spawn a coroutine
-  10.times do |i|                                  #
-    chan = rand > 0.5 ? "a" : "b"                  # pick a channel
-    puts "sending: #{i}"                           # prints always before "got:"
-    DB.exec("SELECT pg_notify($1, $2)", [chan, i]) # send notification
-    puts "   sent: #{i}"                           # may print before or after "got:"
+PG_DB = DB.open("postgres:///")                       # make a normal connection
+spawn do                                              # spawn a coroutine
+  10.times do |i|                                     #
+    chan = rand > 0.5 ? "a" : "b"                     # pick a channel
+    puts "sending: #{i}"                              # prints always before "got:"
+    PG_DB.exec("SELECT pg_notify($1, $2)", [chan, i]) # send notification
+    puts "   sent: #{i}"                              # may print before or after "got:"
     sleep 1
   end
 end

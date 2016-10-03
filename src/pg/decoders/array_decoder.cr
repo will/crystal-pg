@@ -1,5 +1,6 @@
 module PG
   module Decoders
+    # Generic Array decoder: decodes to a recursive array type
     struct ArrayDecoder(T, D)
       include Decoder
 
@@ -46,6 +47,8 @@ module PG
       end
     end
 
+    # Specific array decoder method: decodes to exactly Array(T).
+    # Used when invoking, for example `rs.read(Array(Int32))`.
     def self.decode_array(io, bytesize, t : Array(T).class) forall T
       dimensions, dim_info = decode_array_header(io)
       decode_array_element(io, t, dim_info)
