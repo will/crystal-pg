@@ -61,8 +61,14 @@ class PG::ResultSet < ::DB::ResultSet
       return nil
     end
 
-    value = decoder.decode(conn.soc, col_bytesize)
-    @column_index += 1
+    begin
+      value = decoder.decode(conn.soc, col_bytesize)
+    ensure
+      # An exception might happen while decoding the value,
+      # but we still want to consider the column as read
+      @column_index += 1
+    end
+
     value
   end
 

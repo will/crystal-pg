@@ -2,61 +2,59 @@ module PG
   module Decoders
     class ArrayDecoder(T, A, D) < Decoder
       class DataExtractor(D)
-        include SwapHelpers
-
-        def initialize(@data : Slice(UInt8))
-          @pos = 0
+        def initialize(@io : IO)
           @decoder = D.new
         end
 
         def get_next
-          ptr = @data.pointer(4)
-          size = swap32(ptr + @pos).to_i
-          @pos += 4
-          if size == -1
+          bytesize = @decoder.read_i32(@io)
+          if bytesize == -1
             nil
           else
-            item = @decoder.decode(ptr + @pos)
-            @pos += size
-            item
+            @decoder.decode(@io, bytesize)
           end
         end
       end
 
-      def decode(bytes)
-        dimensions = swap32(bytes).to_i
-        has_null = swap32(bytes + 4) == 1 ? true : false
-        # oid = swap32(bytes + 8) # unused but in header
-        dim_info = Array(NamedTuple(dim: Int32, lbound: Int32)).new(dimensions) do |i|
-          offset = 12 + (8*i)
+      def decode(io, bytesize)
+        dimensions = read_i32(io)
+        bytesize -= 4
+
+        has_null = read_i32(io) == 1
+        bytesize -= 4
+
+        oid = read_i32(io) # unused but in header
+        bytesize -= 4
+
+        dim_info = Array({dim: Int32, lbound: Int32}).new(dimensions) do |i|
+          bytesize -= 8
           {
-            dim:    swap32(bytes + offset).to_i,
-            lbound: swap32(bytes + (offset + 4)).to_i,
+            dim:    read_i32(io),
+            lbound: read_i32(io),
           }
         end
-        data_start = (8*dimensions) + 8 + 4 # advance past end of header
-
-        extractor = DataExtractor(D).new(bytes + data_start)
+        extractor = DataExtractor(D).new(io)
 
         if dimensions == 1 && dim_info.first[:lbound] == 1
           # allow casting down to unnested crystal arrays
-          build_simple_array(has_null, extractor, dim_info.first[:dim])
+          build_simple_array(has_null, extractor, dim_info.first[:dim]).as(A)
         else
           if dim_info.any? { |di| di[:lbound] < 1 }
+            io.skip(bytesize)
             raise PG::RuntimeError.new("Only lower-bounds >= 1 are supported")
           end
 
           # recursively build nested array
-          get_element(extractor, dim_info)
+          get_element(extractor, dim_info).as(A)
         end
       end
 
+      def type
+        A
+      end
+
       def build_simple_array(has_null, extractor, size)
-        if has_null
-          Array(T?).new(size) { extractor.get_next }
-        else
-          Array(T).new(size) { extractor.get_next.not_nil! }
-        end
+        Array(A).new(size) { extractor.get_next }
       end
 
       def get_element(extractor, dim_info)
@@ -71,7 +69,6 @@ module PG
           end
         end
       end
-
     end
   end
 
@@ -81,7 +78,6 @@ module PG
       register_decoder ArrayDecoder({{t}}, {{t}}Array, {{t}}Decoder).new, {{oid}}
     end
   end
-
 
   array_type 1000, Bool
   array_type 1002, Char

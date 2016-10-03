@@ -1,12 +1,5 @@
 require "../spec_helper"
 
-private def test_decode(name, query, expected, file = __FILE__, line = __LINE__)
-  it name, file, line do
-    value = PG_DB.query_one "select #{query}", &.read
-    value.should eq(expected), file, line
-  end
-end
-
 describe PG::Decoders do
   #           name,             sql,              result
   test_decode "undefined    ", "'what'       ", "what"
