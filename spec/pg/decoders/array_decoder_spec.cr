@@ -12,15 +12,25 @@ describe PG::Decoders do
   test_decode "array", "ARRAY[1, null, 2] ", [1, nil, 2]
   test_decode "array", "('[3:5]={1,2,3}'::integer[])", [nil, nil, 1, 2, 3]
 
-  # it "allows special-case casting on simple arrays" do
-  #   arr = DB.exec({Array(Int32)}, "select '{1,2,3}'::integer[]").rows.first.first
-  #   arr.should eq([1, 2, 3])
-  #   typeof(arr).should eq(Array(Int32))
+  it "allows special-case casting on simple arrays" do
+    value = PG_DB.query_one("select '{1,2,3}'::integer[]", &.read(Array(Int32)))
+    typeof(value).should eq(Array(Int32))
+    value.should eq([1, 2, 3])
 
-  #   arr = DB.exec({Array(Int32?)}, "select '{1,2,3,null}'::integer[]").rows.first.first
-  #   arr.should eq([1, 2, 3, nil])
-  #   typeof(arr).should eq(Array(Int32?))
-  # end
+    value = PG_DB.query_one("select '{1,2,3,null}'::integer[]", &.read(Array(Int32?)))
+    typeof(value).should eq(Array(Int32?))
+    value.should eq([1, 2, 3, nil])
+
+    value = PG_DB.query_one("select '{{1,2,3},{4,5,6}}'::integer[]", &.read(Array(Array(Int32))))
+    typeof(value).should eq(Array(Array(Int32)))
+    value.should eq([[1, 2, 3], [4, 5, 6]])
+  end
+
+  it "raises when reading null in non-null array" do
+    expect_raises(PG::RuntimeError) do
+      PG_DB.query_one("select '{1,2,3,null}'::integer[]", &.read(Array(Int32)))
+    end
+  end
 
   it "errors on negative lower bounds" do
     expect_raises(PG::RuntimeError) do

@@ -18,16 +18,9 @@ module PG
 
       def decode(io, bytesize)
         dimensions = read_i32(io)
-        bytesize -= 4
-
         has_null = read_i32(io) == 1
-        bytesize -= 4
-
         oid = read_i32(io) # unused but in header
-        bytesize -= 4
-
         dim_info = Array({dim: Int32, lbound: Int32}).new(dimensions) do |i|
-          bytesize -= 8
           {
             dim:    read_i32(io),
             lbound: read_i32(io),
@@ -40,7 +33,6 @@ module PG
           build_simple_array(has_null, extractor, dim_info.first[:dim]).as(A)
         else
           if dim_info.any? { |di| di[:lbound] < 1 }
-            io.skip(bytesize)
             raise PG::RuntimeError.new("Only lower-bounds >= 1 are supported")
           end
 
@@ -69,6 +61,49 @@ module PG
           end
         end
       end
+    end
+
+    def self.decode_array(io, bytesize, t : Array(T).class) forall T
+      dimensions = read_i32(io)
+      has_null = read_i32(io) == 1
+      oid = read_i32(io) # unused but in header
+      dim_info = Array({dim: Int32, lbound: Int32}).new(dimensions) do |i|
+        {
+          dim:    read_i32(io),
+          lbound: read_i32(io),
+        }
+      end
+      decode_array_element(io, t, dim_info)
+    end
+
+    def self.decode_array_element(io, t : Array(T).class, dim_info) forall T
+      size = dim_info.first[:dim]
+      rest = dim_info[1..-1]
+      Array(T).new(size) { decode_array_element(io, T, rest) }
+    end
+
+    {% for type in %w(Bool Char Int16 Int32 String Int64 Float32 Float64) %}
+      def self.decode_array_element(io, t : {{type.id}}.class, dim_info)
+        bytesize = read_i32(io)
+        if bytesize == -1
+          raise PG::RuntimeError.new("unexpected NULL")
+        else
+          {{type.id}}Decoder.new.decode(io, bytesize)
+        end
+      end
+
+      def self.decode_array_element(io, t : {{type.id}}?.class, dim_info)
+        bytesize = read_i32(io)
+        if bytesize == -1
+          nil
+        else
+          {{type.id}}Decoder.new.decode(io, bytesize)
+        end
+      end
+    {% end %}
+
+    def self.read_i32(io)
+      io.read_bytes(Int32, IO::ByteFormat::NetworkEndian)
     end
   end
 

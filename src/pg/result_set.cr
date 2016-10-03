@@ -61,15 +61,31 @@ class PG::ResultSet < ::DB::ResultSet
       return nil
     end
 
+    sized_io = IO::Sized.new(conn.soc, col_bytesize)
     begin
-      value = decoder.decode(conn.soc, col_bytesize)
+      value = decoder.decode(sized_io, col_bytesize)
     ensure
-      # An exception might happen while decoding the value,
-      # but we still want to consider the column as read
+      # An exception might happen while decoding the value:
+      # 1. Make sure to skip the column bytes
+      # 2. Make sure to increment the column index
+      conn.soc.skip(sized_io.read_remaining) if sized_io.read_remaining > 0
       @column_index += 1
     end
 
     value
+  end
+
+  def read(t : Array(T).class) : Array(T) forall T
+    col_bytesize = conn.read_i32
+    if col_bytesize == -1
+      raise PG::RuntimeError.new("unexpected NULL")
+    end
+
+    begin
+      Decoders.decode_array(conn.soc, col_bytesize, Array(T))
+    ensure
+      @column_index += 1
+    end
   end
 
   private def field(index = @column_index)

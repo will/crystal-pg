@@ -9,10 +9,6 @@ module PG
       abstract def decode(io, bytesize)
       abstract def type
 
-      def decode(bytes)
-        decode MemoryIO.new(bytes), bytes.size
-      end
-
       def read(io, type)
         io.read_bytes(type, IO::ByteFormat::NetworkEndian)
       end
