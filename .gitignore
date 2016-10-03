@@ -1,3 +1,6 @@
 .crystal
+.shards
+shard.lock
+libs
 test*.cr
 spec/.run_auth_specs
