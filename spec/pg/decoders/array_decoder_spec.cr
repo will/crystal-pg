@@ -26,6 +26,16 @@ describe PG::Decoders do
     value.should eq([[1, 2, 3], [4, 5, 6]])
   end
 
+  it "reads array as nilable" do
+    value = PG_DB.query_one("select '{1,2,3}'::integer[]", &.read(Array(Int32)?))
+    typeof(value).should eq(Array(Int32)?)
+    value.should eq([1, 2, 3])
+
+    value = PG_DB.query_one("select null", &.read(Array(Int32)?))
+    typeof(value).should eq(Array(Int32)?)
+    value.should be_nil
+  end
+
   it "raises when reading null in non-null array" do
     expect_raises(PG::RuntimeError) do
       PG_DB.query_one("select '{1,2,3,null}'::integer[]", &.read(Array(Int32)))

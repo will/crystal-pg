@@ -1,78 +1,53 @@
 module PG
   module Decoders
-    class ArrayDecoder(T, A, D) < Decoder
-      class DataExtractor(D)
-        def initialize(@io : IO)
-          @decoder = D.new
-        end
-
-        def get_next
-          bytesize = @decoder.read_i32(@io)
-          if bytesize == -1
-            nil
-          else
-            @decoder.decode(@io, bytesize)
-          end
-        end
-      end
+    struct ArrayDecoder(T, D)
+      include Decoder
 
       def decode(io, bytesize)
-        dimensions = read_i32(io)
-        has_null = read_i32(io) == 1
-        oid = read_i32(io) # unused but in header
-        dim_info = Array({dim: Int32, lbound: Int32}).new(dimensions) do |i|
-          {
-            dim:    read_i32(io),
-            lbound: read_i32(io),
-          }
-        end
-        extractor = DataExtractor(D).new(io)
+        dimensions, dim_info = Decoders.decode_array_header(io)
 
         if dimensions == 1 && dim_info.first[:lbound] == 1
           # allow casting down to unnested crystal arrays
-          build_simple_array(has_null, extractor, dim_info.first[:dim]).as(A)
+          build_simple_array(io, dim_info.first[:dim]).as(T)
         else
           if dim_info.any? { |di| di[:lbound] < 1 }
             raise PG::RuntimeError.new("Only lower-bounds >= 1 are supported")
           end
 
           # recursively build nested array
-          get_element(extractor, dim_info).as(A)
+          get_element(io, dim_info).as(T)
         end
       end
 
-      def type
-        A
+      def build_simple_array(io, size)
+        Array(T).new(size) { get_next(io) }
       end
 
-      def build_simple_array(has_null, extractor, size)
-        Array(A).new(size) { extractor.get_next }
-      end
-
-      def get_element(extractor, dim_info)
+      def get_element(io, dim_info)
         if dim_info.size == 1
           lbound = dim_info.first[:lbound] - 1 # in lower-bound is not 1
-          Array(A).new(dim_info.first[:dim] + lbound) do |i|
-            i < lbound ? nil : extractor.get_next
+          Array(T).new(dim_info.first[:dim] + lbound) do |i|
+            i < lbound ? nil : get_next(io)
           end
         else
-          Array(A).new(dim_info.first[:dim]) do |i|
-            get_element(extractor, dim_info[1..-1])
+          Array(T).new(dim_info.first[:dim]) do |i|
+            get_element(io, dim_info[1..-1])
           end
+        end
+      end
+
+      def get_next(io)
+        bytesize = read_i32(io)
+        if bytesize == -1
+          nil
+        else
+          D.new.decode(io, bytesize)
         end
       end
     end
 
     def self.decode_array(io, bytesize, t : Array(T).class) forall T
-      dimensions = read_i32(io)
-      has_null = read_i32(io) == 1
-      oid = read_i32(io) # unused but in header
-      dim_info = Array({dim: Int32, lbound: Int32}).new(dimensions) do |i|
-        {
-          dim:    read_i32(io),
-          lbound: read_i32(io),
-        }
-      end
+      dimensions, dim_info = decode_array_header(io)
       decode_array_element(io, t, dim_info)
     end
 
@@ -102,6 +77,19 @@ module PG
       end
     {% end %}
 
+    def self.decode_array_header(io)
+      dimensions = read_i32(io)
+      has_null = read_i32(io) == 1 # unused
+      oid = read_i32(io)           # unused but in header
+      dim_info = Array({dim: Int32, lbound: Int32}).new(dimensions) do |i|
+        {
+          dim:    read_i32(io),
+          lbound: read_i32(io),
+        }
+      end
+      {dimensions, dim_info}
+    end
+
     def self.read_i32(io)
       io.read_bytes(Int32, IO::ByteFormat::NetworkEndian)
     end
@@ -110,7 +98,7 @@ module PG
   macro array_type(oid, t)
     alias {{t}}Array = {{t}}? | Array({{t}}Array)
     module Decoders
-      register_decoder ArrayDecoder({{t}}, {{t}}Array, {{t}}Decoder).new, {{oid}}
+      register_decoder ArrayDecoder({{t}}Array, {{t}}Decoder).new, {{oid}}
     end
   end
 

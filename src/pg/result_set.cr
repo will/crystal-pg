@@ -76,13 +76,26 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   def read(t : Array(T).class) : Array(T) forall T
+    read_array(Array(T)) do
+      raise PG::RuntimeError.new("unexpected NULL")
+    end
+  end
+
+  def read(t : Array(T)?.class) : Array(T)? forall T
+    read_array(Array(T)) do
+      @column_index += 1
+      return nil
+    end
+  end
+
+  private def read_array(t : T.class) : T forall T
     col_bytesize = conn.read_i32
     if col_bytesize == -1
-      raise PG::RuntimeError.new("unexpected NULL")
+      yield
     end
 
     begin
-      Decoders.decode_array(conn.soc, col_bytesize, Array(T))
+      Decoders.decode_array(conn.soc, col_bytesize, T)
     ensure
       @column_index += 1
     end

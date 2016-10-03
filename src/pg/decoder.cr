@@ -5,9 +5,8 @@ module PG
 
   # :nodoc:
   module Decoders
-    abstract class Decoder
+    module Decoder
       abstract def decode(io, bytesize)
-      abstract def type
 
       def read(io, type)
         io.read_bytes(type, IO::ByteFormat::NetworkEndian)
@@ -42,20 +41,20 @@ module PG
       end
     end
 
-    class StringDecoder < Decoder
+    struct StringDecoder
+      include Decoder
+
       def decode(io, bytesize)
         String.new(bytesize) do |buffer|
           io.read_fully(Slice.new(buffer, bytesize))
           {bytesize, 0}
         end
       end
-
-      def type
-        String
-      end
     end
 
-    class CharDecoder < Decoder
+    struct CharDecoder
+      include Decoder
+
       def decode(io, bytesize)
         # TODO: can be done without creating an intermediate string
         String.new(bytesize) do |buffer|
@@ -63,13 +62,11 @@ module PG
           {bytesize, 0}
         end[0]
       end
-
-      def type
-        Char
-      end
     end
 
-    class BoolDecoder < Decoder
+    struct BoolDecoder
+      include Decoder
+
       def decode(io, bytesize)
         case byte = io.read_byte
         when 0
@@ -80,158 +77,121 @@ module PG
           raise "bad boolean decode: #{byte}"
         end
       end
-
-      def type
-        Bool
-      end
     end
 
-    class Int16Decoder < Decoder
+    struct Int16Decoder
+      include Decoder
+
       def decode(io, bytesize)
         read_i16(io)
       end
-
-      def type
-        Int16
-      end
     end
 
-    class Int32Decoder < Decoder
+    struct Int32Decoder
+      include Decoder
+
       def decode(io, bytesize)
         read_i32(io)
       end
-
-      def type
-        Int32
-      end
     end
 
-    class Int64Decoder < Decoder
+    struct Int64Decoder
+      include Decoder
+
       def decode(io, bytesize)
         read_u64(io).to_i64
       end
-
-      def type
-        Int64
-      end
     end
 
-    class UIntDecoder < Decoder
+    struct UIntDecoder
+      include Decoder
+
       def decode(io, bytesize)
         read_u32(io)
       end
-
-      def type
-        UInt32
-      end
     end
 
-    class Float32Decoder < Decoder
-      # byte swapped in the same way as int4
+    struct Float32Decoder
+      include Decoder
+
       def decode(io, bytesize)
         read_f32(io)
       end
-
-      def type
-        Float32
-      end
     end
 
-    class Float64Decoder < Decoder
+    struct Float64Decoder
+      include Decoder
+
       def decode(io, bytesize)
         read_f64(io)
       end
-
-      def type
-        Float64
-      end
     end
 
-    class PointDecoder < Decoder
+    struct PointDecoder
+      include Decoder
+
       def decode(io, bytesize)
         Geo::Point.new(read_f64(io), read_f64(io))
       end
-
-      def type
-        Geo::Point
-      end
     end
 
-    class PathDecoder < Decoder
-      def initialize
-        @polygon = PolygonDecoder.new
-      end
+    struct PathDecoder
+      include Decoder
 
       def decode(io, bytesize)
         byte = io.read_byte.not_nil!
         closed = byte == 1_u8
-        Geo::Path.new(@polygon.decode(io, bytesize - 1), closed)
-      end
-
-      def type
-        Geo::Path
+        Geo::Path.new(PolygonDecoder.new.decode(io, bytesize - 1), closed)
       end
     end
 
-    class PolygonDecoder < Decoder
-      def initialize
-        @point_decoder = PointDecoder.new
-      end
+    struct PolygonDecoder
+      include Decoder
 
       def decode(io, bytesize)
         c = read_u32(io)
         count = (pointerof(c).as(Int32*)).value
         Array.new(count) do |i|
-          @point_decoder.decode(io, 16)
+          PointDecoder.new.decode(io, 16)
         end
-      end
-
-      def type
-        Geo::Polygon
       end
     end
 
-    class BoxDecoder < Decoder
+    struct BoxDecoder
+      include Decoder
+
       def decode(io, bytesize)
         Geo::Box.new(read_f64(io), read_f64(io), read_f64(io), read_f64(io))
       end
-
-      def type
-        Geo::Box
-      end
     end
 
-    class LineSegmentDecoder < Decoder
+    struct LineSegmentDecoder
+      include Decoder
+
       def decode(io, bytesize)
         Geo::LineSegment.new(read_f64(io), read_f64(io), read_f64(io), read_f64(io))
       end
-
-      def type
-        Geo::LineSegment
-      end
     end
 
-    class LineDecoder < Decoder
+    struct LineDecoder
+      include Decoder
+
       def decode(io, bytesize)
         Geo::Line.new(read_f64(io), read_f64(io), read_f64(io))
       end
-
-      def type
-        Geo::Line
-      end
     end
 
-    class CircleDecoder < Decoder
+    struct CircleDecoder
+      include Decoder
+
       def decode(io, bytesize)
         Geo::Circle.new(read_f64(io), read_f64(io), read_f64(io))
       end
-
-      def type
-        Geo::Circle
-      end
     end
 
-    class JsonDecoder < Decoder
+    struct JsonDecoder
+      include Decoder
+
       def decode(io, bytesize)
         string = String.new(bytesize) do |buffer|
           io.read_fully(Slice.new(buffer, bytesize))
@@ -239,13 +199,11 @@ module PG
         end
         JSON.parse(string)
       end
-
-      def type
-        JSON::Any
-      end
     end
 
-    class JsonbDecoder < Decoder
+    struct JsonbDecoder
+      include Decoder
+
       def decode(io, bytesize)
         io.read_byte
 
@@ -255,37 +213,31 @@ module PG
         end
         JSON.parse(string)
       end
-
-      def type
-        JSON::Any
-      end
     end
 
     JAN_1_2K_TICKS = Time.new(2000, 1, 1, kind: Time::Kind::Utc).ticks
 
-    class DateDecoder < Decoder
+    struct DateDecoder
+      include Decoder
+
       def decode(io, bytesize)
         v = read_i32(io)
         Time.new(JAN_1_2K_TICKS + (Time::Span::TicksPerDay * v), kind: Time::Kind::Utc)
       end
-
-      def type
-        Time
-      end
     end
 
-    class TimeDecoder < Decoder
+    struct TimeDecoder
+      include Decoder
+
       def decode(io, bytesize)
         v = read_i64(io) / 1000
         Time.new(JAN_1_2K_TICKS + (Time::Span::TicksPerMillisecond * v), kind: Time::Kind::Utc)
       end
-
-      def type
-        Time
-      end
     end
 
-    class UuidDecoder < Decoder
+    struct UuidDecoder
+      include Decoder
+
       def decode(io, bytesize)
         bytes = uninitialized UInt8[6]
 
@@ -315,25 +267,21 @@ module PG
           {36, 36}
         end
       end
-
-      def type
-        String
-      end
     end
 
-    class ByteaDecoder < Decoder
+    struct ByteaDecoder
+      include Decoder
+
       def decode(io, bytesize)
         slice = Bytes.new(bytesize)
         io.read_fully(slice)
         slice
       end
-
-      def type
-        Bytes
-      end
     end
 
-    class NumericDecoder < Decoder
+    struct NumericDecoder
+      include Decoder
+
       def decode(io, bytesize)
         ndigits = read_i16(io)
         weight = read_i16(io)
@@ -341,10 +289,6 @@ module PG
         dscale = read_i16(io)
         digits = (0...ndigits).map { |i| read_i16(io) }
         PG::Numeric.new(ndigits, weight, sign, dscale, digits)
-      end
-
-      def type
-        PG::Numeric
       end
     end
 
