@@ -82,7 +82,7 @@ module PG
       end
     end
 
-    class Int2Decoder < Decoder
+    class Int16Decoder < Decoder
       def decode(io, bytesize)
         read_i16(io)
       end
@@ -92,13 +92,23 @@ module PG
       end
     end
 
-    class IntDecoder < Decoder
+    class Int32Decoder < Decoder
       def decode(io, bytesize)
         read_i32(io)
       end
 
       def type
         Int32
+      end
+    end
+
+    class Int64Decoder < Decoder
+      def decode(io, bytesize)
+        read_u64(io).to_i64
+      end
+
+      def type
+        Int64
       end
     end
 
@@ -109,16 +119,6 @@ module PG
 
       def type
         UInt32
-      end
-    end
-
-    class Int8Decoder < Decoder
-      def decode(io, bytesize)
-        read_u64(io).to_i64
-      end
-
-      def type
-        Int64
       end
     end
 
@@ -406,9 +406,9 @@ module PG
     register_decoder ByteaDecoder.new, 17        # bytea
     register_decoder CharDecoder.new, 18         # "char" (internal type)
     register_decoder StringDecoder.new, 19       # name (internal type)
-    register_decoder Int8Decoder.new, 20         # int8 (bigint)
-    register_decoder Int2Decoder.new, 21         # int2 (smallint)
-    register_decoder IntDecoder.new, 23          # int4 (integer)
+    register_decoder Int64Decoder.new, 20        # int8 (bigint)
+    register_decoder Int16Decoder.new, 21        # int2 (smallint)
+    register_decoder Int32Decoder.new, 23        # int4 (integer)
     register_decoder StringDecoder.new, 25       # text
     register_decoder UIntDecoder.new, 26         # oid (internal type)
     register_decoder JsonDecoder.new, 114        # json
@@ -423,7 +423,7 @@ module PG
     register_decoder TimeDecoder.new, 1114       # timestamp
     register_decoder NumericDecoder.new, 1700    # numeric
     register_decoder TimeDecoder.new, 1184       # timestamptz
-    register_decoder IntDecoder.new, 2206        # regtype
+    register_decoder Int32Decoder.new, 2206      # regtype
     register_decoder UuidDecoder.new, 2950       # uuid
     register_decoder PointDecoder.new, 600       # point
     register_decoder LineSegmentDecoder.new, 601 # lseg
@@ -434,3 +434,5 @@ module PG
     register_decoder CircleDecoder.new, 718      # circle
   end
 end
+
+require "./decoders/*"

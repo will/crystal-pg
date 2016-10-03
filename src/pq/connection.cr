@@ -19,6 +19,7 @@ module PQ
     getter pid : Int32, secret : Int32
 
     def initialize(@conninfo : ConnInfo)
+      @mutex = Mutex.new
       @server_parameters = Hash(String, String).new
       @established = false
       @notice_handler = Proc(Notice, Void).new { }
@@ -66,8 +67,15 @@ module PQ
     end
 
     def close
-      send_terminate_message
-      @soc.close
+      synchronize do
+        return if @soc.closed?
+        send_terminate_message
+        @soc.close
+      end
+    end
+
+    def synchronize
+      @mutex.synchronize { yield }
     end
 
     private def write_i32(i : Int32)
@@ -139,11 +147,24 @@ module PQ
     end
 
     def read(frame_type)
+      frame = read_one_frame(frame_type)
+      handle_async_frames(frame) ? read : frame
+    end
+
+    def read_async_frame_loop
+      loop do
+        begin
+          handle_async_frames(read_one_frame(soc.read_char))
+        rescue e : Errno
+          pp e.errno == Errno::EBADF && @soc.closed? ? break : raise e
+        end
+      end
+    end
+
+    private def read_one_frame(frame_type)
       size = read_i32
       slice = read_bytes(size - 4)
-      frame = Frame.new(frame_type.not_nil!, slice) # .tap { |f| p f if DEBUG }
-
-      handle_async_frames(frame) ? read : frame
+      Frame.new(frame_type.not_nil!, slice) # .tap { |f| p f }
     end
 
     private def handle_async_frames(frame)
@@ -221,7 +242,7 @@ module PQ
       when Frame::Authentication::Type::OK
         # no op
       when Frame::Authentication::Type::CleartextPassword
-        handle_auth_cleartext
+        raise "Cleartext auth is not supported"
       when Frame::Authentication::Type::MD5Password
         handle_auth_md5 auth_frame.body
       else
@@ -229,11 +250,6 @@ module PQ
           "unsupported authentication method: #{auth_frame.type}"
         )
       end
-    end
-
-    private def handle_auth_cleartext
-      send_password_message @conninfo.password
-      expect_frame Frame::Authentication
     end
 
     private def handle_auth_md5(salt)
@@ -288,7 +304,7 @@ module PQ
 
     def send_query_message(query)
       write_chr 'Q'
-      write_i32 query.size + 4 + 1
+      write_i32 query.bytesize + 4 + 1
       soc << query
       write_null
       soc.flush
@@ -296,7 +312,7 @@ module PQ
 
     def send_parse_message(query)
       write_chr 'P'
-      write_i32 query.size + 4 + 1 + 2 + 1
+      write_i32 query.bytesize + 4 + 1 + 2 + 1
       write_null # prepared statment name
       soc << query
       write_i16 0 # don't give any param types

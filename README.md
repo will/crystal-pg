@@ -61,6 +61,39 @@ result = DB.exec("select $1::text || ' ' || $2::text", ["hello", "world"])
 result.rows #=> [["hello world"]]
 ```
 
+### Listen/Notify
+
+There are two ways to listen for notifications. For docs on `NOTIFY`, please
+read <https://www.postgresql.org/docs/current/static/sql-notify.html>.
+
+1. Any connection can be given a callback to run on notifications. However they
+   are only received when other traffic is going on.
+2. A special listen-only connection can be established for instant notification
+   processing with `PG.connect_listen`.
+
+``` crystal
+# see full example in examples/listen_notify.cr
+PG.connect_listen("postgres:///", "a", "b") do |n| # connect and  listen on "a" and "b"
+  puts "    got: #{n.payload} on #{n.channel}"     # print notifications as they come in
+end
+```
+
+
+### Arrays
+
+Crystal-pg supports several popular array types. If you only need a 1
+dimensional array, you can cast down to the appropriate Crystal type:
+
+``` crystal
+DB.exec({Array(Int32?)},
+  "select ARRAY[1, null, 3]"
+).rows.first # => {[1, nil, 3]}
+
+DB.exec({Array(String)},
+  "select '{hello, world}'::text[]"
+).rows.first # => {["hello", "world"]}
+```
+
 ## Requirements
 
 Crystal-pg is [tested on](https://travis-ci.org/will/crystal-pg) Postgres
@@ -75,7 +108,7 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 
 - text
 - boolean
-- int8, int2, int4
+- int8, int4, int2
 - float4, float8
 - timestamptz, date, timestamp (but no one should use ts when tstz exists!)
 - json and jsonb
@@ -85,6 +118,7 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 - varchar
 - regtype
 - geo types: point, box, path, lseg, polygon, circle, line
+- array types: int8, int4, int2, float8, float4, bool, text
 
 1: A note on numeric: In postgres this type has arbitrary percision. In this
     driver, it is represented as a `PG::Numeric` which retians all precision, but
@@ -97,9 +131,3 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
 ## Connection Pooling
 
 If you would like a connection pool, check out [ysbaddaden/pool](https://github.com/ysbaddaden/pool)
-
-## Todo
-
-- more datatypes (ranges, hstore)
-- more info in postgres exceptions
-- transaction help

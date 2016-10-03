@@ -1,6 +1,23 @@
 v?.?.?     upcoming
 =====================
 
+v0.11.0     2016-09-04
+=====================
+* Adds dedicated LISTEN connection
+
+v0.10.0     2016-09-03
+=====================
+* Adds support for array types
+
+v0.9.1     2016-08-23
+=====================
+* Wrap query execution in a mutext to prevent protocol desynchronization
+
+v0.9.0     2016-07-26
+=====================
+* remove support for plaintext auth to prevent downgrade mitm attacks
+* fix for multibyte characters in query strings
+
 v0.8.0     2016-06-17
 =====================
 * (breaking) geo points now all have own types (thanks @asterite)

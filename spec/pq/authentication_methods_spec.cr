@@ -2,7 +2,6 @@ require "../spec_helper"
 
 # The following specs requires specific lines in the local pg_hba.conf file
 #   * crystal_md5 user with md5 method
-#   * crystal_pass user with pass method
 #   * and if the line is trust for everything, it needs to be restricted to
 #     just your user
 # Because of this, most of these specs are disabled by default. To enable them
@@ -46,7 +45,7 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
     end
   end
 
-  describe PQ::Connection, "cleartext auth" do
+  describe PQ::Connection, "md5 auth" do
     it "works when given the correct password" do
       PG_DB.exec("drop role if exists crystal_md5")
       PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
