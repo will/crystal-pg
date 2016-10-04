@@ -39,17 +39,28 @@ describe PG::Driver do
 
     result = PG_DB.exec "insert into contacts values ($1, $2)", "Foo", 10
 
-    # postgres doesn't support this
-    result.last_insert_id.should eq(0)
-
-    # TODO: does postgres support affected rows?
-    # result.rows_affected.should eq(1)
+    result.last_insert_id.should eq(0) # postgres doesn't support this
+    result.rows_affected.should eq(1)
   end
 
   it "executes insert via query" do
     PG_DB.query("drop table if exists contacts") do |rs|
       rs.move_next.should be_false
     end
+  end
+
+  it "executes update" do
+    PG_DB.exec "drop table if exists contacts"
+    PG_DB.exec "create table contacts (name varchar(256), age int4)"
+
+    PG_DB.exec "insert into contacts values ($1, $2)", "Foo", 10
+    PG_DB.exec "insert into contacts values ($1, $2)", "Baz", 10
+    PG_DB.exec "insert into contacts values ($1, $2)", "Baz", 20
+
+    result = PG_DB.exec "update contacts set age = 30 where age = 10"
+
+    result.last_insert_id.should eq(0) # postgres doesn't support this
+    result.rows_affected.should eq(2)
   end
 
   it "traverses result set" do

@@ -37,14 +37,14 @@ module PQ
 
     private def i32(pos, bytes) : {Int32, Int32}
       return pos + 4, (bytes[pos + 3].to_i32 << 0) |
-        (bytes[pos + 2].to_i32 << 8) |
-        (bytes[pos + 1].to_i32 << 16) |
-        (bytes[pos + 0].to_i32 << 24)
+                      (bytes[pos + 2].to_i32 << 8) |
+                      (bytes[pos + 1].to_i32 << 16) |
+                      (bytes[pos + 0].to_i32 << 24)
     end
 
     private def i16(pos, bytes) : {Int32, Int16}
       return pos + 2, (bytes[pos + 1].to_i16 << 0) |
-        (bytes[pos + 0].to_i16 << 8)
+                      (bytes[pos + 0].to_i16 << 8)
     end
 
     struct Unknown
@@ -217,6 +217,16 @@ module PQ
     end
 
     struct CommandComplete < Frame
+      def initialize(@bytes : Bytes)
+      end
+
+      def command
+        String.new(@bytes[0, @bytes.size - 1])
+      end
+
+      def rows_affected
+        command.split.last.to_i64? || 0_i64
+      end
     end
 
     struct ParseComplete < Frame

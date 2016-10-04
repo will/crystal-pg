@@ -32,7 +32,9 @@ class PG::Statement < ::DB::Statement
   protected def perform_exec(args : Enumerable) : ::DB::ExecResult
     result = perform_query(args)
     result.each { }
-    # TODO: I don't know how to get these
-    ::DB::ExecResult.new(rows_affected: 0_i64, last_insert_id: 0_i64)
+    ::DB::ExecResult.new(
+      rows_affected: result.rows_affected,
+      last_insert_id: 0_i64 # postgres doesn't support this
+    )
   end
 end

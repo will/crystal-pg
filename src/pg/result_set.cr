@@ -1,8 +1,11 @@
 class PG::ResultSet < ::DB::ResultSet
+  getter rows_affected
+
   def initialize(statement, @fields : Array(PQ::Field)?)
     super(statement)
     @column_index = -1 # The current column
     @end = false       # Did we read all the rows?
+    @rows_affected = 0_i64
   end
 
   protected def conn
@@ -24,7 +27,11 @@ class PG::ResultSet < ::DB::ResultSet
 
     unless fields
       @end = true
-      conn.expect_frame PQ::Frame::CommandComplete | PQ::Frame::EmptyQueryResponse
+      frame = conn.expect_frame PQ::Frame::CommandComplete | PQ::Frame::EmptyQueryResponse
+      if frame.is_a?(PQ::Frame::CommandComplete)
+        @rows_affected = frame.rows_affected
+      end
+
       conn.expect_frame PQ::Frame::ReadyForQuery
       return false
     end
