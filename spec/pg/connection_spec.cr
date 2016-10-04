@@ -55,15 +55,17 @@ describe PG, "#listen" do
       got = true
     end
 
-    got.should eq(false)
+    begin
+      got.should eq(false)
 
-    PG_DB.exec("notify wrong, 'hello'")
-    got.should eq(false)
+      PG_DB.exec("notify wrong, 'hello'")
+      got.should eq(false)
 
-    PG_DB.exec("notify foo, 'hello'")
-    sleep 0.0001
-    got.should eq(true)
-
-    conn.close
+      PG_DB.exec("notify foo, 'hello'")
+      sleep 0.0001
+      got.should eq(true)
+    ensure
+      conn.close
+    end
   end
 end
