@@ -68,8 +68,8 @@ describe PG::Decoders do
   test_decode "line ", "'(1,2,3,4)'::line ", PG::Geo::Line.new(1.0, -1.0, 1.0)
   test_decode "line ", "'1,2,3'::circle   ", PG::Geo::Circle.new(1.0, 2.0, 3.0)
   test_decode "lseg ", "'(1,2,3,4)'::lseg ", PG::Geo::LineSegment.new(1.0, 2.0, 3.0, 4.0)
-  test_decode "box  ", "'(1,2,3,4)'::box  ", PG::Geo::Box.new(3.0, 4.0, 1.0, 2.0)
+  test_decode "box  ", "'(1,2,3,4)'::box  ", PG::Geo::Box.new(1.0, 2.0, 3.0, 4.0)
   test_decode "path ", "'(1,2,3,4)'::path ", PG::Geo::Path.new([PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0)], closed: true)
   test_decode "path ", "'[1,2,3,4,5,6]'::path", PG::Geo::Path.new([PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0), PG::Geo::Point.new(5.0, 6.0)], closed: false)
-  test_decode "polygon", "'1,2,3,4,5,6'::polygon", [PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0), PG::Geo::Point.new(5.0, 6.0)]
+  test_decode "polygon", "'1,2,3,4,5,6'::polygon", PG::Geo::Polygon.new([PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0), PG::Geo::Point.new(5.0, 6.0)])
 end

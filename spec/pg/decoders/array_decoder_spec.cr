@@ -1,6 +1,7 @@
 require "../../spec_helper"
 
 describe PG::Decoders do
+  test_decode "array", "'{}'::integer[]", [] of Int32
   test_decode "array", "ARRAY[9]", [9]
   test_decode "array", "ARRAY[8,9]", [8, 9]
   test_decode "array", "'{{9,8},{7,6},{5,4}}'::integer[]",
@@ -13,6 +14,10 @@ describe PG::Decoders do
   test_decode "array", "('[3:5]={1,2,3}'::integer[])", [nil, nil, 1, 2, 3]
 
   it "allows special-case casting on simple arrays" do
+    value = PG_DB.query_one("select '{}'::integer[]", &.read(Array(Int32)))
+    typeof(value).should eq(Array(Int32))
+    value.empty?.should be_true
+
     value = PG_DB.query_one("select '{1,2,3}'::integer[]", &.read(Array(Int32)))
     typeof(value).should eq(Array(Int32))
     value.should eq([1, 2, 3])

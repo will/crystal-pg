@@ -141,7 +141,7 @@ module PG
       def decode(io, bytesize)
         byte = io.read_byte.not_nil!
         closed = byte == 1_u8
-        Geo::Path.new(PolygonDecoder.new.decode(io, bytesize - 1), closed)
+        Geo::Path.new(PolygonDecoder.new.decode(io, bytesize - 1).points, closed)
       end
     end
 
@@ -151,9 +151,10 @@ module PG
       def decode(io, bytesize)
         c = read_u32(io)
         count = (pointerof(c).as(Int32*)).value
-        Array.new(count) do |i|
+        points = Array.new(count) do |i|
           PointDecoder.new.decode(io, 16)
         end
+        Geo::Polygon.new(points)
       end
     end
 
@@ -161,7 +162,8 @@ module PG
       include Decoder
 
       def decode(io, bytesize)
-        Geo::Box.new(read_f64(io), read_f64(io), read_f64(io), read_f64(io))
+        x2, y2, x1, y1 = read_f64(io), read_f64(io), read_f64(io), read_f64(io)
+        Geo::Box.new(x1, y1, x2, y2)
       end
     end
 

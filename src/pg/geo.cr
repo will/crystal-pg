@@ -17,5 +17,5 @@ module PG::Geo
     end
   end
 
-  alias Polygon = Array(Point)
+  record Polygon, points : Array(Point)
 end

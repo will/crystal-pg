@@ -7,7 +7,9 @@ module PG
       def decode(io, bytesize)
         dimensions, dim_info = Decoders.decode_array_header(io)
 
-        if dimensions == 1 && dim_info.first[:lbound] == 1
+        if dimensions == 0
+          ([] of T).as(T)
+        elsif dimensions == 1 && dim_info.first[:lbound] == 1
           # allow casting down to unnested crystal arrays
           build_simple_array(io, dim_info.first[:dim]).as(T)
         else
@@ -51,6 +53,10 @@ module PG
     # Used when invoking, for example `rs.read(Array(Int32))`.
     def self.decode_array(io, bytesize, t : Array(T).class) forall T
       dimensions, dim_info = decode_array_header(io)
+      if dimensions == 0
+        return [] of T
+      end
+
       decode_array_element(io, t, dim_info)
     end
 
