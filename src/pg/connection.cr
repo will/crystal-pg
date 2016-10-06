@@ -9,6 +9,7 @@ module PG
       conn_info = PQ::ConnInfo.new(database.uri)
       @connection = PQ::Connection.new(conn_info)
       @connection.connect
+      exec("SET extra_float_digits = 3")
     end
 
     def build_statement(query)
@@ -31,14 +32,12 @@ module PG
       @connection.notification_handler = on_notification_proc
     end
 
-    def listen(*channels : String, &blk : PQ::Notification ->)
-      on_notification(&blk)
+    protected def listen(*channels : String)
       channels.each { |c| exec "LISTEN #{escape_identifier c}" }
       listen
     end
 
-    # :nodoc:
-    def listen
+    protected def listen
       spawn { @connection.read_async_frame_loop }
     end
 

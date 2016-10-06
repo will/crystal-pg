@@ -19,32 +19,6 @@ describe PQ::Connection, "nologin role" do
 end
 
 if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
-  describe PQ::Connection, "cleartext auth" do
-    it "works when given the correct password" do
-      PG_DB.exec("drop role if exists crystal_pass")
-      PG_DB.exec("create role crystal_pass login encrypted password 'pass'")
-      DB.open("postgres://crystal_pass:pass@localhost") do |db|
-        db.query_one("select 1", &.read).should eq(1)
-      end
-      PG_DB.exec("drop role if exists crystal_pass")
-    end
-
-    it "fails when given the wrong password" do
-      PG_DB.exec("drop role if exists crystal_pass")
-      PG_DB.exec("create role crystal_pass login encrypted password 'pass'")
-
-      expect_raises(PQ::PQError) {
-        DB.open("postgres://crystal_pass:bad@localhost")
-      }
-
-      expect_raises(PQ::PQError) {
-        DB.open("postgres://crystal_pass@localhost")
-      }
-
-      PG_DB.exec("drop role if exists crystal_pass")
-    end
-  end
-
   describe PQ::Connection, "md5 auth" do
     it "works when given the correct password" do
       PG_DB.exec("drop role if exists crystal_md5")

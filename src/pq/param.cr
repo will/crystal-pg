@@ -5,8 +5,6 @@ module PQ
 
     #  Internal wrapper to represent an encoded parameter
 
-    # The only special case is nil->null and slice.
-    # If more types need special cases, there should be an encoder
     def self.encode(val : Nil)
       binary Pointer(UInt8).null.to_slice(0), -1
     end
