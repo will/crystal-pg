@@ -33,7 +33,7 @@ module PG
     end
 
     protected def listen(*channels : String)
-      channels.each { |c| exec "LISTEN #{escape_identifier c}" }
+      channels.each { |c| exec_all "LISTEN #{escape_identifier c}" }
       listen
     end
 
