@@ -9,7 +9,6 @@ module PG
       conn_info = PQ::ConnInfo.new(database.uri)
       @connection = PQ::Connection.new(conn_info)
       @connection.connect
-      exec_all("SET extra_float_digits = 3")
     end
 
     def build_statement(query)
