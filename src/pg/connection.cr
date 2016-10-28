@@ -50,64 +50,66 @@ module PG
     def listen
       spawn { @pq_conn.read_async_frame_loop }
     end
-
-    # Execute an untyped query and store the results in memory.
-    def exec(query : String) : Result
-      exec([] of PG::PGValue, query, [] of PG::PGValue)
-    end
-
-    # Execute an untyped query with parameters and store the results in memory.
-    def exec(query : String, params) : Result
-      exec([] of PG::PGValue, query, params)
-    end
-
-    # Execute a typed query and store the results in memory.
-    def exec(types, query : String) : Result
-      exec(types, query, [] of PG::PGValue)
-    end
-
-    # Execute a typed query with parameters and store the results in memory.
-    def exec(types, query : String, params) : Result
-      @pq_conn.synchronize do
-        Result.new(types, extended_query(query, params))
+    
+    {% for method in %w(exec query) %}
+      # Execute an untyped query and store the results in memory.
+      def {{ method.id }}(query : String) : Result
+        exec([] of PG::PGValue, query, [] of PG::PGValue)
       end
-    end
 
-    # Execute an untyped query and stream the results.
-    def exec(query : String) : Nil
-      exec([] of PG::PGValue, query, [] of PG::PGValue) do |row, fields|
-        yield row, fields
+      # Execute an untyped query with parameters and store the results in memory.
+      def {{ method.id }}(query : String, params) : Result
+        exec([] of PG::PGValue, query, params)
       end
-    end
 
-    # Execute an untyped query with parameters and stream the results.
-    def exec(query : String, params) : Nil
-      exec([] of PG::PGValue, query, params) do |row, fields|
-        yield row, fields
+      # Execute a typed query and store the results in memory.
+      def {{ method.id }}(types, query : String) : Result
+        exec(types, query, [] of PG::PGValue)
       end
-    end
 
-    # Execute an typed query and stream the results.
-    def exec(types, query : String) : Nil
-      exec(types, query, [] of PG::PGValue) do |row, fields|
-        yield row, fields
+      # Execute a typed query with parameters and store the results in memory.
+      def {{ method.id }}(types, query : String, params) : Result
+        @pq_conn.synchronize do
+          Result.new(types, extended_query(query, params))
+        end
       end
-    end
 
-    # Execute an typed query with parameters and stream the results.
-    def exec(types, query : String, params) : Nil
-      @pq_conn.synchronize do
-        Result.stream(types, extended_query(query, params)) do |row, fields|
+      # Execute an untyped query and stream the results.
+      def {{ method.id }}(query : String) : Nil
+        exec([] of PG::PGValue, query, [] of PG::PGValue) do |row, fields|
           yield row, fields
         end
       end
-    end
 
-    # Execute several statements. No results are returned.
-    def exec_all(query : String) : Nil
-      PQ::SimpleQuery.new(@pq_conn, query)
-      nil
-    end
+      # Execute an untyped query with parameters and stream the results.
+      def {{ method.id }}(query : String, params) : Nil
+        exec([] of PG::PGValue, query, params) do |row, fields|
+          yield row, fields
+        end
+      end
+
+      # Execute an typed query and stream the results.
+      def {{ method.id }}(types, query : String) : Nil
+        exec(types, query, [] of PG::PGValue) do |row, fields|
+          yield row, fields
+        end
+      end
+
+      # Execute an typed query with parameters and stream the results.
+      def {{ method.id }}(types, query : String, params) : Nil
+        @pq_conn.synchronize do
+          Result.stream(types, extended_query(query, params)) do |row, fields|
+            yield row, fields
+          end
+        end
+      end
+
+      # Execute several statements. No results are returned.
+      def {{ method.id }}_all(query : String) : Nil
+        PQ::SimpleQuery.new(@pq_conn, query)
+        nil
+      end
+    {% end %}
 
     # :nodoc:
     def finalize
