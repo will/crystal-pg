@@ -11,7 +11,11 @@ module PG
       @connection.connect
     end
 
-    def build_statement(query)
+    def build_prepared_statement(query)
+      Statement.new(self, query)
+    end
+
+    def build_unprepared_statement(query)
       Statement.new(self, query)
     end
 
