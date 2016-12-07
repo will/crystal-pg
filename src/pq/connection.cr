@@ -156,7 +156,7 @@ module PQ
         begin
           handle_async_frames(read_one_frame(soc.read_char))
         rescue e : Errno
-          pp e.errno == Errno::EBADF && @soc.closed? ? break : raise e
+          e.errno == Errno::EBADF && @soc.closed? ? break : raise e
         end
       end
     end

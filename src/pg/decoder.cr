@@ -211,7 +211,7 @@ module PG
 
         string = String.new(bytesize - 1) do |buffer|
           io.read_fully(Slice.new(buffer, bytesize - 1))
-          {bytesize, 0}
+          {bytesize - 1, 0}
         end
         JSON.parse(string)
       end
