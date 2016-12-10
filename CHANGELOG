@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
 
+v0.11.0     2016-12-10
+=====================
+* Uses crystal-db api (thanks @asterite)
+
 v0.11.0     2016-09-04
 =====================
 * Adds dedicated LISTEN connection
