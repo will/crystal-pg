@@ -153,6 +153,7 @@ module PQ
 
     def read_async_frame_loop
       loop do
+        break if @soc.closed?
         begin
           handle_async_frames(read_one_frame(soc.read_char))
         rescue e : Errno
