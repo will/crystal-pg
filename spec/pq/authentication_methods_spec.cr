@@ -7,6 +7,12 @@ require "../spec_helper"
 # Because of this, most of these specs are disabled by default. To enable them
 # place an empty file called .run_auth_specs in /spec
 
+private def other_role(pass)
+  db = PG_DB.query_one("select current_database()", &.read)
+  host = URI.parse(DB_URL).host
+  "postgres://crystal_md5#{pass}@#{host}/#{db}"
+end
+
 describe PQ::Connection, "nologin role" do
   it "raises" do
     PG_DB.exec("drop role if exists crystal_test")
@@ -23,7 +29,7 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
     it "works when given the correct password" do
       PG_DB.exec("drop role if exists crystal_md5")
       PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
-      DB.open("postgres://crystal_md5:pass@localhost") do |db|
+      DB.open(other_role(":pass")) do |db|
         db.query_one("select 1", &.read).should eq(1)
       end
       PG_DB.exec("drop role if exists crystal_md5")
@@ -34,11 +40,11 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
 
       expect_raises(PQ::PQError) {
-        DB.open("postgres://crystal_md5:bad@localhost")
+        DB.open(other_role(":bad"))
       }
 
       expect_raises(PQ::PQError) {
-        DB.open("postgres://crystal_md5@localhost")
+        DB.open(other_role(""))
       }
 
       PG_DB.exec("drop role if exists crystal_md5")
