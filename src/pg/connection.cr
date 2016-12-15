@@ -9,6 +9,8 @@ module PG
       conn_info = PQ::ConnInfo.new(database.uri)
       @connection = PQ::Connection.new(conn_info)
       @connection.connect
+    rescue
+      raise DB::ConnectionRefused.new
     end
 
     def build_prepared_statement(query)

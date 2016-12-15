@@ -47,6 +47,8 @@ class PG::ResultSet < ::DB::ResultSet
       @end = true
       false
     end
+  rescue IO::EOFError
+    raise DB::ConnectionLost.new(statement.connection)
   end
 
   def column_count : Int32
@@ -80,6 +82,8 @@ class PG::ResultSet < ::DB::ResultSet
     end
 
     value
+  rescue IO::EOFError
+    raise DB::ConnectionLost.new(statement.connection)
   end
 
   def read(t : Array(T).class) : Array(T) forall T
@@ -106,6 +110,8 @@ class PG::ResultSet < ::DB::ResultSet
     ensure
       @column_index += 1
     end
+  rescue IO::EOFError
+    raise DB::ConnectionLost.new(statement.connection)
   end
 
   private def field(index = @column_index)
