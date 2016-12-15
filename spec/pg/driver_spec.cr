@@ -78,4 +78,60 @@ describe PG::Driver do
       rs.move_next.should be_false
     end
   end
+
+  describe "transactions" do
+    it "can read inside transaction and rollback after" do
+      with_db do |db|
+        db.exec "drop table if exists person"
+        db.exec "create table person (name varchar(25))"
+        db.transaction do |tx|
+          tx.connection.scalar("select count(*) from person").should eq(0)
+          tx.connection.exec "insert into person (name) values ($1)", "John Doe"
+          tx.connection.scalar("select count(*) from person").should eq(1)
+          tx.rollback
+        end
+        db.scalar("select count(*) from person").should eq(0)
+      end
+    end
+
+    it "can read inside transaction or after commit" do
+      with_db do |db|
+        db.exec "drop table if exists person"
+        db.exec "create table person (name varchar(25))"
+        db.transaction do |tx|
+          tx.connection.scalar("select count(*) from person").should eq(0)
+          tx.connection.exec "insert into person (name) values ($1)", "John Doe"
+          tx.connection.scalar("select count(*) from person").should eq(1)
+          # using other connection
+          db.scalar("select count(*) from person").should eq(0)
+        end
+        db.scalar("select count(*) from person").should eq(1)
+      end
+    end
+  end
+
+  describe "nested transactions" do
+    it "can read inside transaction and rollback after" do
+      with_db do |db|
+        db.exec "drop table if exists person"
+        db.exec "create table person (name varchar(25))"
+        db.transaction do |tx_0|
+          tx_0.connection.scalar("select count(*) from person").should eq(0)
+          tx_0.connection.exec "insert into person (name) values ($1)", "John Doe"
+          tx_0.transaction do |tx_1|
+            tx_1.connection.exec "insert into person (name) values ($1)", "Sarah"
+            tx_1.connection.scalar("select count(*) from person").should eq(2)
+            tx_1.transaction do |tx_2|
+              tx_2.connection.exec "insert into person (name) values ($1)", "Jimmy"
+              tx_2.connection.scalar("select count(*) from person").should eq(3)
+              tx_2.rollback
+            end
+          end
+          tx_0.connection.scalar("select count(*) from person").should eq(2)
+          tx_0.rollback
+        end
+        db.scalar("select count(*) from person").should eq(0)
+      end
+    end
+  end
 end
