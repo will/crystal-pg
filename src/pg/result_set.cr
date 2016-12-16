@@ -47,7 +47,7 @@ class PG::ResultSet < ::DB::ResultSet
       @end = true
       false
     end
-  rescue IO::EOFError
+  rescue IO::Error
     raise DB::ConnectionLost.new(statement.connection)
   end
 
@@ -82,7 +82,7 @@ class PG::ResultSet < ::DB::ResultSet
     end
 
     value
-  rescue IO::EOFError
+  rescue IO::Error
     raise DB::ConnectionLost.new(statement.connection)
   end
 
@@ -110,7 +110,7 @@ class PG::ResultSet < ::DB::ResultSet
     ensure
       @column_index += 1
     end
-  rescue IO::EOFError
+  rescue IO::Error
     raise DB::ConnectionLost.new(statement.connection)
   end
 
@@ -126,6 +126,8 @@ class PG::ResultSet < ::DB::ResultSet
     col_size = conn.read_i32
     conn.skip_bytes(col_size) if col_size != 1
     @column_index += 1
+  rescue IO::Error
+    raise DB::ConnectionLost.new(statement.connection)
   end
 
   protected def do_close
@@ -149,5 +151,8 @@ class PG::ResultSet < ::DB::ResultSet
 
       break unless move_next
     end
+  rescue DB::ConnectionLost
+    # if the connection is lost there is nothing to be
+    # done since the result set is no longer needed
   end
 end
