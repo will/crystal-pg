@@ -17,7 +17,7 @@ describe PQ::Connection, "nologin role" do
   it "raises" do
     PG_DB.exec("drop role if exists crystal_test")
     PG_DB.exec("create role crystal_test nologin")
-    expect_raises(PQ::PQError) {
+    expect_raises(DB::ConnectionRefused) {
       DB.open("postgres://crystal_test@localhost")
     }
     PG_DB.exec("drop role if exists crystal_test")
@@ -39,11 +39,11 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("drop role if exists crystal_md5")
       PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
 
-      expect_raises(PQ::PQError) {
+      expect_raises(DB::ConnectionRefused) {
         DB.open(other_role(":bad"))
       }
 
-      expect_raises(PQ::PQError) {
+      expect_raises(DB::ConnectionRefused) {
         DB.open(other_role(""))
       }
 
