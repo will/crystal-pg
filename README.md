@@ -1,10 +1,17 @@
 # crystal-pg
-A Postgres driver for Crystal
+A native, non-blocking Postgres driver for Crystal
+
 [![Build Status](https://travis-ci.org/will/crystal-pg.svg?branch=master)](https://travis-ci.org/will/crystal-pg)
 [![docrystal.org](http://www.docrystal.org/badge.svg?style=round)](http://www.docrystal.org/github.com/will/crystal-pg)
 
 
 ## usage
+
+This driver now uses the `crystal-db` project. Documention on connecting,
+quering, etc, can be found at:
+
+* https://crystal-lang.org/docs/database/
+* https://crystal-lang.org/docs/database/connection_pool.html
 
 ### shards
 
@@ -14,51 +21,6 @@ Add this to your `shard.yml` and run `crystal deps`
 dependencies:
   pg:
     github: will/crystal-pg
-```
-
-### connecting
-
-``` crystal
-require "pg"
-DB = PG.connect("postgres://...")
-```
-
-### typed querying
-
-The preferred way to send queries is to send a tuple of the types you expect
-back along with the query. `#rows` will then be an array of tuples with each
-element properly casted. You can also use parameterized queries for
-injection-safe server-side interpolation.
-
-``` crystal
-result = DB.exec({Int32, String}, "select id, email from users")
-result.fields  #=> [PG::Result::Field, PG::Result::Field]
-result.rows    #=> [{1, "will@example.com"}], …]
-result.to_hash #=> [{"field1" => value, …}, …]
-
-result = DB.exec({String}, "select $1::text || ' ' || $2::text", ["hello", "world"])
-result.rows #=> [{"hello world"}]
-```
-
-Out of the box, crystal-pg supports 1-32 types. If you need more, you can
-reopen `PG::Result` and use the `generate_gather_rows` macro. If your field can
-return nil, you should use `Int32|Nil` for example, which is a union of the
-type and `Nil`.
-
-### untyped querying
-
-If you do not know the types beforehand you can omit them. However you will get
-back an array of arrays of PGValue. Since it is a union type of amost every
-type, you will probably have to manually cast later on in your program.
-
-``` crystal
-result = DB.exec("select * from table")
-result.fields  #=> [PG::Result::Field, …]
-result.rows    #=> [[value, …], …]
-result.to_hash #=> [{"field1" => value, …}, …]
-
-result = DB.exec("select $1::text || ' ' || $2::text", ["hello", "world"])
-result.rows #=> [["hello world"]]
 ```
 
 ### Listen/Notify
@@ -78,31 +40,25 @@ PG.connect_listen("postgres:///", "a", "b") do |n| # connect and  listen on "a" 
 end
 ```
 
-
 ### Arrays
 
 Crystal-pg supports several popular array types. If you only need a 1
 dimensional array, you can cast down to the appropriate Crystal type:
 
 ``` crystal
-DB.exec({Array(Int32?)},
-  "select ARRAY[1, null, 3]"
-).rows.first # => {[1, nil, 3]}
+PG_DB.query_one("select ARRAY[1, null, 3]", &.read(Array(Int32?))
+# => [1, nil, 3]
 
-DB.exec({Array(String)},
-  "select '{hello, world}'::text[]"
-).rows.first # => {["hello", "world"]}
+PG_DB.query_one("select '{hello, world}'::text[]", &.read(Array(String))
+# => ["hello", "world"]
 ```
 
 ## Requirements
 
 Crystal-pg is [tested on](https://travis-ci.org/will/crystal-pg) Postgres
-versions 9.1 through 9.4 and developed on 9.5 (travis does not currently have
+versions 9.1 through 9.4 and developed on 9.6 (travis does not currently have
 9.5 support). Since it uses protocal version 3, older versions probably also
 work but are not guaranteed.
-
-Linking requires that the `pg_config` binary is in your `$PATH` and returns
-correct results for `pg_config --includedir` and `pg_config --libdir`.
 
 ## Supported Datatypes
 
@@ -127,7 +83,3 @@ correct results for `pg_config --includedir` and `pg_config --libdir`.
     require `pg_ext/big_rational` which adds `#to_big_r`, but requires that you
     have LibGMP installed.
 
-
-## Connection Pooling
-
-If you would like a connection pool, check out [ysbaddaden/pool](https://github.com/ysbaddaden/pool)

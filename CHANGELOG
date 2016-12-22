@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
 
+v0.13.0     2016-12-21
+=====================
+* Update to support crystal-db's connection pooling (thanks @bcardiff)
+
 v0.12.0     2016-12-10
 =====================
 * Uses crystal-db api (thanks @asterite)
