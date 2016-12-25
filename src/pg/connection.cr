@@ -6,11 +6,15 @@ module PG
 
     def initialize(database)
       super
-      conn_info = PQ::ConnInfo.new(database.uri)
-      @connection = PQ::Connection.new(conn_info)
-      @connection.connect
-    rescue
-      raise DB::ConnectionRefused.new
+      @connection = uninitialized PQ::Connection
+
+      begin
+        conn_info = PQ::ConnInfo.new(database.uri)
+        @connection = PQ::Connection.new(conn_info)
+        @connection.connect
+      rescue
+        raise DB::ConnectionRefused.new
+      end
     end
 
     def build_prepared_statement(query)
