@@ -1,4 +1,5 @@
 module PQ
+  ISO_8601 = "%FT%X.%L%z"
   # :nodoc:
   record Param, slice : Slice(UInt8), size : Int32, format : Int16 do
     delegate to_unsafe, to: slice
@@ -15,6 +16,10 @@ module PQ
 
     def self.encode(val : Array)
       text encode_array(val)
+    end
+
+    def self.encode(val : Time)
+      text val.to_s(ISO_8601)
     end
 
     def self.encode(val : PG::Geo::Point)
