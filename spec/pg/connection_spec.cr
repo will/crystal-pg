@@ -34,14 +34,16 @@ describe PG::Connection, "#on_notice" do
 end
 
 describe PG::Connection, "#on_notification" do
-  it "does listen/notify" do
+  it "does listen/notify within same connection" do
     last_note = nil
-    PG_DB.using_connection do |conn|
-      conn.on_notification { |note| last_note = note }
-    end
+    with_db do |db|
+      db.using_connection do |conn|
+        conn.on_notification { |note| last_note = note }
 
-    PG_DB.exec("listen somechannel")
-    PG_DB.exec("notify somechannel, 'do a thing'")
+        conn.exec("listen somechannel")
+        conn.exec("notify somechannel, 'do a thing'")
+      end
+    end
 
     last_note.not_nil!.channel.should eq("somechannel")
     last_note.not_nil!.payload.should eq("do a thing")
