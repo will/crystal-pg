@@ -46,6 +46,33 @@ describe PG::Connection, "#on_notification" do
     last_note.not_nil!.channel.should eq("somechannel")
     last_note.not_nil!.payload.should eq("do a thing")
   end
+
+  it "does listen/notify from other connection" do
+    last_note = nil
+
+    listening = Channel(Nil).new
+    notified = Channel(Nil).new
+    stop = Channel(Nil).new
+
+    with_db do |db|
+      spawn do
+        db.using_connection do |conn|
+          conn.on_notification { |note| last_note = note; notified.send(nil) }
+          conn.listen("somechannel")
+          listening.send(nil)
+          stop.receive
+        end
+      end
+
+      listening.receive
+      db.exec("notify somechannel, 'do a thing'")
+      notified.receive
+      stop.send(nil)
+    end
+
+    last_note.not_nil!.channel.should eq("somechannel")
+    last_note.not_nil!.payload.should eq("do a thing")
+  end
 end
 
 describe PG, "#listen" do
