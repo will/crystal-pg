@@ -1,5 +1,5 @@
 require "uri"
-require "crypto/md5"
+require "digest/md5"
 require "socket"
 require "socket/tcp_socket"
 require "socket/unix_socket"
@@ -254,14 +254,14 @@ module PQ
     end
 
     private def handle_auth_md5(salt)
-      inner = Crypto::MD5.hex_digest("#{@conninfo.password}#{@conninfo.user}")
+      inner = Digest::MD5.hexdigest("#{@conninfo.password}#{@conninfo.user}")
 
-      c = Crypto::MD5::Context.new
-      c.update(inner.to_unsafe, inner.bytesize.to_u32)
-      c.update(salt.to_unsafe, salt.bytesize.to_u32)
-      c.final
+      pass = Digest::MD5.hexdigest do |ctx|
+        ctx.update(inner.to_unsafe, inner.bytesize.to_u32)
+        ctx.update(salt.to_unsafe, salt.bytesize.to_u32)
+      end
 
-      send_password_message "md5#{c.hex}"
+      send_password_message "md5#{pass}"
       expect_frame Frame::Authentication
     end
 
