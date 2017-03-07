@@ -13,20 +13,17 @@ module PG
   end
 
   class ListenConnection
-    @db : DB::Database
+    @conn : PG::Connection
 
     def initialize(url, *channels : String, &blk : PQ::Notification ->)
-      @db = DB.open(url)
-      @db.using_connection do |conn|
-        conn = conn.as(PG::Connection)
-        conn.on_notification(&blk)
-        conn.listen(*channels)
-      end
+      @conn = DB.connect(url).as(PG::Connection)
+      @conn.on_notification(&blk)
+      @conn.listen(*channels)
     end
 
     # Close the connection.
     def close
-      @db.close
+      @conn.close
     end
   end
 end
