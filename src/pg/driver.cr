@@ -1,6 +1,6 @@
 class PG::Driver < ::DB::Driver
-  def build_connection(db)
-    Connection.new(db)
+  def build_connection(context : ::DB::ConnectionContext)
+    Connection.new(context)
   end
 end
 

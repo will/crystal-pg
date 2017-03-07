@@ -11,7 +11,7 @@ def with_db
 end
 
 def with_connection
-  with_db &.using_connection do |conn|
+  DB.connect(DB_URL) do |conn|
     yield conn
   end
 end

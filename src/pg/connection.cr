@@ -4,12 +4,12 @@ module PG
   class Connection < ::DB::Connection
     protected getter connection
 
-    def initialize(database)
+    def initialize(context)
       super
       @connection = uninitialized PQ::Connection
 
       begin
-        conn_info = PQ::ConnInfo.new(database.uri)
+        conn_info = PQ::ConnInfo.new(context.uri)
         @connection = PQ::Connection.new(conn_info)
         @connection.connect
       rescue
