@@ -2,21 +2,26 @@ dist: trusty
 
 sudo: required
 
-addons:
-  postgresql: "9.4"
+services:
+  - postgresql
 
 language: crystal
+
 crystal:
   - latest
+
 env:
+  - TRAVIS_POSTGRESQL_VERSION=9.6
+  - TRAVIS_POSTGRESQL_VERSION=9.5
   - TRAVIS_POSTGRESQL_VERSION=9.4
   - TRAVIS_POSTGRESQL_VERSION=9.3
   - TRAVIS_POSTGRESQL_VERSION=9.2
-  - TRAVIS_POSTGRESQL_VERSION=9.1
+
 before_install:
   - sudo service postgresql stop
   - sudo service postgresql start $TRAVIS_POSTGRESQL_VERSION
   - createdb crystal
   - export DATABASE_URL=postgres://postgres@/crystal
+
 notifications:
   email: false
