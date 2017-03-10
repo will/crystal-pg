@@ -24,7 +24,9 @@ describe PG::Driver, "encoder" do
   test_insert_and_read "integer[]", [1, 2, 3]
   test_insert_and_read "integer[]", [[1, 2], [3, 4]]
   test_insert_and_read "point", PG::Geo::Point.new(1.2, 3.4)
-  test_insert_and_read "line", PG::Geo::Line.new(1.2, 3.4, 5.6)
+  if Helper.db_version_gte(9, 4)
+    test_insert_and_read "line", PG::Geo::Line.new(1.2, 3.4, 5.6)
+  end
   test_insert_and_read "circle", PG::Geo::Circle.new(1.2, 3.4, 5.6)
   test_insert_and_read "lseg", PG::Geo::LineSegment.new(1.2, 3.4, 5.6, 7.8)
   test_insert_and_read "box", PG::Geo::Box.new(1.2, 3.4, 5.6, 7.8)
