@@ -65,8 +65,10 @@ describe PG::Decoders do
   test_decode "name", %('hi'::name), "hi"
   test_decode "oid", %(2147483648::oid), 2147483648_u32
   test_decode "point", "'(1.2,3.4)'::point", PG::Geo::Point.new(1.2, 3.4)
-  test_decode "line ", "'(1,2,3,4)'::line ", PG::Geo::Line.new(1.0, -1.0, 1.0)
-  test_decode "line ", "'1,2,3'::circle   ", PG::Geo::Circle.new(1.0, 2.0, 3.0)
+  if Helper.db_version_gte(9, 4)
+    test_decode "line ", "'(1,2,3,4)'::line ", PG::Geo::Line.new(1.0, -1.0, 1.0)
+    test_decode "line ", "'1,2,3'::circle   ", PG::Geo::Circle.new(1.0, 2.0, 3.0)
+  end
   test_decode "lseg ", "'(1,2,3,4)'::lseg ", PG::Geo::LineSegment.new(1.0, 2.0, 3.0, 4.0)
   test_decode "box  ", "'(1,2,3,4)'::box  ", PG::Geo::Box.new(1.0, 2.0, 3.0, 4.0)
   test_decode "path ", "'(1,2,3,4)'::path ", PG::Geo::Path.new([PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0)], closed: true)
