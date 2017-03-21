@@ -1,6 +1,11 @@
 v?.?.?     upcoming
 =====================
+
+v0.13.3     2017-03-21
+=====================
 * Increased precision when encoding times
+* Use DB.connect in ListenConnection to avoid creating a connection pool (thanks @bcardiff)
+* Updates to use db 0.4.0. (thanks again @bcardiff)
 
 v0.13.2     2017-02-21
 =====================
