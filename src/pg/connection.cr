@@ -4,7 +4,7 @@ module PG
   class Connection < ::DB::Connection
     protected getter connection
 
-    @decoders : Decoders::DecoderMap?
+    @decoders : Decoders::DecoderMap = Decoders::DecoderMap.new { |_, oid| Decoders.from_oid(oid) }
 
     def initialize(context)
       super
@@ -23,7 +23,7 @@ module PG
       # else this would cause a premature `release` before this connection
       # has even been added to the pool.
       self.auto_release, auto_release = false, self.auto_release
-      @decoders = Decoders.build_decoder_list(self)
+      Decoders.register_connection_decoders(self)
       self.auto_release = auto_release
     end
 
@@ -67,15 +67,14 @@ module PG
       {major: major, minor: minor, patch: patch}
     end
 
-    def decoder_from_oid(oid)
-      decoders = @decoders
-      if decoders.nil?
-        # We haven't built the connection-specific decoders up yet (this is
-        # probably happening in the caller), so fallback to the default known list.
-        Decoders.from_oid(oid)
-      else
-        decoders.fetch(oid) { Decoders.from_oid(oid) }
-      end
+    def decoder_from_oid(oid) : Decoders::Decoder
+      @decoders[oid] # will fallback to built-in
+    end
+
+    # Registers a `Decoder` instance to handle type specified by
+    # provided OID for this connection only
+    def register_decoder(decoder, oid)
+      @decoders[oid] = decoder
     end
 
     protected def do_close

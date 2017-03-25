@@ -327,9 +327,7 @@ module PG
 
     # Builds a `DecoderMap` of all types visible on `connection` that are not
     # already statically known.
-    def self.build_decoder_list(connection : PG::Connection) : DecoderMap
-      decoders = DecoderMap.new { |_, oid| from_oid(oid) }
-
+    def self.register_connection_decoders(connection : PG::Connection) : Void
       types = connection.query_all(TYPE_SQL, as: {UInt32, String, Char})
       types.each do |oid, name, category|
         oid = oid.to_i32 # Query execution if I read straight to Int32 :\
@@ -337,14 +335,11 @@ module PG
 
         case {oid, name, category}
         when {_, _, TypeCategories::STRING} # citext, domains based on text, etc
-          decoders[oid] = StringDecoder.new
-        when {_, "hstore", TypeCategories::USER_DEFINED}
-          # ...
-          # ...
+          connection.register_decoder StringDecoder.new, oid
+        # when {_, "hstore", TypeCategories::USER_DEFINED}
+        #   ...
         end
       end
-
-      decoders
     end
 
     # Globally registers a `Decoder` instance to handle type specified by
