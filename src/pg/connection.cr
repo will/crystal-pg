@@ -14,17 +14,17 @@ module PG
         conn_info = PQ::ConnInfo.new(context.uri)
         @connection = PQ::Connection.new(conn_info)
         @connection.connect
-
-        # We have to query `pg_type` table to learn about the types in this
-        # database, so make sure we temporarily set `auto_release` to false
-        # else this would cause a premature `release` before this connection
-        # has even been added to the pool.
-        self.auto_release, auto_release = false, self.auto_release
-        @decoders = Decoders.build_decoder_list(self)
-        self.auto_release = auto_release
       rescue
         raise DB::ConnectionRefused.new
       end
+
+      # We have to query `pg_type` table to learn about the types in this
+      # database, so make sure we temporarily set `auto_release` to false
+      # else this would cause a premature `release` before this connection
+      # has even been added to the pool.
+      self.auto_release, auto_release = false, self.auto_release
+      @decoders = Decoders.build_decoder_list(self)
+      self.auto_release = auto_release
     end
 
     def build_prepared_statement(query)
