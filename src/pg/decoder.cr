@@ -302,12 +302,7 @@ module PG
     end
 
     TYPE_SQL = %q(
-      SELECT
-        /* Avoid search_path woes by qualifying before cast... */
-        (typnamespace::regnamespace::text || '.' || typname)::regtype::oid
-                                              oid
-      , typname                               "name"
-      , typcategory                           category
+      SELECT oid, typname, typcategory
       FROM pg_type
       WHERE typisdefined = 't'
         AND typtype IN ('b', 'd'))
