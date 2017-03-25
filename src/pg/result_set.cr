@@ -119,7 +119,7 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   private def decoder(index = @column_index)
-    statement.connection.decoders[field(index).type_oid]
+    statement.connection.decoder_from_oid(field(index).type_oid)
   end
 
   private def skip

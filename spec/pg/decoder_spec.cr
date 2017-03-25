@@ -38,6 +38,18 @@ describe PG::Decoders do
     test_decode "jsonb", "'[1,2,3]'::jsonb", JSON.parse("[1,2,3]")
   end
 
+  it "citext" do
+    begin
+      PG_DB.exec("CREATE EXTENSION \"citext\"")
+      with_connection do |conn| # fresh connection so decoders are evaluated
+        value = conn.query_one "select 'abc'::citext", &.read
+        value.should eq("abc")
+      end
+    ensure
+      PG_DB.exec("DROP EXTENSION \"citext\"")
+    end
+  end
+
   test_decode "timestamptz", "'2015-02-03 16:15:13-01'::timestamptz",
     Time.new(2015, 2, 3, 17, 15, 13, 0, Time::Kind::Utc)
 

@@ -294,10 +294,62 @@ module PG
       end
     end
 
-    @@decoders = Hash(Int32, PG::Decoders::Decoder).new(ByteaDecoder.new)
+    alias DecoderMap = Hash(Int32, PG::Decoders::Decoder)
+    @@decoders = DecoderMap.new(ByteaDecoder.new)
 
     def self.from_oid(oid)
       @@decoders[oid]
+    end
+
+    TYPE_SQL = %q(
+      SELECT
+        /* Avoid search_path woes by qualifying before cast... */
+        (typnamespace::regnamespace::text || '.' || typname)::regtype::oid
+                                              oid
+      , typname                               "name"
+      , typcategory                           category
+      FROM pg_type
+      WHERE typisdefined = 't'
+        AND typtype IN ('b', 'd'))
+
+    # https://www.postgresql.org/docs/9.4/static/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
+    module TypeCategories # Could this be an enum?
+      ARRAY        = 'A'
+      COMPOSITE    = 'C'
+      DATE_OR_TIME = 'D'
+      ENUM         = 'E'
+      GEOMETRIC    = 'G'
+      NETWORK      = 'I'
+      NUMERIC      = 'N'
+      PSEUDO       = 'P'
+      RANGE        = 'R'
+      STRING       = 'S'
+      TIMESPAN     = 'T'
+      USER_DEFINED = 'U'
+      BIT_STRING   = 'V'
+      UNKNOWN      = 'X'
+    end
+
+    # Builds a `DecoderMap` of all types visible on `connection` that are not
+    # already statically known.
+    def self.build_decoder_list(connection : PG::Connection) : DecoderMap
+      decoders = DecoderMap.new { |_, oid| from_oid(oid) }
+
+      types = connection.query_all(TYPE_SQL, as: {UInt32, String, Char})
+      types.each do |oid, name, category|
+        oid = oid.to_i32 # Query execution if I read straight to Int32 :\
+        next if @@decoders[oid]? # always prefer pre-defined/global decoders
+
+        case {oid, name, category}
+        when {_, _, TypeCategories::STRING} # citext, domains based on text, etc
+          decoders[oid] = StringDecoder.new
+        when {_, "hstore", TypeCategories::USER_DEFINED}
+          # ...
+          # ...
+        end
+      end
+
+      decoders
     end
 
     # Globally registers a `Decoder` instance to handle type specified by
