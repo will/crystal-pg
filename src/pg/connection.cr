@@ -57,6 +57,10 @@ module PG
       {major: major, minor: minor, patch: patch}
     end
 
+    def decoders
+      @decoders ||= Hash(Int32, PG::Decoders::Decoder).new { |_, oid| Decoders.from_oid(oid) }
+    end
+
     protected def do_close
       @connection.close
     end

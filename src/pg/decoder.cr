@@ -300,6 +300,8 @@ module PG
       @@decoders[oid]
     end
 
+    # Globally registers a `Decoder` instance to handle type specified by
+    # provided OID.
     def self.register_decoder(decoder, oid)
       @@decoders[oid] = decoder
     end
