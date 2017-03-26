@@ -29,6 +29,7 @@ describe PG::Driver, "encoder" do
   test_insert_and_read "float", 12.34
   test_insert_and_read "varchar", "hello world"
   test_insert_and_read "citext", "hello world", extension: "citext"
+  test_insert_and_read "hstore", {"foo" => "42", "bar" => nil}, extension: "hstore"
   test_insert_and_read "integer[]", [] of Int32
   test_insert_and_read "integer[]", [1, 2, 3]
   test_insert_and_read "integer[]", [[1, 2], [3, 4]]
