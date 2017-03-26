@@ -127,6 +127,29 @@ module PG
       end
     end
 
+    struct HstoreDecoder
+      include Decoder
+
+      def decode(io, bytesize)
+        # return String.new(ByteaDecoder.new.decode(io,bytesize))
+        Hash(String, String?).new.tap do |hash|
+          string_decoder = StringDecoder.new
+          key_count = read_u32(io)
+          key_count.times do
+            length = read_u32(io)
+            key = string_decoder.decode(io, length)
+            length = read_u32(io)
+            if length == UInt32::MAX
+              hash[key] = nil
+            else
+              value = string_decoder.decode(io, length)
+              hash[key] = value
+            end
+          end
+        end
+      end
+    end
+
     struct PointDecoder
       include Decoder
 
@@ -336,8 +359,8 @@ module PG
         case {oid, name, category}
         when {_, _, TypeCategories::STRING} # citext, domains based on text, etc
           connection.register_decoder StringDecoder.new, oid
-        # when {_, "hstore", TypeCategories::USER_DEFINED}
-        #   ...
+        when {_, "hstore", TypeCategories::USER_DEFINED}
+          connection.register_decoder HstoreDecoder.new, oid
         end
       end
     end
