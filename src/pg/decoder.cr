@@ -139,7 +139,7 @@ module PG
             length = read_u32(io)
             key = string_decoder.decode(io, length)
             length = read_u32(io)
-            if length == UInt32::MAX
+            if length == -1
               hash[key] = nil
             else
               value = string_decoder.decode(io, length)
