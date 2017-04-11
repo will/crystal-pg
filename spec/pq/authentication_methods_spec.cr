@@ -9,7 +9,7 @@ require "../spec_helper"
 
 private def other_role(pass)
   db = PG_DB.query_one("select current_database()", &.read)
-  host = URI.parse(DB_URL).host
+  host = URI.parse(DB_URL).host || "localhost"
   "postgres://crystal_md5#{pass}@#{host}/#{db}"
 end
 
