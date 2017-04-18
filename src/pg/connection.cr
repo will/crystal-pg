@@ -41,7 +41,7 @@ module PG
       @connection.notification_handler = on_notification_proc
     end
 
-    protected def listen(*channels : String)
+    def listen(*channels : String)
       channels.each { |c| exec_all "LISTEN #{escape_identifier c}" }
       listen
     end
