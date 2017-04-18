@@ -40,19 +40,19 @@ describe PG::Decoders do
 
   it "citext" do
     begin
-      PG_DB.exec("CREATE EXTENSION \"citext\"")
+      PG_DB.exec("CREATE EXTENSION IF NOT EXISTS \"citext\"")
       with_connection do |conn| # fresh connection so decoders are evaluated
         value = conn.query_one "select 'abc'::citext", &.read
         value.should eq("abc")
       end
     ensure
-      PG_DB.exec("DROP EXTENSION \"citext\"")
+      PG_DB.exec("DROP EXTENSION IF EXISTS \"citext\"")
     end
   end
 
   it "hstore" do
     begin
-      PG_DB.exec("CREATE EXTENSION \"hstore\"")
+      PG_DB.exec("CREATE EXTENSION IF NOT EXISTS \"hstore\"")
       with_connection do |conn| # fresh connection so decoders are evaluated
         value = conn.query_one "select 'foo=>bar,baz=>42'::hstore", &.read
         value.should eq({"foo" => "bar", "baz" => "42"})
@@ -67,7 +67,7 @@ describe PG::Decoders do
         value.should eq(nil)
       end
     ensure
-      PG_DB.exec("DROP EXTENSION \"hstore\"")
+      PG_DB.exec("DROP EXTENSION IF EXISTS \"hstore\"")
     end
   end
 

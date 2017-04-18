@@ -3,7 +3,7 @@ require "../spec_helper"
 private def test_insert_and_read(datatype, value, extension = nil, file = __FILE__, line = __LINE__)
   it "inserts #{datatype}", file, line do
     begin
-      PG_DB.exec "create extension \"#{extension}\"" if extension
+      PG_DB.exec "create extension if not exists \"#{extension}\"" if extension
 
       with_connection do |conn|
         conn.exec "drop table if exists test_table"
@@ -19,7 +19,7 @@ private def test_insert_and_read(datatype, value, extension = nil, file = __FILE
         actual_value.should eq(value)
       end
     ensure
-      PG_DB.exec "drop extension \"#{extension}\" cascade" if extension
+      PG_DB.exec "drop extension if exists \"#{extension}\" cascade" if extension
     end
   end
 end
