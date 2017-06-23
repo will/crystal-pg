@@ -49,6 +49,9 @@ class PG::ResultSet < ::DB::ResultSet
     end
   rescue IO::Error
     raise DB::ConnectionLost.new(statement.connection)
+  rescue ex
+    @end = true
+    raise ex.message
   end
 
   def column_count : Int32
