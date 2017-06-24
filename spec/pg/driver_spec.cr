@@ -40,7 +40,6 @@ describe PG::Driver do
 
       result = PG_DB.query "insert into contacts values ($1)", "Foo"
       result = PG_DB.query "insert into contacts values ($1)", "Foo" do |rs|
-        pp rs
         rs.move_next
       end
     end
