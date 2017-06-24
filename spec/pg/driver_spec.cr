@@ -33,6 +33,19 @@ describe PG::Driver do
     end
   end
 
+  it "should raise an exception if unique constraint is violated" do
+    expect_raises(PQ::PQError) do
+      PG_DB.exec "drop table if exists contacts"
+      PG_DB.exec "create table contacts (name varchar(256), CONSTRAINT key_name UNIQUE(name))"
+
+      result = PG_DB.query "insert into contacts values ($1)", "Foo"
+      result = PG_DB.query "insert into contacts values ($1)", "Foo" do |rs|
+        pp rs
+        rs.move_next
+      end
+    end
+  end
+
   it "executes insert" do
     PG_DB.exec "drop table if exists contacts"
     PG_DB.exec "create table contacts (name varchar(256), age int4)"
