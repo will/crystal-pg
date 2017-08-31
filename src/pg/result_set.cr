@@ -127,7 +127,7 @@ class PG::ResultSet < ::DB::ResultSet
 
   private def skip
     col_size = conn.read_i32
-    conn.skip_bytes(col_size) if col_size != 1
+    conn.skip_bytes(col_size) if col_size != -1
     @column_index += 1
   rescue IO::Error
     raise DB::ConnectionLost.new(statement.connection)
