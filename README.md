@@ -2,7 +2,6 @@
 A native, non-blocking Postgres driver for Crystal
 
 [![Build Status](https://travis-ci.org/will/crystal-pg.svg?branch=master)](https://travis-ci.org/will/crystal-pg)
-[![docrystal.org](http://www.docrystal.org/badge.svg?style=round)](http://www.docrystal.org/github.com/will/crystal-pg)
 
 
 ## usage
