@@ -1,33 +1,39 @@
 v?.?.?     upcoming
 =====================
 
-v0.13.3     2017-03-21
+v0.13.4    2017-10-16
+=====================
+* fix CI (thanks @waghanza)
+* bugfix: make sure to read all nulls (thanks @ZeWebDev)
+* bugfix: no longer hangs on unhandeled exceptions (thanks @bigtunacan)
+
+v0.13.3    2017-03-21
 =====================
 * Increased precision when encoding times
 * Use DB.connect in ListenConnection to avoid creating a connection pool (thanks @bcardiff)
 * Updates to use db 0.4.0. (thanks again @bcardiff)
 
-v0.13.2     2017-02-21
+v0.13.2    2017-02-21
 =====================
 * update to crystal 0.21.0 (thanks @felipeelias)
 
-v0.13.1     2016-12-25
+v0.13.1    2016-12-25
 =====================
 * update to crystal 0.20.3 (thanks @bcardiff)
 
-v0.13.0     2016-12-21
+v0.13.0    2016-12-21
 =====================
 * Update to support crystal-db's connection pooling (thanks @bcardiff)
 
-v0.12.0     2016-12-10
+v0.12.0    2016-12-10
 =====================
 * Uses crystal-db api (thanks @asterite)
 
-v0.11.0     2016-09-04
+v0.11.0    2016-09-04
 =====================
 * Adds dedicated LISTEN connection
 
-v0.10.0     2016-09-03
+v0.10.0    2016-09-03
 =====================
 * Adds support for array types
 
