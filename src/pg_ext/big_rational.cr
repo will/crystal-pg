@@ -1,4 +1,4 @@
-require "big_rational"
+require "big"
 
 module PG
   struct Numeric

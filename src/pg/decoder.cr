@@ -217,14 +217,14 @@ module PG
       end
     end
 
-    JAN_1_2K_TICKS = Time.new(2000, 1, 1, kind: Time::Kind::Utc).ticks
+    JAN_1_2K = Time.new(2000, 1, 1, kind: Time::Kind::Utc)
 
     struct DateDecoder
       include Decoder
 
       def decode(io, bytesize)
         v = read_i32(io)
-        Time.new(JAN_1_2K_TICKS + (Time::Span::TicksPerDay * v), kind: Time::Kind::Utc)
+        JAN_1_2K + Time::Span.new(days: v, hours: 0, minutes: 0, seconds: 0)
       end
     end
 
@@ -232,8 +232,9 @@ module PG
       include Decoder
 
       def decode(io, bytesize)
-        v = read_i64(io) / 1000
-        Time.new(JAN_1_2K_TICKS + (Time::Span::TicksPerMillisecond * v), kind: Time::Kind::Utc)
+        v = read_i64(io) # microseconds
+        sec, m = v.divmod(1_000_000)
+        JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
       end
     end
 
