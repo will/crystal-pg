@@ -6,8 +6,8 @@ A native, non-blocking Postgres driver for Crystal
 
 ## usage
 
-This driver now uses the `crystal-db` project. Documention on connecting,
-quering, etc, can be found at:
+This driver now uses the `crystal-db` project. Documentation on connecting,
+querying, etc, can be found at:
 
 * https://crystal-lang.org/docs/database/
 * https://crystal-lang.org/docs/database/connection_pool.html
@@ -55,7 +55,7 @@ PG_DB.query_one("select '{hello, world}'::text[]", &.read(Array(String))
 ## Requirements
 
 Crystal-pg is [tested on](https://travis-ci.org/will/crystal-pg) Postgres
-versions 9.2 through 9.6. Since it uses protocal version 3, older versions probably also
+versions 9.2 through 9.6. Since it uses protocol version 3, older versions probably also
 work but are not guaranteed.
 
 ## Supported Datatypes
@@ -74,10 +74,10 @@ work but are not guaranteed.
 - geo types: point, box, path, lseg, polygon, circle, line
 - array types: int8, int4, int2, float8, float4, bool, text
 
-1: A note on numeric: In postgres this type has arbitrary percision. In this
-    driver, it is represented as a `PG::Numeric` which retians all precision, but
+1: A note on numeric: In Postgres this type has arbitrary precision. In this
+    driver, it is represented as a `PG::Numeric` which retains all precision, but
     if you need to do any math on it, you will probably need to cast it to a
-    float first. If you need true abitrary percision, you can optionally
+    float first. If you need true arbitrary precision, you can optionally
     require `pg_ext/big_rational` which adds `#to_big_r`, but requires that you
     have LibGMP installed.
 
