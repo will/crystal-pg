@@ -51,10 +51,8 @@ module PG
     end
 
     def version
-      query = "SELECT ver[1]::int AS major, ver[2]::int AS minor, ver[3]::int AS patch
-               FROM regexp_matches(version(), 'PostgreSQL (\\d+)\\.(\\d+)\\.(\\d+)') ver"
-      major, minor, patch = query_one query, &.read(Int32, Int32, Int32)
-      {major: major, minor: minor, patch: patch}
+      vers = connection.server_parameters["server_version"].split('.').map(&.to_i)
+      {major: vers[0], minor: vers[1], patch: vers[2]? || 0}
     end
 
     protected def do_close
