@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
 
+v0.14.1    2017-12-26
+=====================
+* Update crystal db support to 0.5.0 (thanks @bcardiff)
+
 v0.14.0    2017-12-26
 =====================
 * Support Crystal v0.24, breaks support for older versions
