@@ -81,21 +81,27 @@ module PQ
     private def write_i32(i : Int32)
       soc.write_bytes i, IO::ByteFormat::NetworkEndian
     end
+
     private def write_i32(i)
       write_i32 i.to_i32
     end
+
     private def write_i16(i : Int16)
       soc.write_bytes i, IO::ByteFormat::NetworkEndian
     end
+
     private def write_i16(i)
       write_i16 i.to_i16
     end
+
     private def write_null
       soc.write_byte 0_u8
     end
+
     private def write_byte(byte)
       soc.write_byte byte
     end
+
     private def write_chr(chr : Char)
       soc.write_byte chr.ord.to_u8
     end
