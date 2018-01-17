@@ -27,3 +27,6 @@ before_install:
 
 notifications:
   email: false
+
+script:
+  - crystal tool format --check
