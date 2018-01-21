@@ -14,7 +14,7 @@ querying, etc, can be found at:
 
 ### shards
 
-Add this to your `shard.yml` and run `crystal deps`
+Add this to your `shard.yml` and run `shards install`
 
 ``` yml
 dependencies:
