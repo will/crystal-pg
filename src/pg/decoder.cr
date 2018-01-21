@@ -1,7 +1,7 @@
 require "json"
 
 module PG
-  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Type | PG::Numeric
+  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric
 
   # :nodoc:
   module Decoders
@@ -217,7 +217,7 @@ module PG
       end
     end
 
-    JAN_1_2K = Time.new(2000, 1, 1, kind: Time::Kind::Utc)
+    JAN_1_2K = Time.new(2000, 1, 1, location: Time::Location::UTC)
 
     struct DateDecoder
       include Decoder

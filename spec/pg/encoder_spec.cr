@@ -42,6 +42,6 @@ describe PG::Driver, "encoder" do
     PG::Geo::Point.new(1.2, 3.4),
     PG::Geo::Point.new(5.6, 7.8),
   ])
-  test_insert_and_read "timestamp", Time.new(2015, 2, 3, 17, 15, nanosecond: 13_000_000, kind: Time::Kind::Utc)
-  test_insert_and_read "timestamp", Time.new(2015, 2, 3, 17, 15, 13, nanosecond: 11_000_000, kind: Time::Kind::Utc)
+  test_insert_and_read "timestamp", Time.new(2015, 2, 3, 17, 15, nanosecond: 13_000_000, location: Time::Location::UTC)
+  test_insert_and_read "timestamp", Time.new(2015, 2, 3, 17, 15, 13, nanosecond: 11_000_000, location: Time::Location::UTC)
 end

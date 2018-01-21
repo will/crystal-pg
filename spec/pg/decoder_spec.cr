@@ -39,16 +39,16 @@ describe PG::Decoders do
   end
 
   test_decode "timestamptz", "'2015-02-03 16:15:13-01'::timestamptz",
-    Time.new(2015, 2, 3, 17, 15, 13, kind: Time::Kind::Utc)
+    Time.new(2015, 2, 3, 17, 15, 13, location: Time::Location::UTC)
 
   test_decode "timestamptz", "'2015-02-03 16:15:14.23-01'::timestamptz",
-    Time.new(2015, 2, 3, 17, 15, 14, nanosecond: 230_000_000, kind: Time::Kind::Utc)
+    Time.new(2015, 2, 3, 17, 15, 14, nanosecond: 230_000_000, location: Time::Location::UTC)
 
   test_decode "timestamp", "'2015-02-03 16:15:15'::timestamp",
-    Time.new(2015, 2, 3, 16, 15, 15, kind: Time::Kind::Utc)
+    Time.new(2015, 2, 3, 16, 15, 15, location: Time::Location::UTC)
 
   test_decode "date", "'2015-02-03'::date",
-    Time.new(2015, 2, 3, 0, 0, 0, kind: Time::Kind::Utc)
+    Time.new(2015, 2, 3, 0, 0, 0, location: Time::Location::UTC)
 
   it "numeric" do
     x = ->(q : String) do
