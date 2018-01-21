@@ -1,4 +1,5 @@
 require "json"
+require "uuid"
 
 module PG
   alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Type | PG::Numeric
@@ -242,33 +243,9 @@ module PG
       include Decoder
 
       def decode(io, bytesize)
-        bytes = uninitialized UInt8[6]
-
-        String.new(36) do |buffer|
-          buffer[8] = buffer[13] = buffer[18] = buffer[23] = 45_u8
-
-          slice = bytes.to_slice[0, 4]
-
-          io.read(slice)
-          slice.hexstring(buffer + 0)
-
-          slice = bytes.to_slice[0, 2]
-
-          io.read(slice)
-          slice.hexstring(buffer + 9)
-
-          io.read(slice)
-          slice.hexstring(buffer + 14)
-
-          io.read(slice)
-          slice.hexstring(buffer + 19)
-
-          slice = bytes.to_slice
-          io.read(slice)
-          slice.hexstring(buffer + 24)
-
-          {36, 36}
-        end
+        bytes = uninitialized UInt8[16]
+        io.read(bytes.to_slice)
+        UUID.new(bytes).to_s
       end
     end
 
