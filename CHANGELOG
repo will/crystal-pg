@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* fix PG::Numeric#to_s on numbers with >= weight than ndigits, eg 800000
 
 v0.14.1    2017-12-26
 =====================

@@ -81,7 +81,7 @@ module PG
       io << '-' if neg?
 
       if weight >= 0
-        (0..weight).each { |idx| io << digits[idx].to_s }
+        (0..weight).each { |idx| io << (digits[idx]? || "0000").to_s }
       end
 
       return if dscale <= 0
