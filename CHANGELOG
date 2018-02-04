@@ -1,6 +1,8 @@
 v?.?.?     upcoming
 =====================
-* fix PG::Numeric#to_s on numbers with >= weight than ndigits, eg 800000
+* fix PG::Numeric#to_s on numbers with >= weight than ndigits, eg 800000 (#133)
+* fix PG::Numeric#to_s on numbers where the `digits` expected to be zero padded
+  and other cases (#134)
 
 v0.14.1    2017-12-26
 =====================

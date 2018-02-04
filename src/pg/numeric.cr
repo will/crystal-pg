@@ -80,8 +80,17 @@ module PG
 
       io << '-' if neg?
 
+      pos = 0
+
       if weight >= 0
-        (0..weight).each { |idx| io << (digits[idx]? || "0000").to_s }
+        io << digits[0].to_s
+        pos += 1
+        (1..weight).each do |idx|
+          pos += 1
+          str = digits[idx]?.to_s
+          (4 - str.size).times { io << '0' }
+          io << str
+        end
       end
 
       return if dscale <= 0
@@ -89,15 +98,29 @@ module PG
       io << '0' if weight < 0
       io << '.'
 
-      extra = ndigits == 1 ? 1 : (dscale % 4)
-      if weight < 0
-        (dscale + weight + extra).times { io << '0' }
-        start = 0
-      else
-        start = weight + 1
+      count = 0
+      (-1 - weight).times do
+        io << "0000"
+        count += 4
       end
-      (start...ndigits - 1).each { |idx| io << digits[idx].to_s }
-      io << digits[ndigits - 1].to_s[0..extra - 1]
+
+      (pos...ndigits).each do |idx|
+        str = digits[idx].to_s
+
+        (4 - str.size).times do
+          io << '0'
+          count += 1
+        end
+
+        if idx == ndigits - 1
+          remain = (dscale + str.size) % 4
+          str = str[0...remain] unless remain == 0
+        end
+        io << str
+        count += str.size
+      end
+
+      (dscale - count).times { io << '0' }
     end
   end
 end
