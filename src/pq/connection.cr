@@ -16,7 +16,6 @@ module PQ
     getter server_parameters : Hash(String, String)
     property notice_handler : Notice ->
     property notification_handler : Notification ->
-    getter pid : Int32, secret : Int32
 
     def initialize(@conninfo : ConnInfo)
       @mutex = Mutex.new
@@ -24,8 +23,6 @@ module PQ
       @established = false
       @notice_handler = Proc(Notice, Void).new { }
       @notification_handler = Proc(Notification, Void).new { }
-      @pid = uninitialized Int32
-      @secret = uninitialized Int32
 
       begin
         if @conninfo.host[0] == '/'
@@ -235,11 +232,16 @@ module PQ
       auth_frame = expect_frame Frame::Authentication
       handle_auth auth_frame
 
-      key_data = expect_frame Frame::BackendKeyData
-      @pid = key_data.pid
-      @secret = key_data.secret
-
-      expect_frame Frame::ReadyForQuery
+      loop do
+        case frame = read
+        when Frame::BackendKeyData
+          # do nothing
+        when Frame::ReadyForQuery
+          break
+        else
+          raise "Expected BackendKeyData or ReadyForQuery but was #{frame}"
+        end
+      end
 
       @established = true
     end
