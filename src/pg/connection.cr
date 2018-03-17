@@ -12,8 +12,8 @@ module PG
         conn_info = PQ::ConnInfo.new(context.uri)
         @connection = PQ::Connection.new(conn_info)
         @connection.connect
-      rescue
-        raise DB::ConnectionRefused.new
+      rescue ex
+        raise DB::ConnectionRefused.new(cause: ex)
       end
     end
 
