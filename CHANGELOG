@@ -1,7 +1,7 @@
 v?.?.?     upcoming
 =====================
 
-v?.?.?     upcoming
+v0.15.0    2018-06-15
 =====================
 * Support Crystal v0.25 (thanks @greenbigfrog)
 * fix PG::Numeric#to_s on numbers with >= weight than ndigits, eg 800000 (#133)
