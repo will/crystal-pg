@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* Support connection negotiation without BackendKeyData frame (thanks @rx14)
 
 v0.15.0    2018-06-15
 =====================
