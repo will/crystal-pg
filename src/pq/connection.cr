@@ -207,7 +207,7 @@ module PQ
       @server_parameters[frame.key] = frame.value
       case frame.key
       when "client_encoding"
-        if frame.value != "UTF8"
+        if frame.value.upcase != "UTF8"
           raise ConnectionError.new(
             "Only UTF8 is supported for client_encoding, got: #{frame.value.inspect}")
         end
