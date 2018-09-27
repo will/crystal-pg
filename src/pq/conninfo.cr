@@ -19,11 +19,17 @@ module PQ
     # The password. Optional.
     getter password : String?
 
-    # SSLmode, either :prefer or :require
-    #
-    # If set to `:prefer`, ssl is attempted. If it is `:require` and ssl is not
-    # established, an error is raised
+    # The sslmode. Optional (:prefer is default).
     getter sslmode : Symbol
+
+    # The sslcert. Optional.
+    getter sslcert : String?
+
+    # The sslkey. Optional.
+    getter sslkey : String?
+
+    # The sslrootcert. Optional.
+    getter sslrootcert : String?
 
     # Create a new ConnInfo from all parts
     def initialize(host : String? = nil, database : String? = nil, user : String? = nil, @password : String? = nil, port : Int | String? = 5432, sslmode : String | Symbol? = nil)
@@ -57,24 +63,37 @@ module PQ
 
     # Initializes with a `URI`
     def initialize(uri : URI)
-      sslmode = nil
+      initialize(uri.host, uri.path, uri.user, uri.password, uri.port, :prefer)
       if q = uri.query
-        q.split('&').each do |pair|
-          k, v = pair.split('=')
-          sslmode = v if k == "sslmode"
+        HTTP::Params.parse(q) do |key, value|
+          handle_sslparam(key, value)
         end
       end
-
-      initialize(uri.host, uri.path, uri.user, uri.password, uri.port, sslmode)
     end
 
     # Initialize with a `Hash`
     #
     # Valid keys match Postgres "conninfo" keys and are `"host"`, `"dbname"`,
-    # `"user"`, `"password"`, `"port"`, and `"sslmode"`
+    # `"user"`, `"password"`, `"port"`, `"sslmode"`, `"sslcert"`, `"sslkey"` and `"sslrootcert"`
     def initialize(params : Hash)
       initialize(params["host"]?, params["dbname"]?, params["user"]?,
         params["password"]?, params["port"]?, params["sslmode"]?)
+      params.each do |key, value|
+        handle_sslparam(key, value)
+      end
+    end
+
+    private def handle_sslparam(key : String, value : String)
+      case key
+      when "sslmode"
+        @sslmode = default_sslmode value
+      when "sslcert"
+        @sslcert = value
+      when "sslkey"
+        @sslkey = value
+      when "sslrootcert"
+        @sslrootcert = value
+      end
     end
 
     private def default_host(h)
@@ -103,8 +122,16 @@ module PQ
       case mode
       when nil, :prefer, "prefer"
         :prefer
+      when :disable, "disable"
+        :disable
+      when :allow, "allow"
+        :allow
       when :require, "require"
         :require
+      when :"verify-ca", "verify-ca"
+        :"verify-ca"
+      when :"verify-full", "verify-full"
+        :"verify-full"
       else
         raise ArgumentError.new("sslmode #{mode} not supported")
       end
