@@ -20,6 +20,13 @@ private def assert_custom_params(ci)
   ci.sslmode.should eq(:require)
 end
 
+private def assert_ssl_params(ci)
+  ci.sslmode.should eq(:"verify-full")
+  ci.sslcert.should eq("postgresql.crt")
+  ci.sslkey.should eq("postgresql.key")
+  ci.sslrootcert.should eq("root.crt")
+end
+
 describe PQ::ConnInfo, "parts" do
   it "can have all defaults" do
     ci = PQ::ConnInfo.new
@@ -44,6 +51,10 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     assert_custom_params ci
 
     ci = PQ::ConnInfo.from_conninfo_string(
+      "postgres://user:pass@host:5555/db?sslmode=verify-full&sslcert=postgresql.crt&sslkey=postgresql.key&sslrootcert=root.crt")
+    assert_ssl_params ci
+
+    ci = PQ::ConnInfo.from_conninfo_string(
       "postgresql://user:pass@host:5555/db?sslmode=require")
     assert_custom_params ci
   end
@@ -52,6 +63,10 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     ci = PQ::ConnInfo.from_conninfo_string(
       "host=host dbname=db user=user password=pass port=5555 sslmode=require")
     assert_custom_params ci
+
+    ci = PQ::ConnInfo.from_conninfo_string(
+      "host=host dbname=db user=user password=pass port=5555 sslmode=verify-full sslcert=postgresql.crt sslkey=postgresql.key sslrootcert=root.crt")
+    assert_ssl_params ci
 
     ci = PQ::ConnInfo.from_conninfo_string("host=host")
     ci.host.should eq("host")

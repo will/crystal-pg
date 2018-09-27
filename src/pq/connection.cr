@@ -54,6 +54,15 @@ module PQ
       if serv_ssl
         ctx = OpenSSL::SSL::Context::Client.new
         ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE # currently emulating sslmode 'require' not verify_ca or verify_full
+        if sslcert = @conninfo.sslcert
+          ctx.certificate_chain = sslcert
+        end
+        if sslkey = @conninfo.sslkey
+          ctx.private_key = sslkey
+        end
+        if sslrootcert = @conninfo.sslrootcert
+          ctx.ca_certificates = sslrootcert
+        end
         @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true)
       end
 
