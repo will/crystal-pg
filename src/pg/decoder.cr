@@ -305,37 +305,37 @@ module PG
       @@decoders[oid] = decoder
     end
 
-    # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
-    register_decoder BoolDecoder.new, 16         # bool
-    register_decoder ByteaDecoder.new, 17        # bytea
-    register_decoder CharDecoder.new, 18         # "char" (internal type)
-    register_decoder StringDecoder.new, 19       # name (internal type)
-    register_decoder Int64Decoder.new, 20        # int8 (bigint)
-    register_decoder Int16Decoder.new, 21        # int2 (smallint)
-    register_decoder Int32Decoder.new, 23        # int4 (integer)
-    register_decoder StringDecoder.new, 25       # text
-    register_decoder UIntDecoder.new, 26         # oid (internal type)
-    register_decoder JsonDecoder.new, 114        # json
-    register_decoder StringDecoder.new, 142      # xml
-    register_decoder JsonbDecoder.new, 3802      # jsonb
-    register_decoder Float32Decoder.new, 700     # float4
-    register_decoder Float64Decoder.new, 701     # float8
-    register_decoder StringDecoder.new, 705      # unknown
-    register_decoder StringDecoder.new, 1042     # blchar
-    register_decoder StringDecoder.new, 1043     # varchar
-    register_decoder DateDecoder.new, 1082       # date
-    register_decoder TimeDecoder.new, 1114       # timestamp
-    register_decoder NumericDecoder.new, 1700    # numeric
-    register_decoder TimeDecoder.new, 1184       # timestamptz
-    register_decoder Int32Decoder.new, 2206      # regtype
-    register_decoder UuidDecoder.new, 2950       # uuid
-    register_decoder PointDecoder.new, 600       # point
-    register_decoder LineSegmentDecoder.new, 601 # lseg
-    register_decoder PathDecoder.new, 602        # path
-    register_decoder BoxDecoder.new, 603         # box
-    register_decoder PolygonDecoder.new, 604     # polygon
-    register_decoder LineDecoder.new, 628        # line
-    register_decoder CircleDecoder.new, 718      # circle
+    # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
+    register_decoder BoolDecoder.new, Type::BOOLOID
+    register_decoder ByteaDecoder.new, Type::BYTEAOID
+    register_decoder CharDecoder.new, Type::CHAROID
+    register_decoder StringDecoder.new, Type::NAMEOID
+    register_decoder Int64Decoder.new, Type::INT8OID
+    register_decoder Int16Decoder.new, Type::INT2OID
+    register_decoder Int32Decoder.new, Type::INT4OID
+    register_decoder StringDecoder.new, Type::TEXTOID
+    register_decoder UIntDecoder.new, Type::OIDOID
+    register_decoder JsonDecoder.new, Type::JSONOID
+    register_decoder StringDecoder.new, Type::XMLOID
+    register_decoder JsonbDecoder.new, Type::JSONBOID
+    register_decoder Float32Decoder.new, Type::FLOAT4OID
+    register_decoder Float64Decoder.new, Type::FLOAT8OID
+    register_decoder StringDecoder.new, 705 # unknown
+    register_decoder StringDecoder.new, Type::BPCHAROID
+    register_decoder StringDecoder.new, Type::VARCHAROID
+    register_decoder DateDecoder.new, Type::DATEOID
+    register_decoder TimeDecoder.new, Type::TIMESTAMPOID
+    register_decoder NumericDecoder.new, Type::NUMERICOID
+    register_decoder TimeDecoder.new, Type::TIMESTAMPTZOID
+    register_decoder Int32Decoder.new, Type::REGTYPEOID
+    register_decoder UuidDecoder.new, Type::UUIDOID
+    register_decoder PointDecoder.new, Type::POINTOID
+    register_decoder LineSegmentDecoder.new, Type::LSEGOID
+    register_decoder PathDecoder.new, Type::PATHOID
+    register_decoder BoxDecoder.new, Type::BOXOID
+    register_decoder PolygonDecoder.new, Type::POLYGONOID
+    register_decoder LineDecoder.new, Type::LINEOID
+    register_decoder CircleDecoder.new, Type::CIRCLEOID
   end
 end
 

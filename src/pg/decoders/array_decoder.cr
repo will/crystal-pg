@@ -113,10 +113,14 @@ module PG
 
   array_type 1000, Bool
   array_type 1002, Char
-  array_type 1005, Int16
-  array_type 1007, Int32
-  array_type 1009, String
+  array_type Type::INT2ARRAYOID, Int16
+  array_type Type::INT4ARRAYOID, Int32
+  array_type Type::TEXTARRAYOID, String
   array_type 1016, Int64
-  array_type 1021, Float32
+  array_type Type::FLOAT4ARRAYOID, Float32
   array_type 1022, Float64
+
+  module Decoders
+    register_decoder ArrayDecoder(StringArray, StringDecoder).new, 1015
+  end
 end

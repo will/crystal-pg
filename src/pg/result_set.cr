@@ -62,8 +62,10 @@ class PG::ResultSet < ::DB::ResultSet
     field(index).name
   end
 
-  def column_type(index : Int32)
-    decoder(index).type
+  # Returns the data type associated with the given column number. The integer returned is the internal OID number of the type.
+  # You can query the system table pg_type to obtain the names and properties of the various data types.
+  def column_type_oid(index : Int32) : Int32
+    field(index).type_oid
   end
 
   def read
