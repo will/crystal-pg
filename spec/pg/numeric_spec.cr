@@ -127,11 +127,11 @@ describe PG::Numeric do
     ].each do |x|
       ex(x[0]).to_s.should eq(x[1])
     end
+  end
 
-    it "#nan?" do
-      ex("nan").nan?.should be_true
-      ex("1").nan?.should be_false
-      ex("-1").nan?.should be_false
-    end
+  it "#nan?" do
+    ex("nan").nan?.should be_true
+    ex("1").nan?.should be_false
+    ex("-1").nan?.should be_false
   end
 end
