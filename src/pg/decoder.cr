@@ -127,6 +127,29 @@ module PG
       end
     end
 
+    struct HstoreDecoder
+      include Decoder
+
+      def decode(io, bytesize)
+        # return String.new(ByteaDecoder.new.decode(io,bytesize))
+        Hash(String, String?).new.tap do |hash|
+          string_decoder = StringDecoder.new
+          key_count = read_u32(io)
+          key_count.times do
+            length = read_u32(io)
+            key = string_decoder.decode(io, length)
+            length = read_u32(io)
+            if length == -1
+              hash[key] = nil
+            else
+              value = string_decoder.decode(io, length)
+              hash[key] = value
+            end
+          end
+        end
+      end
+    end
+
     struct PointDecoder
       include Decoder
 
@@ -295,12 +318,56 @@ module PG
       end
     end
 
-    @@decoders = Hash(Int32, PG::Decoders::Decoder).new(ByteaDecoder.new)
+    alias DecoderMap = Hash(Int32, PG::Decoders::Decoder)
+    @@decoders = DecoderMap.new(ByteaDecoder.new)
 
     def self.from_oid(oid)
       @@decoders[oid]
     end
 
+    TYPE_SQL = %q(
+      SELECT oid, typname, typcategory
+      FROM pg_type
+      WHERE typisdefined = 't'
+        AND typtype IN ('b', 'd'))
+
+    # https://www.postgresql.org/docs/9.4/static/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
+    module TypeCategories # Could this be an enum?
+      ARRAY        = 'A'
+      COMPOSITE    = 'C'
+      DATE_OR_TIME = 'D'
+      ENUM         = 'E'
+      GEOMETRIC    = 'G'
+      NETWORK      = 'I'
+      NUMERIC      = 'N'
+      PSEUDO       = 'P'
+      RANGE        = 'R'
+      STRING       = 'S'
+      TIMESPAN     = 'T'
+      USER_DEFINED = 'U'
+      BIT_STRING   = 'V'
+      UNKNOWN      = 'X'
+    end
+
+    # Builds a `DecoderMap` of all types visible on `connection` that are not
+    # already statically known.
+    def self.register_connection_decoders(connection : PG::Connection) : Void
+      types = connection.query_all(TYPE_SQL, as: {UInt32, String, Char})
+      types.each do |oid, name, category|
+        oid = oid.to_i32 # Query execution if I read straight to Int32 :\
+        next if @@decoders[oid]? # always prefer pre-defined/global decoders
+
+        case {oid, name, category}
+        when {_, _, TypeCategories::STRING} # citext, domains based on text, etc
+          connection.register_decoder StringDecoder.new, oid
+        when {_, "hstore", TypeCategories::USER_DEFINED}
+          connection.register_decoder HstoreDecoder.new, oid
+        end
+      end
+    end
+
+    # Globally registers a `Decoder` instance to handle type specified by
+    # provided OID.
     def self.register_decoder(decoder, oid)
       @@decoders[oid] = decoder
     end

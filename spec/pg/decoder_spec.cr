@@ -38,6 +38,39 @@ describe PG::Decoders do
     test_decode "jsonb", "'[1,2,3]'::jsonb", JSON.parse("[1,2,3]")
   end
 
+  it "citext" do
+    begin
+      PG_DB.exec("CREATE EXTENSION IF NOT EXISTS \"citext\"")
+      with_connection do |conn| # fresh connection so decoders are evaluated
+        value = conn.query_one "select 'abc'::citext", &.read
+        value.should eq("abc")
+      end
+    ensure
+      PG_DB.exec("DROP EXTENSION IF EXISTS \"citext\"")
+    end
+  end
+
+  it "hstore" do
+    begin
+      PG_DB.exec("CREATE EXTENSION IF NOT EXISTS \"hstore\"")
+      with_connection do |conn| # fresh connection so decoders are evaluated
+        value = conn.query_one "select 'foo=>bar,baz=>42'::hstore", &.read
+        value.should eq({"foo" => "bar", "baz" => "42"})
+
+        value = conn.query_one "select ''::hstore", &.read
+        value.should eq({} of String => String?)
+
+        value = conn.query_one "select 'bar=>42,foo=>NULL'::hstore", &.read
+        value.should eq({"foo"=>nil, "bar" => "42"})
+
+        value = conn.query_one "select NULL::hstore", &.read
+        value.should eq(nil)
+      end
+    ensure
+      PG_DB.exec("DROP EXTENSION IF EXISTS \"hstore\"")
+    end
+  end
+
   test_decode "timestamptz", "'2015-02-03 16:15:13-01'::timestamptz",
     Time.new(2015, 2, 3, 17, 15, 13, location: Time::Location::UTC)
 

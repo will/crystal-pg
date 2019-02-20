@@ -22,6 +22,10 @@ module PQ
       text val.to_s(ISO_8601)
     end
 
+    def self.encode(val : Hash(String, String?))
+      text val.map { |k, v| "#{k.inspect} => #{v.nil? ? "NULL" : v.inspect}" }.join(',')
+    end
+
     def self.encode(val : PG::Geo::Point)
       text "(#{val.x},#{val.y})"
     end

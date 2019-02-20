@@ -4,6 +4,8 @@ module PG
   class Connection < ::DB::Connection
     protected getter connection
 
+    @decoders : Decoders::DecoderMap = Decoders::DecoderMap.new { |_, oid| Decoders.from_oid(oid) }
+
     def initialize(context)
       super
       @connection = uninitialized PQ::Connection
@@ -15,6 +17,14 @@ module PG
       rescue ex
         raise DB::ConnectionRefused.new(cause: ex)
       end
+
+      # We have to query `pg_type` table to learn about the types in this
+      # database, so make sure we temporarily set `auto_release` to false
+      # else this would cause a premature `release` before this connection
+      # has even been added to the pool.
+      self.auto_release, auto_release = false, self.auto_release
+      Decoders.register_connection_decoders(self)
+      self.auto_release = auto_release
     end
 
     def build_prepared_statement(query)
@@ -53,6 +63,16 @@ module PG
     def version
       vers = connection.server_parameters["server_version"].split('.').map(&.to_i)
       {major: vers[0], minor: vers[1], patch: vers[2]? || 0}
+    end
+
+    def decoder_from_oid(oid) : Decoders::Decoder
+      @decoders[oid] # will fallback to built-in
+    end
+
+    # Registers a `Decoder` instance to handle type specified by
+    # provided OID for this connection only
+    def register_decoder(decoder, oid)
+      @decoders[oid] = decoder
     end
 
     protected def do_close
