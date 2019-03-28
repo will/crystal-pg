@@ -51,7 +51,7 @@ module PG
     end
 
     def version
-      vers = connection.server_parameters["server_version"].split('.').map(&.to_i)
+      vers = connection.server_parameters["server_version"].partition(' ').first.split('.').map(&.to_i)
       {major: vers[0], minor: vers[1], patch: vers[2]? || 0}
     end
 
