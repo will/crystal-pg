@@ -55,7 +55,7 @@ PG_DB.query_one("select '{hello, world}'::text[]", &.read(Array(String))
 ## Requirements
 
 Crystal-pg is [tested on](https://travis-ci.org/will/crystal-pg) Postgres
-versions 9.2 through 9.6. Since it uses protocol version 3, older versions probably also
+versions 9.2 through 11. Since it uses protocol version 3, older versions probably also
 work but are not guaranteed.
 
 ## Supported Datatypes
