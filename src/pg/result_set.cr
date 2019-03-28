@@ -91,13 +91,12 @@ class PG::ResultSet < ::DB::ResultSet
 
   def read(t : Array(T).class) : Array(T) forall T
     read_array(Array(T)) do
-      raise PG::RuntimeError.new("unexpected NULL")
+      raise PG::RuntimeError.new("unexpected NULL, expecting to read #{t}")
     end
   end
 
   def read(t : Array(T)?.class) : Array(T)? forall T
     read_array(Array(T)) do
-      @column_index += 1
       return nil
     end
   end
@@ -105,6 +104,7 @@ class PG::ResultSet < ::DB::ResultSet
   private def read_array(t : T.class) : T forall T
     col_bytesize = conn.read_i32
     if col_bytesize == -1
+      @column_index += 1
       yield
     end
 

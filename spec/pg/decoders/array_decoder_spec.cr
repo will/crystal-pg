@@ -60,4 +60,10 @@ describe PG::Decoders do
   test_decode "int8 array", "$${1,2}$$::int8[]", [1, 2]
   test_decode "float4 array", "$${1.1,2.2}$$::float4[]", [1.1_f32, 2.2_f32]
   test_decode "float8 array", "$${1.1,2.2}$$::float8[]", [1.1_f64, 2.2_f64]
+
+  it "errors when expecting array returns null" do
+    expect_raises(PG::RuntimeError, "unexpected NULL, expecting to read Array(String)") do
+      PG_DB.query_one("SELECT NULL", as: Array(String))
+    end
+  end
 end
