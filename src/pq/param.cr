@@ -1,3 +1,5 @@
+require "../pg/geo"
+
 module PQ
   ISO_8601 = "%FT%X.%L%z"
   # :nodoc:
@@ -84,19 +86,64 @@ module PQ
     end
 
     def self.encode_array(array)
-      String.build do |io|
-        encode_array(array, io)
+      String.build(array.size + 2) do |io|
+        encode_array(io, array)
       end
     end
 
-    def self.encode_array(value, io)
-      if value.is_a?(Array)
-        io << "{"
-        value.join(",", io) { |e| encode_array(e, io) }
-        io << "}"
-      else
-        io << value
+    def self.encode_array(io, value : Array)
+      io << "{"
+      value.join(",", io) do |item|
+        encode_array(io, item)
       end
+      io << "}"
+    end
+
+    def self.encode_array(io, value)
+      io << value
+    end
+
+    def self.encode_array(io, value : Bool)
+      io << (value ? 't' : 'f')
+    end
+
+    def self.encode_array(io, value : Bytes)
+      io << '"'
+      io << String.new(value).gsub(%("), %(\\"))
+      io << '"'
+    end
+
+    def self.encode_array(io, value : String)
+      io << '"'
+      if value.ascii_only?
+        special_chars = {'"'.ord.to_u8, '\\'.ord.to_u8}
+        last_index = 0
+        value.to_slice.each_with_index do |byte, index|
+          if special_chars.includes?(byte)
+            io.write value.unsafe_byte_slice(last_index, index - last_index)
+            last_index = index
+            io << '\\'
+          end
+        end
+
+        io.write value.unsafe_byte_slice(last_index)
+      else
+        last_index = 0
+        reader = Char::Reader.new(value)
+        while reader.has_next?
+          char = reader.current_char
+          if {'"', '\\'}.includes?(char)
+            io.write value.unsafe_byte_slice(last_index, reader.pos - last_index)
+            last_index = reader.pos
+            io << '\\'
+          end
+          reader.next_char
+        end
+
+        io.write value.unsafe_byte_slice(last_index)
+      end
+
+      io << '"'
     end
   end
 end

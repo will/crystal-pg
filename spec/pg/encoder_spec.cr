@@ -18,30 +18,46 @@ end
 
 describe PG::Driver, "encoder" do
   test_insert_and_read "int4", 123
+
   test_insert_and_read "float", 12.34
+
   test_insert_and_read "varchar", "hello world"
+
+  test_insert_and_read "timestamp", Time.utc(2015, 2, 3, 17, 15, nanosecond: 13_000_000)
+  test_insert_and_read "timestamp", Time.utc(2015, 2, 3, 17, 15, 13, nanosecond: 11_000_000)
+
+  test_insert_and_read "bool[]", [true, false, true]
+
+  test_insert_and_read "float[]", [1.2, 3.4, 5.6]
+
   test_insert_and_read "integer[]", [] of Int32
   test_insert_and_read "integer[]", [1, 2, 3]
   test_insert_and_read "integer[]", [[1, 2], [3, 4]]
-  test_insert_and_read "point", PG::Geo::Point.new(1.2, 3.4)
-  if Helper.db_version_gte(9, 4)
-    test_insert_and_read "line", PG::Geo::Line.new(1.2, 3.4, 5.6)
+
+  test_insert_and_read "text[]", ["t", "f", "t"]
+  test_insert_and_read "text[]", [%("a), %(\\b~), %(c\\"d), %(\uFF8F)]
+  test_insert_and_read "text[]", ["baz, bar"]
+  test_insert_and_read "text[]", ["foo}"]
+
+  describe "geo" do
+    test_insert_and_read "point", PG::Geo::Point.new(1.2, 3.4)
+    if Helper.db_version_gte(9, 4)
+      test_insert_and_read "line", PG::Geo::Line.new(1.2, 3.4, 5.6)
+    end
+    test_insert_and_read "circle", PG::Geo::Circle.new(1.2, 3.4, 5.6)
+    test_insert_and_read "lseg", PG::Geo::LineSegment.new(1.2, 3.4, 5.6, 7.8)
+    test_insert_and_read "box", PG::Geo::Box.new(1.2, 3.4, 5.6, 7.8)
+    test_insert_and_read "path", PG::Geo::Path.new([
+      PG::Geo::Point.new(1.2, 3.4),
+      PG::Geo::Point.new(5.6, 7.8),
+    ], closed: false)
+    test_insert_and_read "path", PG::Geo::Path.new([
+      PG::Geo::Point.new(1.2, 3.4),
+      PG::Geo::Point.new(5.6, 7.8),
+    ], closed: true)
+    test_insert_and_read "polygon", PG::Geo::Polygon.new([
+      PG::Geo::Point.new(1.2, 3.4),
+      PG::Geo::Point.new(5.6, 7.8),
+    ])
   end
-  test_insert_and_read "circle", PG::Geo::Circle.new(1.2, 3.4, 5.6)
-  test_insert_and_read "lseg", PG::Geo::LineSegment.new(1.2, 3.4, 5.6, 7.8)
-  test_insert_and_read "box", PG::Geo::Box.new(1.2, 3.4, 5.6, 7.8)
-  test_insert_and_read "path", PG::Geo::Path.new([
-    PG::Geo::Point.new(1.2, 3.4),
-    PG::Geo::Point.new(5.6, 7.8),
-  ], closed: false)
-  test_insert_and_read "path", PG::Geo::Path.new([
-    PG::Geo::Point.new(1.2, 3.4),
-    PG::Geo::Point.new(5.6, 7.8),
-  ], closed: true)
-  test_insert_and_read "polygon", PG::Geo::Polygon.new([
-    PG::Geo::Point.new(1.2, 3.4),
-    PG::Geo::Point.new(5.6, 7.8),
-  ])
-  test_insert_and_read "timestamp", Time.new(2015, 2, 3, 17, 15, nanosecond: 13_000_000, location: Time::Location::UTC)
-  test_insert_and_read "timestamp", Time.new(2015, 2, 3, 17, 15, 13, nanosecond: 11_000_000, location: Time::Location::UTC)
 end
