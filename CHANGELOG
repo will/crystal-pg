@@ -3,6 +3,8 @@ v?.?.?     upcoming
 * Support connection negotiation without BackendKeyData frame (thanks @rx14)
 * Make connection client encoding check case insesitive (thanks @yumoose)
 * Support client cert auth (thanks @sanderhahn)
+* Fix reading null when expecting array (thanks @straight-shoota)
+* Fix encoding string arrays with special characters (thanks @straight-shoota)
 
 v0.15.0    2018-06-15
 =====================
