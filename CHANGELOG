@@ -5,6 +5,7 @@ v?.?.?     upcoming
 * Support client cert auth (thanks @sanderhahn)
 * Fix reading null when expecting array (thanks @straight-shoota)
 * Fix encoding string arrays with special characters (thanks @straight-shoota)
+* Fix version parser (thanks @straight-shoota)
 
 v0.15.0    2018-06-15
 =====================
