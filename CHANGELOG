@@ -1,5 +1,8 @@
 v?.?.?     upcoming
 =====================
+
+v0.16.0    2019-04-02
+=====================
 * Support connection negotiation without BackendKeyData frame (thanks @rx14)
 * Make connection client encoding check case insesitive (thanks @yumoose)
 * Support client cert auth (thanks @sanderhahn)
