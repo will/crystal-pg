@@ -284,6 +284,15 @@ module PQ
 
     def read_next_row_start
       type = soc.read_char
+
+      if type == 'N'
+        frame = read_one_frame type
+        async_frames = handle_async_frames frame
+        if async_frames
+          type = soc.read_char
+        end
+      end
+           
       if type == 'D'
         true
       else
