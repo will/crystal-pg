@@ -73,3 +73,28 @@ describe PG, "#listen" do
     end
   end
 end
+
+describe PG, "#read_next_row_start" do
+  it "handles reading a notice" do
+    with_connection do |db|
+      db.exec <<-SQL
+        CREATE OR REPLACE FUNCTION foo() RETURNS integer AS $$
+        BEGIN
+          RAISE NOTICE 'foo';
+          RAISE NOTICE 'bar';
+          RETURN 42;
+        END;
+        $$ LANGUAGE plpgsql;
+        SQL
+
+      received_notices = [] of String
+      db.on_notice do |notice|
+        received_notices << notice.message
+      end
+      db.scalar("SELECT foo()").should eq 42
+      received_notices.should eq ["foo", "bar"]
+
+      db.exec("DROP FUNCTION foo()")
+    end
+  end
+end
