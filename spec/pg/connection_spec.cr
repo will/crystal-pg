@@ -77,6 +77,7 @@ end
 describe PG, "#read_next_row_start" do
   it "handles reading a notice" do
     with_connection do |db|
+      db.exec "SET client_min_messages TO notice"
       db.exec <<-SQL
         CREATE OR REPLACE FUNCTION foo() RETURNS integer AS $$
         BEGIN
