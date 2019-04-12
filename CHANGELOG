@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* Fix support for reading a NoticeResponse at row start (thanks @straight-shoota)
 
 v0.16.0    2019-04-02
 =====================
