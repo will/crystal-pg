@@ -1,4 +1,5 @@
 require "uri"
+require "http"
 
 module PQ
   struct ConnInfo
@@ -97,7 +98,7 @@ module PQ
     end
 
     private def default_host(h)
-      return h if h
+      return h if h && !h.blank?
 
       SOCKET_SEARCH.each do |s|
         return s if File.exists?(s)
