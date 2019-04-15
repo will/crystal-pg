@@ -1,5 +1,9 @@
 v?.?.?     upcoming
 =====================
+
+v0.16.1    2019-04-15
+=====================
+* Support Crystal v0.28.0 (thanks @bcardiff)
 * Fix support for reading a NoticeResponse at row start (thanks @straight-shoota)
 
 v0.16.0    2019-04-02
