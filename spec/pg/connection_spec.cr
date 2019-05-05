@@ -54,7 +54,7 @@ describe PG, "#listen" do
   it "opens a special listen only connection" do
     got = false
     ch = Channel(Nil).new
-    conn = PG.connect_listen(DB_URL, "foo") do |n|
+    conn = PG.connect_listen(DB_URL, "foo", "bar") do |n|
       got = true
       ch.send(nil)
     end
@@ -66,6 +66,11 @@ describe PG, "#listen" do
       got.should eq(false)
 
       PG_DB.exec("notify foo, 'hello'")
+      ch.receive
+      got.should eq(true)
+      got = false
+
+      PG_DB.exec("notify bar, 'hello'")
       ch.receive
       got.should eq(true)
     ensure
