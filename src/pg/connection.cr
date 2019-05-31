@@ -56,7 +56,12 @@ module PG
     end
 
     protected def do_close
-      @connection.close
+      super
+
+      begin
+        @connection.close
+      rescue
+      end
     end
   end
 end
