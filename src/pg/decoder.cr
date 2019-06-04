@@ -217,7 +217,7 @@ module PG
       end
     end
 
-    JAN_1_2K = Time.new(2000, 1, 1, location: Time::Location::UTC)
+    JAN_1_2K = Time.utc(2000, 1, 1)
 
     struct DateDecoder
       include Decoder
