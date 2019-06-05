@@ -1,5 +1,8 @@
 v?.?.?     upcoming
 =====================
+* Add `Enumerable` channels overload for `PG.connect_listen` (thanks @vladfaust)
+* Fixes Time.new deprecation warning (thanks @bcardiff)
+* Ensure PQ::Connection#do_close does not raise (thanks @bcardiff)
 
 v0.16.1    2019-04-15
 =====================
