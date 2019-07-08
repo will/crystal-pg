@@ -27,7 +27,7 @@ class PG::Statement < ::DB::Statement
       raise "expected RowDescription or NoData, got #{frame}"
     end
     ResultSet.new(self, fields)
-  rescue IO::EOFError
+  rescue IO::Error
     raise DB::ConnectionLost.new(connection)
   end
 
@@ -38,7 +38,7 @@ class PG::Statement < ::DB::Statement
       rows_affected: result.rows_affected,
       last_insert_id: 0_i64 # postgres doesn't support this
     )
-  rescue IO::EOFError
+  rescue IO::Error
     raise DB::ConnectionLost.new(connection)
   end
 end
