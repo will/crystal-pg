@@ -73,18 +73,9 @@ class PG::ResultSet < ::DB::ResultSet
       return nil
     end
 
-    sized_io = IO::Sized.new(conn.soc, col_bytesize)
-    begin
-      value = decoder.decode(sized_io, col_bytesize)
-    ensure
-      # An exception might happen while decoding the value:
-      # 1. Make sure to skip the column bytes
-      # 2. Make sure to increment the column index
-      conn.soc.skip(sized_io.read_remaining) if sized_io.read_remaining > 0
-      @column_index += 1
+    safe_read(col_bytesize) do |io|
+      decoder.decode(io, col_bytesize)
     end
-
-    value
   rescue IO::Error
     raise DB::ConnectionLost.new(statement.connection)
   end
@@ -108,13 +99,25 @@ class PG::ResultSet < ::DB::ResultSet
       yield
     end
 
-    begin
-      Decoders.decode_array(conn.soc, col_bytesize, T)
-    ensure
-      @column_index += 1
+    safe_read(col_bytesize) do |io|
+      Decoders.decode_array(io, col_bytesize, T)
     end
   rescue IO::Error
     raise DB::ConnectionLost.new(statement.connection)
+  end
+
+  private def safe_read(col_bytesize)
+    sized_io = IO::Sized.new(conn.soc, col_bytesize)
+
+    begin
+      yield sized_io
+    ensure
+      # An exception might happen while decoding the value:
+      # 1. Make sure to skip the column bytes
+      # 2. Make sure to increment the column index
+      conn.soc.skip(sized_io.read_remaining) if sized_io.read_remaining > 0
+      @column_index += 1
+    end
   end
 
   private def field(index = @column_index)
