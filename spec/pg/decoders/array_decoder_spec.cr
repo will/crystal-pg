@@ -41,9 +41,27 @@ describe PG::Decoders do
     value.should be_nil
   end
 
+  it "reads arrray of numeric" do
+    value = PG_DB.query_one("select '{1,2,3}'::numeric[]", &.read(Array(PG::Numeric)))
+    typeof(value).should eq(Array(PG::Numeric))
+    value.map(&.to_f).should eq([1, 2, 3])
+  end
+
+  it "reads arrray of nilable numeric" do
+    value = PG_DB.query_one("select '{1,null,3}'::numeric[]", &.read(Array(PG::Numeric?)))
+    typeof(value).should eq(Array(PG::Numeric?))
+    value.map(&.try &.to_f).should eq([1, nil, 3])
+  end
+
   it "raises when reading null in non-null array" do
     expect_raises(PG::RuntimeError) do
       PG_DB.query_one("select '{1,2,3,null}'::integer[]", &.read(Array(Int32)))
+    end
+  end
+
+  it "raises when reading incorrect array type" do
+    expect_raises(PG::RuntimeError) do
+      PG_DB.query_one("select '{1,2,3}'::numeric[]", &.read(Array(Float64)))
     end
   end
 

@@ -7,6 +7,16 @@ module PG
   module Decoders
     module Decoder
       abstract def decode(io, bytesize)
+      abstract def oids : Array(Int32)
+      abstract def type
+
+      macro def_oids(oids)
+        OIDS = {{oids}}
+
+        def oids : Array(Int32)
+          OIDS
+        end
+      end
 
       def read(io, type)
         io.read_bytes(type, IO::ByteFormat::NetworkEndian)
@@ -44,16 +54,33 @@ module PG
     struct StringDecoder
       include Decoder
 
+      def_oids [
+        19,   # name (internal type)
+        25,   # text
+        142,  # xml
+        705,  # unknown
+        1042, # blchar
+        1043, # varchar
+      ]
+
       def decode(io, bytesize)
         String.new(bytesize) do |buffer|
           io.read_fully(Slice.new(buffer, bytesize))
           {bytesize, 0}
         end
       end
+
+      def type
+        String
+      end
     end
 
     struct CharDecoder
       include Decoder
+
+      def_oids [
+        18, # "char" (internal type)
+      ]
 
       def decode(io, bytesize)
         # TODO: can be done without creating an intermediate string
@@ -62,10 +89,18 @@ module PG
           {bytesize, 0}
         end[0]
       end
+
+      def type
+        Char
+      end
     end
 
     struct BoolDecoder
       include Decoder
+
+      OIDS = [
+        16, # bool
+      ]
 
       def decode(io, bytesize)
         case byte = io.read_byte
@@ -77,76 +112,153 @@ module PG
           raise "bad boolean decode: #{byte}"
         end
       end
+
+      def oids : Array(Int32)
+        OIDS
+      end
+
+      def type
+        Bool
+      end
     end
 
     struct Int16Decoder
       include Decoder
 
+      def_oids [
+        21, # int2 (smallint)
+      ]
+
       def decode(io, bytesize)
         read_i16(io)
+      end
+
+      def type
+        Int16
       end
     end
 
     struct Int32Decoder
       include Decoder
 
+      def_oids [
+        23,   # int4 (integer)
+        2206, # regtype
+      ]
+
       def decode(io, bytesize)
         read_i32(io)
+      end
+
+      def type
+        Int32
       end
     end
 
     struct Int64Decoder
       include Decoder
 
+      def_oids [
+        20, # int8 (bigint)
+      ]
+
       def decode(io, bytesize)
         read_u64(io).to_i64
+      end
+
+      def type
+        Int64
       end
     end
 
     struct UIntDecoder
       include Decoder
 
+      def_oids [
+        26, # oid (internal type)
+      ]
+
       def decode(io, bytesize)
         read_u32(io)
+      end
+
+      def type
+        UInt32
       end
     end
 
     struct Float32Decoder
       include Decoder
 
+      def_oids [
+        700, # float4
+      ]
+
       def decode(io, bytesize)
         read_f32(io)
+      end
+
+      def type
+        Float32
       end
     end
 
     struct Float64Decoder
       include Decoder
 
+      def_oids [
+        701, # float8
+      ]
+
       def decode(io, bytesize)
         read_f64(io)
+      end
+
+      def type
+        Float64
       end
     end
 
     struct PointDecoder
       include Decoder
 
+      def_oids [
+        600, # point
+      ]
+
       def decode(io, bytesize)
         Geo::Point.new(read_f64(io), read_f64(io))
+      end
+
+      def type
+        Geo::Point
       end
     end
 
     struct PathDecoder
       include Decoder
 
+      def_oids [
+        602, # path
+      ]
+
       def decode(io, bytesize)
         byte = io.read_byte.not_nil!
         closed = byte == 1_u8
         Geo::Path.new(PolygonDecoder.new.decode(io, bytesize - 1).points, closed)
       end
+
+      def type
+        Geo::Path
+      end
     end
 
     struct PolygonDecoder
       include Decoder
+
+      def_oids [
+        604, # polygon
+      ]
 
       def decode(io, bytesize)
         c = read_u32(io)
@@ -156,43 +268,83 @@ module PG
         end
         Geo::Polygon.new(points)
       end
+
+      def type
+        Geo::Polygon
+      end
     end
 
     struct BoxDecoder
       include Decoder
 
+      def_oids [
+        603, # box
+      ]
+
       def decode(io, bytesize)
         x2, y2, x1, y1 = read_f64(io), read_f64(io), read_f64(io), read_f64(io)
         Geo::Box.new(x1, y1, x2, y2)
+      end
+
+      def type
+        Geo::Box
       end
     end
 
     struct LineSegmentDecoder
       include Decoder
 
+      def_oids [
+        601, # lseg
+      ]
+
       def decode(io, bytesize)
         Geo::LineSegment.new(read_f64(io), read_f64(io), read_f64(io), read_f64(io))
+      end
+
+      def type
+        Geo::LineSegment
       end
     end
 
     struct LineDecoder
       include Decoder
 
+      def_oids [
+        628, # line
+      ]
+
       def decode(io, bytesize)
         Geo::Line.new(read_f64(io), read_f64(io), read_f64(io))
+      end
+
+      def type
+        Geo::Line
       end
     end
 
     struct CircleDecoder
       include Decoder
 
+      def_oids [
+        718, # circle
+      ]
+
       def decode(io, bytesize)
         Geo::Circle.new(read_f64(io), read_f64(io), read_f64(io))
+      end
+
+      def type
+        Geo::Circle
       end
     end
 
     struct JsonDecoder
       include Decoder
+
+      def_oids [
+        114, # json
+      ]
 
       def decode(io, bytesize)
         string = String.new(bytesize) do |buffer|
@@ -201,10 +353,18 @@ module PG
         end
         JSON.parse(string)
       end
+
+      def type
+        JSON::Any
+      end
     end
 
     struct JsonbDecoder
       include Decoder
+
+      def_oids [
+        3802, # jsonb
+      ]
 
       def decode(io, bytesize)
         io.read_byte
@@ -215,6 +375,10 @@ module PG
         end
         JSON.parse(string)
       end
+
+      def type
+        JSON::Any
+      end
     end
 
     JAN_1_2K = Time.utc(2000, 1, 1)
@@ -222,24 +386,45 @@ module PG
     struct DateDecoder
       include Decoder
 
+      def_oids [
+        1082, # date
+      ]
+
       def decode(io, bytesize)
         v = read_i32(io)
         JAN_1_2K + Time::Span.new(days: v, hours: 0, minutes: 0, seconds: 0)
+      end
+
+      def type
+        Time
       end
     end
 
     struct TimeDecoder
       include Decoder
 
+      def_oids [
+        1114, # timestamp
+        1184, # timestamptz
+      ]
+
       def decode(io, bytesize)
         v = read_i64(io) # microseconds
         sec, m = v.divmod(1_000_000)
         JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
       end
+
+      def type
+        Time
+      end
     end
 
     struct UuidDecoder
       include Decoder
+
+      def_oids [
+        2950, # uuid
+      ]
 
       def decode(io, bytesize)
         bytes = uninitialized UInt8[6]
@@ -270,20 +455,36 @@ module PG
           {36, 36}
         end
       end
+
+      def type
+        String
+      end
     end
 
     struct ByteaDecoder
       include Decoder
+
+      def_oids [
+        17, # bytea
+      ]
 
       def decode(io, bytesize)
         slice = Bytes.new(bytesize)
         io.read_fully(slice)
         slice
       end
+
+      def type
+        Bytes
+      end
     end
 
     struct NumericDecoder
       include Decoder
+
+      def_oids [
+        1700, # numeric
+      ]
 
       def decode(io, bytesize)
         ndigits = read_i16(io)
@@ -293,6 +494,10 @@ module PG
         digits = (0...ndigits).map { |i| read_i16(io) }
         PG::Numeric.new(ndigits, weight, sign, dscale, digits)
       end
+
+      def type
+        PG::Numeric
+      end
     end
 
     @@decoders = Hash(Int32, PG::Decoders::Decoder).new(ByteaDecoder.new)
@@ -301,41 +506,36 @@ module PG
       @@decoders[oid]
     end
 
-    def self.register_decoder(decoder, oid)
-      @@decoders[oid] = decoder
+    def self.register_decoder(decoder)
+      decoder.oids.each do |oid|
+        @@decoders[oid] = decoder
+      end
     end
 
     # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
-    register_decoder BoolDecoder.new, 16         # bool
-    register_decoder ByteaDecoder.new, 17        # bytea
-    register_decoder CharDecoder.new, 18         # "char" (internal type)
-    register_decoder StringDecoder.new, 19       # name (internal type)
-    register_decoder Int64Decoder.new, 20        # int8 (bigint)
-    register_decoder Int16Decoder.new, 21        # int2 (smallint)
-    register_decoder Int32Decoder.new, 23        # int4 (integer)
-    register_decoder StringDecoder.new, 25       # text
-    register_decoder UIntDecoder.new, 26         # oid (internal type)
-    register_decoder JsonDecoder.new, 114        # json
-    register_decoder StringDecoder.new, 142      # xml
-    register_decoder JsonbDecoder.new, 3802      # jsonb
-    register_decoder Float32Decoder.new, 700     # float4
-    register_decoder Float64Decoder.new, 701     # float8
-    register_decoder StringDecoder.new, 705      # unknown
-    register_decoder StringDecoder.new, 1042     # blchar
-    register_decoder StringDecoder.new, 1043     # varchar
-    register_decoder DateDecoder.new, 1082       # date
-    register_decoder TimeDecoder.new, 1114       # timestamp
-    register_decoder NumericDecoder.new, 1700    # numeric
-    register_decoder TimeDecoder.new, 1184       # timestamptz
-    register_decoder Int32Decoder.new, 2206      # regtype
-    register_decoder UuidDecoder.new, 2950       # uuid
-    register_decoder PointDecoder.new, 600       # point
-    register_decoder LineSegmentDecoder.new, 601 # lseg
-    register_decoder PathDecoder.new, 602        # path
-    register_decoder BoxDecoder.new, 603         # box
-    register_decoder PolygonDecoder.new, 604     # polygon
-    register_decoder LineDecoder.new, 628        # line
-    register_decoder CircleDecoder.new, 718      # circle
+    register_decoder BoolDecoder.new
+    register_decoder ByteaDecoder.new
+    register_decoder CharDecoder.new
+    register_decoder StringDecoder.new
+    register_decoder Int16Decoder.new
+    register_decoder Int32Decoder.new
+    register_decoder Int64Decoder.new
+    register_decoder UIntDecoder.new
+    register_decoder JsonDecoder.new
+    register_decoder JsonbDecoder.new
+    register_decoder Float32Decoder.new
+    register_decoder Float64Decoder.new
+    register_decoder DateDecoder.new
+    register_decoder TimeDecoder.new
+    register_decoder NumericDecoder.new
+    register_decoder UuidDecoder.new
+    register_decoder PointDecoder.new
+    register_decoder LineSegmentDecoder.new
+    register_decoder PathDecoder.new
+    register_decoder BoxDecoder.new
+    register_decoder PolygonDecoder.new
+    register_decoder LineDecoder.new
+    register_decoder CircleDecoder.new
   end
 end
 
