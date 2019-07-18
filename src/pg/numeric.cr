@@ -63,6 +63,10 @@ module PG
       neg? ? -quot : quot
     end
 
+    def inspect(io : IO)
+      to_s(io)
+    end
+
     def to_s(io : IO)
       if ndigits == 0
         if nan?

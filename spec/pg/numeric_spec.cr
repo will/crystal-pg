@@ -126,6 +126,7 @@ describe PG::Numeric do
       {"50093.60754417", "50093.60754417"},
     ].each do |x|
       ex(x[0]).to_s.should eq(x[1])
+      ex(x[0]).inspect.should eq(x[1])
     end
   end
 
