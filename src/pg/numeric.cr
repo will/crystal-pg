@@ -32,7 +32,7 @@ module PG
     # (not an array of individual digits!)
     getter digits : Array(Int16)
 
-    def initialize(@ndigits, @weight, sign, @dscale, @digits)
+    def initialize(@ndigits : Int16, @weight : Int16, sign, @dscale : Int16, @digits : Array(Int16))
       @sign = Sign.from_value(sign)
     end
 

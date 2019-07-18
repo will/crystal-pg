@@ -6,55 +6,56 @@ module PG
     struct ArrayDecoder(T, D)
       include Decoder
 
-      def initialize(oid : Int32)
-        @oids = [oid] of Int32
+      getter oids : Array(Int32)
+
+      def self.new(oid : Int32)
+        new([oid])
       end
 
-      def oids : Array(Int32)
-        @oids
+      def initialize(@oids : Array(Int32))
       end
 
-      def decode(io, bytesize)
+      def decode(io, bytesize, oid)
         header = Decoders.decode_array_header(io)
 
         if header.dimensions == 0
           ([] of T).as(T)
         elsif header.dimensions == 1 && header.dim_info.first[:lbound] == 1
           # allow casting down to unnested crystal arrays
-          build_simple_array(io, header.dim_info.first[:dim]).as(T)
+          build_simple_array(io, header.dim_info.first[:dim], header.oid).as(T)
         else
           if header.dim_info.any? { |di| di[:lbound] < 1 }
             raise PG::RuntimeError.new("Only lower-bounds >= 1 are supported")
           end
 
           # recursively build nested array
-          get_element(io, header.dim_info).as(T)
+          get_element(io, header.dim_info, header.oid).as(T)
         end
       end
 
-      def build_simple_array(io, size)
-        Array(T).new(size) { get_next(io) }
+      def build_simple_array(io, size, oid)
+        Array(T).new(size) { get_next(io, oid) }
       end
 
-      def get_element(io, dim_info)
+      def get_element(io, dim_info, oid)
         if dim_info.size == 1
           lbound = dim_info.first[:lbound] - 1 # in lower-bound is not 1
           Array(T).new(dim_info.first[:dim] + lbound) do |i|
-            i < lbound ? nil : get_next(io)
+            i < lbound ? nil : get_next(io, oid)
           end
         else
           Array(T).new(dim_info.first[:dim]) do |i|
-            get_element(io, dim_info[1..-1])
+            get_element(io, dim_info[1..-1], oid)
           end
         end
       end
 
-      def get_next(io)
+      def get_next(io, oid)
         bytesize = read_i32(io)
         if bytesize == -1
           nil
         else
-          D.new.decode(io, bytesize)
+          D.new.decode(io, bytesize, oid)
         end
       end
 
@@ -69,8 +70,6 @@ module PG
       header = decode_array_header(io)
 
       decoder = array_decoder(T)
-
-      # Check that what we want to decode actually matches the underlying colum type
       unless decoder.oids.includes?(header.oid)
         correct_decoder = Decoders.from_oid(header.oid)
 
@@ -81,19 +80,19 @@ module PG
         return [] of T
       end
 
-      decode_array_element(io, t, header.dim_info)
+      decode_array_element(io, t, header.dim_info, decoder, header.oid)
     end
 
-    def self.decode_array_element(io, t : Array(T).class, dim_info) forall T
+    def self.decode_array_element(io, t : Array(T).class, dim_info, decoder, oid) forall T
       size = dim_info.first[:dim]
       rest = dim_info[1..-1]
 
       Array(T).new(size) do
-        decode_array_element(io, T, rest)
+        decode_array_element(io, T, rest, decoder, oid)
       end
     end
 
-    def self.decode_array_element(io, t : T.class, dim_info) forall T
+    def self.decode_array_element(io, t : T.class, dim_info, decoder, oid) forall T
       bytesize = read_i32(io)
       if bytesize == -1
         {% if T.nilable? %}
@@ -102,7 +101,7 @@ module PG
           raise PG::RuntimeError.new("unexpected NULL")
         {% end %}
       else
-        array_decoder(t).decode(io, bytesize)
+        decoder.decode(io, bytesize, oid)
       end
     end
 
@@ -110,7 +109,7 @@ module PG
       array_decoder(T)
     end
 
-    {% for type in %w(Bool Char Int16 Int32 String Int64 Float32 Float64 Numeric).map(&.id) %}
+    {% for type in %w(Bool Char Int16 Int32 String Int64 Float32 Float64 Numeric Time).map(&.id) %}
       def self.array_decoder(t : {{type}}?.class)
         {{type}}Decoder.new
       end
@@ -158,6 +157,7 @@ module PG
 
   macro array_type(t, oid)
     alias {{t}}Array = {{t}}? | Array({{t}}Array)
+
     module Decoders
       register_decoder ArrayDecoder({{t}}Array, {{t}}Decoder).new({{oid}})
     end
@@ -167,8 +167,10 @@ module PG
   array_type Char, 1002
   array_type Int16, 1005
   array_type Int32, 1007
-  array_type String, 1009
   array_type Int64, 1016
   array_type Float32, 1021
   array_type Float64, 1022
+  array_type String, 1009
+  array_type Numeric, 1231
+  array_type Time, [1115, 1182]
 end

@@ -74,7 +74,7 @@ class PG::ResultSet < ::DB::ResultSet
     end
 
     safe_read(col_bytesize) do |io|
-      decoder.decode(io, col_bytesize)
+      decoder.decode(io, col_bytesize, oid)
     end
   rescue IO::Error
     raise DB::ConnectionLost.new(statement.connection)
@@ -125,7 +125,11 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   private def decoder(index = @column_index)
-    Decoders.from_oid(field(index).type_oid)
+    Decoders.from_oid(oid(index))
+  end
+
+  private def oid(index = @column_index)
+    field(index).type_oid
   end
 
   private def skip

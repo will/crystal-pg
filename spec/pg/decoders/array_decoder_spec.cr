@@ -59,6 +59,22 @@ describe PG::Decoders do
     end
   end
 
+  it "reads array of time" do
+    values = PG_DB.query_one("select array[to_date('20170103', 'YYYYMMDD')::timestamp]", &.read(Array(Time)))
+    typeof(values).should eq(Array(Time))
+
+    values.size.should eq(1)
+    values[0].should eq(Time.utc(2017, 1, 3))
+  end
+
+  it "reads array of date" do
+    values = PG_DB.query_one("select array[to_date('20170103', 'YYYYMMDD')]", &.read(Array(Time)))
+    typeof(values).should eq(Array(Time))
+
+    values.size.should eq(1)
+    values[0].should eq(Time.utc(2017, 1, 3))
+  end
+
   it "raises when reading incorrect array type" do
     expect_raises(PG::RuntimeError) do
       PG_DB.query_one("select '{1,2,3}'::numeric[]", &.read(Array(Float64)))
@@ -78,6 +94,9 @@ describe PG::Decoders do
   test_decode "int8 array", "$${1,2}$$::int8[]", [1, 2]
   test_decode "float4 array", "$${1.1,2.2}$$::float4[]", [1.1_f32, 2.2_f32]
   test_decode "float8 array", "$${1.1,2.2}$$::float8[]", [1.1_f64, 2.2_f64]
+  test_decode "date array", "array[to_date('20170103', 'YYYYMMDD')]", [Time.utc(2017, 1, 3)]
+  test_decode "numeric array", "array[1::numeric]", [PG::Numeric.new(ndigits: 1, weight: 0, sign: PG::Numeric::Sign::Pos.value, dscale: 0, digits: [1] of Int16)]
+  test_decode "time array", "array[to_date('20170103', 'YYYYMMDD')::timestamp]", [Time.utc(2017, 1, 3)]
 
   it "errors when expecting array returns null" do
     expect_raises(PG::RuntimeError, "unexpected NULL, expecting to read Array(String)") do
