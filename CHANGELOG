@@ -1,9 +1,17 @@
 v?.?.?     upcoming
 =====================
+
+v0.17.0    2019-07-19
+=====================
 * Add `Enumerable` channels overload for `PG.connect_listen` (thanks @vladfaust)
 * Fixes Time.new deprecation warning (thanks @bcardiff)
 * Ensure PQ::Connection#do_close does not raise (thanks @bcardiff)
 * Fix IOError on closed connection (thanks @omarroth)
+* Array fixes (thanks @asterite)
+  * properly handle exceptions during decoding array
+  * add Numeric#inspect
+  * prevent decoding array of numeric as floats
+  * internal: map each type to decoder
 
 v0.16.1    2019-04-15
 =====================
