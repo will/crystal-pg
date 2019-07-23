@@ -50,7 +50,7 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
 
       PG_DB.exec("drop role if exists crystal_scram")
     end
-  end
+  end if Helper.db_version_gte(10)
 
   describe PQ::Connection, "md5 auth" do
     it "works when given the correct password" do
@@ -83,8 +83,8 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("drop role if exists crystal_ssl")
       PG_DB.exec("create role crystal_ssl login encrypted password 'pass'")
       db = PG_DB.query_one("select current_database()", &.read)
-      home = ENV["HOME"]
-      uri = "postgres://crystal_ssl@127.0.0.1/#{db}?sslmode=verify-full&sslcert=#{home}/.postgresql/crystal_ssl.crt&sslkey=#{home}/.postgresql/crystal_ssl.key&sslrootcert=#{home}/.postgresql/root.crt"
+      certs = File.join Dir.current, ".cert"
+      uri = "postgres://crystal_ssl@127.0.0.1/#{db}?sslmode=verify-full&sslcert=#{certs}/crystal_ssl.crt&sslkey=#{certs}/crystal_ssl.key&sslrootcert=#{certs}/root.crt"
       DB.open(uri) do |db|
         db.query_one("select current_user", &.read).should eq("crystal_ssl")
       end

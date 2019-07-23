@@ -25,7 +25,7 @@ def escape_identifier(string)
 end
 
 module Helper
-  def self.db_version_gte(major, minor, patch = 0)
+  def self.db_version_gte(major, minor = 0, patch = 0)
     ver = with_connection &.version
     ver[:major] >= major && ver[:minor] >= minor && ver[:patch] >= patch
   end
