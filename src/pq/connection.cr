@@ -4,8 +4,7 @@ require "socket"
 require "socket/tcp_socket"
 require "socket/unix_socket"
 require "openssl"
-
-# DEBUG = ENV["DEBUG"]?
+require "openssl/hmac"
 
 module PQ
   record Notification, pid : Int32, channel : String, payload : String
@@ -261,6 +260,8 @@ module PQ
         # no op
       when Frame::Authentication::Type::CleartextPassword
         raise "Cleartext auth is not supported"
+      when Frame::Authentication::Type::SASL
+        handle_auth_sasl auth_frame.body
       when Frame::Authentication::Type::MD5Password
         handle_auth_md5 auth_frame.body
       else
@@ -268,6 +269,69 @@ module PQ
           "unsupported authentication method: #{auth_frame.type}"
         )
       end
+    end
+
+    struct SamlContext
+      property client_first_msg : String
+      property client_first_msg_size : Int32
+
+      def initialize(@password : String)
+        @client_nonce = Random::Secure.urlsafe_base64(18)
+        @client_first_msg = "n,,n=,r=#{@client_nonce}"
+        @client_first_msg_size = @client_first_msg.bytesize
+      end
+
+      def generate_client_final_message(body)
+        server_first_msg = String.new(body)
+        params = server_first_msg.split(',')
+        r = params.find { |p| p[0] == 'r' }.not_nil![2..-1]
+        s = params.find { |p| p[0] == 's' }.not_nil![2..-1]
+        i = params.find { |p| p[0] == 'i' }.not_nil![2..-1].to_i
+        raise ConnectionError.new("SASL: scram server nonce does not start with client nonce") unless r.starts_with?(@client_nonce)
+
+        client_final_msg_without_proof = "c=biws,r=#{r}"
+        salted_pass = OpenSSL::PKCS5.pbkdf2_hmac(@password, Base64.decode(s), i, algorithm: OpenSSL::Algorithm::SHA256, key_size: 32)
+        client_key = OpenSSL::HMAC.digest(:sha256, salted_pass, "Client Key")
+        auth_msg = "n=,r=#{@client_nonce},#{server_first_msg},#{client_final_msg_without_proof}"
+        client_sig = OpenSSL::HMAC.digest(:sha256, sha256(client_key), auth_msg)
+        proof = Base64.strict_encode Slice.new(32) { |i| client_key[i].as(UInt8) ^ client_sig[i].as(UInt8) }
+        "#{client_final_msg_without_proof},p=#{proof}"
+      end
+
+      private def sha256(key)
+        OpenSSL::Digest.new("SHA256").update(key).digest
+      end
+    end
+
+    private def handle_auth_sasl(mechanism_list)
+      # it is possible in the future for postgres to send something other than
+      # SCRAM-SHA-265, but for now ignore the mechanism_list
+
+      ctx = SamlContext.new(@conninfo.password || "")
+
+      # send client-first-message
+      write_chr 'p' # SASLInitialResponse
+      write_i32 4 + 13 + 1 + 4 + ctx.client_first_msg_size
+      soc << "SCRAM-SHA-256"
+      write_null
+      write_i32 ctx.client_first_msg_size
+      soc << ctx.client_first_msg
+      soc.flush
+
+      # receive server-first-message
+      continue = expect_frame Frame::Authentication
+      final_msg = ctx.generate_client_final_message(continue.body)
+
+      # send client-final-message
+      write_chr 'p'
+      write_i32 4 + final_msg.bytesize
+      soc << final_msg
+      soc.flush
+
+      # receive server-final-message
+      expect_frame Frame::Authentication
+      # receive OK
+      expect_frame Frame::Authentication
     end
 
     private def handle_auth_md5(salt)

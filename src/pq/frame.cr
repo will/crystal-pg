@@ -57,13 +57,16 @@ module PQ
 
     struct Authentication < Frame
       enum Type : Int32
-        OK                = 0
-        KerberosV5        = 2
-        CleartextPassword = 3
-        MD5Password       = 5
-        SCMCredential     = 6
-        GSS               = 7
-        GSSContinue       = 8
+        OK                =  0
+        KerberosV5        =  2
+        CleartextPassword =  3
+        MD5Password       =  5
+        SCMCredential     =  6
+        GSS               =  7
+        GSSContinue       =  8
+        SASL              = 10
+        SASLContinue      = 11
+        SASLFinal         = 12
       end
 
       getter type : Type
