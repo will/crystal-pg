@@ -58,6 +58,12 @@ describe PG::Decoders do
     x.call("nan").nan?.should be_true
   end
 
+  it "decodes many uuids (#148)" do
+    uuid = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    ids = PG_DB.query_all("select '#{uuid}'::uuid from generate_series(1,1000)", as: String)
+    ids.uniq.should eq([uuid])
+  end
+
   test_decode "xml", "'<json>false</json>'::xml", "<json>false</json>"
   test_decode "char", %('c'::"char"), 'c'
   test_decode "bpchar", %('c'::char), "c"

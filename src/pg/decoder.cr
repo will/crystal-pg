@@ -85,22 +85,22 @@ module PG
 
           slice = bytes.to_slice[0, 4]
 
-          io.read(slice)
+          io.read_fully(slice)
           slice.hexstring(buffer + 0)
 
           slice = bytes.to_slice[0, 2]
 
-          io.read(slice)
+          io.read_fully(slice)
           slice.hexstring(buffer + 9)
 
-          io.read(slice)
+          io.read_fully(slice)
           slice.hexstring(buffer + 14)
 
-          io.read(slice)
+          io.read_fully(slice)
           slice.hexstring(buffer + 19)
 
           slice = bytes.to_slice
-          io.read(slice)
+          io.read_fully(slice)
           slice.hexstring(buffer + 24)
 
           {36, 36}
