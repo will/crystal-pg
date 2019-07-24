@@ -1,7 +1,6 @@
 require "../pg/geo"
 
 module PQ
-  ISO_8601 = "%FT%X.%L%z"
   # :nodoc:
   record Param, slice : Slice(UInt8), size : Int32, format : Int16 do
     delegate to_unsafe, to: slice
@@ -21,7 +20,7 @@ module PQ
     end
 
     def self.encode(val : Time)
-      text val.to_s(ISO_8601)
+      text val.to_s("%Y-%m-%d %H:%M:%S.%6N")
     end
 
     def self.encode(val : PG::Geo::Point)

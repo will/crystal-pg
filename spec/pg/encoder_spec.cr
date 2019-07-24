@@ -25,6 +25,7 @@ describe PG::Driver, "encoder" do
 
   test_insert_and_read "timestamp", Time.utc(2015, 2, 3, 17, 15, nanosecond: 13_000_000)
   test_insert_and_read "timestamp", Time.utc(2015, 2, 3, 17, 15, 13, nanosecond: 11_000_000)
+  test_insert_and_read "timestamp", Time.utc(2015, 2, 3, 17, 15, 13, nanosecond: 123_456_000)
 
   test_insert_and_read "bool[]", [true, false, true]
 
