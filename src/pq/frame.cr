@@ -1,3 +1,5 @@
+require "./field"
+
 module PQ
   # :nodoc:
   abstract struct Frame

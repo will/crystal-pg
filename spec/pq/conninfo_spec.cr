@@ -86,7 +86,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
 
   it "auth_methods" do
     ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo")
-    ci.auth_methods.should eq ["scram-sha-256", "md5"]
+    ci.auth_methods.should eq ["scram-sha-256-plus", "scram-sha-256", "md5"]
 
     ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo?auth_methods=md5")
     ci.auth_methods.should eq ["md5"]

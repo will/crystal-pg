@@ -5,7 +5,7 @@ module PQ
   struct ConnInfo
     SOCKET_SEARCH = %w(/run/postgresql/.s.PGSQL.5432 /tmp/.s.PGSQL.5432 /var/run/postgresql/.s.PGSQL.5432)
 
-    SUPPORTED_AUTH_METHODS = ["cleartext", "md5", "scram-sha-256"]
+    SUPPORTED_AUTH_METHODS = %w[cleartext md5 scram-sha-256 scram-sha-256-plus]
 
     # The host. If starts with a / it is assumed to be a local Unix socket.
     getter host : String
@@ -34,7 +34,7 @@ module PQ
     # The sslrootcert. Optional.
     getter sslrootcert : String?
 
-    getter auth_methods : Array(String) = ["scram-sha-256", "md5"] of String
+    getter auth_methods : Array(String) = %w[scram-sha-256-plus scram-sha-256 md5]
 
     # Create a new ConnInfo from all parts
     def initialize(host : String? = nil, database : String? = nil, user : String? = nil, @password : String? = nil, port : Int | String? = 5432, sslmode : String | Symbol? = nil)

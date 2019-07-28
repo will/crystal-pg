@@ -1,5 +1,11 @@
 v?.?.?     upcoming
 =====================
+* Add scram-sha-256-plus "scram with channel binding". If your version of
+  postgres does support this, you should provide only this as your
+  `auth_methods` in order to exclude the non-plus/non-channel-binding version
+  of scram, as it's possible for a MITM to downgrade if the non-plus version is
+  on the list. However this driver can't remove support for the non-plus version
+  since not all supported versions of postgres support channel binding.
 * Give a name to error notice field V (the same as S/severity but not localized)
 
 v0.24.0    2021-07-21
