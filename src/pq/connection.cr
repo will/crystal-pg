@@ -6,6 +6,53 @@ require "socket/unix_socket"
 require "openssl"
 require "openssl/hmac"
 
+class OpenSSL::SSL::Socket::Client
+  def peer_certificate
+    OpenSSL::X509::Certificate.new(LibSSL.ssl_get_peer_certificate(@ssl))
+  end
+end
+
+class OpenSSL::X509::Certificate
+  def signature
+    sigid = LibSSL.x509_get_signature_nid(@cert)
+    result = LibSSL.obj_find_sigid_algs(sigid, out algo_nid, nil)
+    raise "could not determine server certificate signature algorithm" if result == 0
+
+    sn = LibCrypto.obj_nid2sn(algo_nid)
+    raise "unknown algo NID #{algo_nid}" if sn == Pointer(UInt8).null
+    algo_name = String.new sn
+
+    # The TLS server's certificate bytes need to be hashed with SHA-256 if
+    # its signature algorithm is MD5 or SHA-1 as per RFC 5929
+    # (https://tools.ietf.org/html/rfc5929#section-4.1).  If something else
+    # is used, the same hash as the signature algorithm is used.
+    algo_type = case algo_nid
+                when "MD5", "SHA1"
+                  LibCrypto.evp_sha256
+                else
+                  LibCrypto::OPENSSL_VERSION
+                  LibCrypto.evp_get_digestbyname algo_name
+                end
+    raise "could not find digest for NID #{algo_nid}: #{algo_name}" if Pointer(Void).null == algo_type
+    hash = Slice(UInt8).new(64) # EVP_MAX_MD_SIZE for SHA512
+    result = LibCrypto.x509_digest(@cert, algo_type, hash, out size)
+    raise "could not generate certificate hash" unless result == 1
+
+    hash[0, size]
+  end
+end
+
+lib LibSSL
+  fun ssl_get_peer_certificate = SSL_get_peer_certificate(handle : SSL) : LibCrypto::X509
+  fun x509_get_signature_nid = X509_get_signature_nid(x509 : LibCrypto::X509) : Int32
+  fun obj_find_sigid_algs = OBJ_find_sigid_algs(sigid : Int32, pdig_nid : Int32*, ppkey_nid : Int32*) : Int32
+end
+
+lib LibCrypto
+  fun obj_nid2sn = OBJ_nid2sn(a : Int32) : Char*
+  fun x509_digest = X509_digest(x509 : X509, evp_md : EVP_MD, hash : UInt8*, len : Int32*) : Int32
+end
+
 module PQ
   record Notification, pid : Int32, channel : String, payload : String
 
@@ -272,13 +319,27 @@ module PQ
     end
 
     struct SamlContext
-      property client_first_msg : String
-      property client_first_msg_size : Int32
+      SCRAM_NAME      = "SCRAM-SHA-256"
+      SCRAM_PLUS_NAME = "SCRAM-SHA-256-PLUS"
 
-      def initialize(@password : String)
+      getter name : String
+      getter client_first_msg : String
+      getter signature : Slice(UInt8)?
+
+      def initialize(@password : String, @cbind : Bool, soc)
         @client_nonce = Random::Secure.urlsafe_base64(18)
-        @client_first_msg = "n,,n=,r=#{@client_nonce}"
-        @client_first_msg_size = @client_first_msg.bytesize
+
+        if @cbind
+          @name = SCRAM_PLUS_NAME
+          cbind_flag = "p=tls-server-end-point"
+          cert = soc.as(OpenSSL::SSL::Socket::Client).peer_certificate
+          @signature = cert.signature
+        else
+          @name = SCRAM_NAME
+          cbind_flag = "n"
+        end
+
+        @client_first_msg = "#{cbind_flag},,n=,r=#{@client_nonce}"
       end
 
       def generate_client_final_message(body)
@@ -289,7 +350,14 @@ module PQ
         i = params.find { |p| p[0] == 'i' }.not_nil![2..-1].to_i
         raise ConnectionError.new("SASL: scram server nonce does not start with client nonce") unless r.starts_with?(@client_nonce)
 
-        client_final_msg_without_proof = "c=biws,r=#{r}"
+        if @signature
+          # cd10b...Cws == base64 of "p=tls-server-end-point,,"
+          b64sig = Base64.strict_encode @signature.not_nil!
+          client_final_msg_without_proof = "c=cD10bHMtc2VydmVyLWVuZC1wb2ludCws#{b64sig},r=#{r}"
+        else
+          # biws == base64 of "n,,"
+          client_final_msg_without_proof = "c=biws,r=#{r}"
+        end
         salted_pass = OpenSSL::PKCS5.pbkdf2_hmac(@password, Base64.decode(s), i, algorithm: OpenSSL::Algorithm::SHA256, key_size: 32)
         server_key = OpenSSL::HMAC.digest(:sha256, salted_pass, "Server Key")
         client_key = OpenSSL::HMAC.digest(:sha256, salted_pass, "Client Key")
@@ -311,17 +379,23 @@ module PQ
     end
 
     private def handle_auth_sasl(mechanism_list)
-      # it is possible in the future for postgres to send something other than
-      # SCRAM-SHA-265, but for now ignore the mechanism_list
+      mechs = String.new(mechanism_list)
+      cbind = if mechs.includes?(SamlContext::SCRAM_PLUS_NAME)
+                true
+              elsif mechs.includes?(SamlContext::SCRAM_NAME)
+                false
+              else
+                raise ConnectionError.new("no known sasl mechanism in list: #{mechs}")
+              end
 
-      ctx = SamlContext.new(@conninfo.password || "")
+      ctx = SamlContext.new(@conninfo.password || "", cbind, soc)
 
       # send client-first-message
       write_chr 'p' # SASLInitialResponse
-      write_i32 4 + 13 + 1 + 4 + ctx.client_first_msg_size
-      soc << "SCRAM-SHA-256"
+      write_i32 4 + ctx.name.bytesize + 1 + 4 + ctx.client_first_msg.bytesize
+      soc << ctx.name
       write_null
-      write_i32 ctx.client_first_msg_size
+      write_i32 ctx.client_first_msg.bytesize
       soc << ctx.client_first_msg
       soc.flush
 
