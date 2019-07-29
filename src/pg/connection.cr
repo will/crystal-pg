@@ -17,11 +17,11 @@ module PG
       end
     end
 
-    def build_prepared_statement(query)
+    def build_prepared_statement(query) : Statement
       Statement.new(self, query)
     end
 
-    def build_unprepared_statement(query)
+    def build_unprepared_statement(query) : Statement
       Statement.new(self, query)
     end
 

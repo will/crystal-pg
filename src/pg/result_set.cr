@@ -12,7 +12,7 @@ class PG::ResultSet < ::DB::ResultSet
     statement.as(Statement).conn
   end
 
-  def move_next
+  def move_next : Bool
     return false if @end
 
     fields = @fields
