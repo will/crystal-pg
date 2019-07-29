@@ -7,50 +7,60 @@ require "openssl"
 require "openssl/hmac"
 
 class OpenSSL::SSL::Socket::Client
-  def peer_certificate
-    OpenSSL::X509::Certificate.new(LibSSL.ssl_get_peer_certificate(@ssl))
+  def peer_certificate : OpenSSL::X509::Certificate
+    super.not_nil!
+  end
+end
+
+class OpenSSL::SSL::Socket
+  def peer_certificate : OpenSSL::X509::Certificate?
+    cert = LibSSL.ssl_get_peer_certificate(@ssl)
+    OpenSSL::X509::Certificate.new cert if cert
   end
 end
 
 class OpenSSL::X509::Certificate
-  def signature
-    sigid = LibSSL.x509_get_signature_nid(@cert)
-    result = LibSSL.obj_find_sigid_algs(sigid, out algo_nid, nil)
-    raise "could not determine server certificate signature algorithm" if result == 0
+  # Returns the name of the signature algorithm.
+  def signature : String
+    sigid = LibCrypto.x509_get_signature_nid(@cert)
+    result = LibCrypto.obj_find_sigid_algs(sigid, out algo_nid, nil)
+    raise "could not determine certificate signature algorithm" if result == 0
 
     sn = LibCrypto.obj_nid2sn(algo_nid)
     raise "unknown algo NID #{algo_nid}" if sn == Pointer(UInt8).null
-    algo_name = String.new sn
+    String.new sn
+  end
 
-    # The TLS server's certificate bytes need to be hashed with SHA-256 if
-    # its signature algorithm is MD5 or SHA-1 as per RFC 5929
-    # (https://tools.ietf.org/html/rfc5929#section-4.1).  If something else
-    # is used, the same hash as the signature algorithm is used.
-    algo_type = case algo_nid
-                when "MD5", "SHA1"
-                  LibCrypto.evp_sha256
-                else
-                  LibCrypto::OPENSSL_VERSION
-                  LibCrypto.evp_get_digestbyname algo_name
-                end
-    raise "could not find digest for NID #{algo_nid}: #{algo_name}" if Pointer(Void).null == algo_type
+  # Returns the digest using *algorithm_name*
+  def digest(algorithm_name : String) : Slice(UInt8)
+    algo_type = LibCrypto.evp_get_digestbyname algorithm_name
+    raise ArgumentError.new "could not find digest for '#{algorithm_name}'" if Pointer(Void).null == algo_type
     hash = Slice(UInt8).new(64) # EVP_MAX_MD_SIZE for SHA512
     result = LibCrypto.x509_digest(@cert, algo_type, hash, out size)
     raise "could not generate certificate hash" unless result == 1
 
     hash[0, size]
   end
+
+  def scram_signature
+    # The TLS server's certificate bytes need to be hashed with SHA-256 if
+    # its signature algorithm is MD5 or SHA-1 as per RFC 5929
+    # (https://tools.ietf.org/html/rfc5929#section-4.1).  If something else
+    # is used, the same hash as the signature algorithm is used.
+    algo_type = signature
+    algo_type = "SHA256" if algo_type == "MD5" || algo_type == "SHA1"
+    digest algo_type
+  end
 end
 
 lib LibSSL
   fun ssl_get_peer_certificate = SSL_get_peer_certificate(handle : SSL) : LibCrypto::X509
-  fun x509_get_signature_nid = X509_get_signature_nid(x509 : LibCrypto::X509) : Int32
-  fun obj_find_sigid_algs = OBJ_find_sigid_algs(sigid : Int32, pdig_nid : Int32*, ppkey_nid : Int32*) : Int32
 end
 
 lib LibCrypto
-  fun obj_nid2sn = OBJ_nid2sn(a : Int32) : Char*
+  fun obj_find_sigid_algs = OBJ_find_sigid_algs(sigid : Int32, pdig_nid : Int32*, ppkey_nid : Int32*) : Int32
   fun x509_digest = X509_digest(x509 : X509, evp_md : EVP_MD, hash : UInt8*, len : Int32*) : Int32
+  fun x509_get_signature_nid = X509_get_signature_nid(x509 : X509) : Int32
 end
 
 module PQ
@@ -333,7 +343,7 @@ module PQ
           @name = SCRAM_PLUS_NAME
           cbind_flag = "p=tls-server-end-point"
           cert = soc.as(OpenSSL::SSL::Socket::Client).peer_certificate
-          @signature = cert.signature
+          @signature = cert.scram_signature
         else
           @name = SCRAM_NAME
           cbind_flag = "n"
