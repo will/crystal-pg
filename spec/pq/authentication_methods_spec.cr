@@ -35,6 +35,24 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
 
       test_role("crystal_scram", "pass")
 
+      [                        # saslprep examples from MagicStack/asyncpg
+        "nonascii\u1680space", # C.1.2
+        "common\u1806nothing", # B.1
+        "ab\ufb01c",           # normalization
+        "ab\u007fc",           # C.2.1
+        "ab\u206ac",           # C.2.2, C.6
+        "ab\ue000c",           # C.3, C.5
+        "ab\ufdd0c",           # C.4
+        "ab\u2ff0c",           # C.7
+        "ab\u2000c",           # C.8
+        "ab\ue0001",           # C.9
+      ].each do |pass|
+        PG_DB.exec("alter role crystal_scram with password '#{pass}'")
+        test_role("crystal_scram", pass)
+      rescue DB::ConnectionRefused
+        raise "password #{pass.inspect} faild sasl prep"
+      end
+
       PG_DB.exec("drop role if exists crystal_scram")
     end
 

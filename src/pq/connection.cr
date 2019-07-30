@@ -276,6 +276,7 @@ module PQ
       property client_first_msg_size : Int32
 
       def initialize(@password : String)
+        sasl_prep
         @client_nonce = Random::Secure.urlsafe_base64(18)
         @client_first_msg = "n,,n=,r=#{@client_nonce}"
         @client_first_msg_size = @client_first_msg.bytesize
@@ -307,6 +308,10 @@ module PQ
 
       private def sha256(key)
         OpenSSL::Digest.new("SHA256").update(key).digest
+      end
+
+      private def sasl_prep
+        return if @password.ascii_only?
       end
     end
 
