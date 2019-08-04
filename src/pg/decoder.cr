@@ -483,6 +483,10 @@ module PG
       end
     end
 
+    def self.register_decoder(decoder, oid)
+      @@decoders[oid] = decoder
+    end
+
     # https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
     register_decoder BoolDecoder.new
     register_decoder ByteaDecoder.new
