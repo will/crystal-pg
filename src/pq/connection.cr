@@ -291,11 +291,18 @@ module PQ
 
         client_final_msg_without_proof = "c=biws,r=#{r}"
         salted_pass = OpenSSL::PKCS5.pbkdf2_hmac(@password, Base64.decode(s), i, algorithm: OpenSSL::Algorithm::SHA256, key_size: 32)
+        server_key = OpenSSL::HMAC.digest(:sha256, salted_pass, "Server Key")
         client_key = OpenSSL::HMAC.digest(:sha256, salted_pass, "Client Key")
         auth_msg = "n=,r=#{@client_nonce},#{server_first_msg},#{client_final_msg_without_proof}"
         client_sig = OpenSSL::HMAC.digest(:sha256, sha256(client_key), auth_msg)
+        @server_sig = OpenSSL::HMAC.digest(:sha256, server_key, auth_msg)
         proof = Base64.strict_encode Slice.new(32) { |i| client_key[i].as(UInt8) ^ client_sig[i].as(UInt8) }
         "#{client_final_msg_without_proof},p=#{proof}"
+      end
+
+      def verify_server_signature(server_message)
+        server_sig = Base64.strict_encode @server_sig.not_nil!
+        raise ConnectionError.new("server signature does not match") unless server_message[2..-1] == server_sig.to_slice
       end
 
       private def sha256(key)
@@ -329,7 +336,8 @@ module PQ
       soc.flush
 
       # receive server-final-message
-      expect_frame Frame::Authentication
+      final = expect_frame Frame::Authentication
+      ctx.verify_server_signature(final.body)
       # receive OK
       expect_frame Frame::Authentication
     end
