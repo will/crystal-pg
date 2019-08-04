@@ -2,8 +2,8 @@
 require "readline"
 require "../src/pg"
 
-url = ARGV[0]? || "/"
-db = DB.open("postgres://#{url}")
+url = ARGV[0]? || "postgres:///"
+db = DB.open(url)
 
 loop do
   query = Readline.readline("# ", true) || ""
