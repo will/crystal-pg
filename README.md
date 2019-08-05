@@ -1,7 +1,7 @@
 # crystal-pg
 A native, non-blocking Postgres driver for Crystal
 
-[![Build Status](https://travis-ci.org/will/crystal-pg.svg?branch=master)](https://travis-ci.org/will/crystal-pg)
+[![Build Status](https://circleci.com/gh/will/crystal-pg/tree/master.svg?style=svg)](https://circleci.com/gh/will/crystal-pg/tree/master)
 
 
 ## usage
@@ -54,9 +54,9 @@ PG_DB.query_one("select '{hello, world}'::text[]", &.read(Array(String))
 
 ## Requirements
 
-Crystal-pg is [regularly tested on](https://travis-ci.org/will/crystal-pg) Postgres
-versions 9.2 through 9.6 and has been confirmed to support all newer releases (up to version 11). Since it uses protocol version 3, older versions probably also
-work but are not guaranteed.
+Crystal-pg is [regularly tested on](https://circleci.com/gh/will/crystal-pg)
+the Postgres versions the [Postgres project itself supports](https://www.postgresql.org/support/versioning/).
+Since it uses protocol version 3, older versions probably also work but are not guaranteed.
 
 ## Supported Datatypes
 
