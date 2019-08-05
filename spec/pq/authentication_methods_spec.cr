@@ -7,9 +7,12 @@ require "../spec_helper"
 # Because of this, most of these specs are disabled by default. To enable them
 # place an empty file called .run_auth_specs in /spec
 
-private def other_role(role, pass)
+private def test_role(role, pass)
   db = PG_DB.query_one("select current_database()", &.read)
-  "postgres://#{role}:#{pass}@127.0.0.1/#{db}"
+  url = "postgres://#{role}:#{pass}@127.0.0.1/#{db}"
+  DB.open(url) do |db|
+    db.query_one("select 1", &.read).should eq(1)
+  end
 end
 
 describe PQ::Connection, "nologin role" do
@@ -29,9 +32,9 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("drop role if exists crystal_scram")
       PG_DB.exec("set password_encryption='scram-sha-256'")
       PG_DB.exec("create role crystal_scram login encrypted password 'pass'")
-      DB.open(other_role("crystal_scram", "pass")) do |db|
-        db.query_one("select 1", &.read).should eq(1)
-      end
+
+      test_role("crystal_scram", "pass")
+
       PG_DB.exec("drop role if exists crystal_scram")
     end
 
@@ -41,11 +44,11 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("create role crystal_scram login encrypted password 'pass'")
 
       expect_raises(DB::ConnectionRefused) {
-        DB.open(other_role("crystal_scram", "wrong"))
+        test_role("crystal_scram", "wrong")
       }
 
       expect_raises(DB::ConnectionRefused) {
-        DB.open(other_role("crystal_scram", ""))
+        test_role("crystal_scram", "")
       }
 
       PG_DB.exec("drop role if exists crystal_scram")
@@ -55,23 +58,23 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
   describe PQ::Connection, "md5 auth" do
     it "works when given the correct password" do
       PG_DB.exec("drop role if exists crystal_md5")
+      PG_DB.exec("set password_encryption='md5'") if Helper.db_version_gte(10)
       PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
-      DB.open(other_role("crystal_md5", "pass")) do |db|
-        db.query_one("select 1", &.read).should eq(1)
-      end
+      test_role("crystal_md5", "pass")
       PG_DB.exec("drop role if exists crystal_md5")
     end
 
     it "fails when given the wrong password" do
       PG_DB.exec("drop role if exists crystal_md5")
+      PG_DB.exec("set password_encryption='md5'") if Helper.db_version_gte(10)
       PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
 
       expect_raises(DB::ConnectionRefused) {
-        DB.open(other_role("crystal_md5", "bad"))
+        test_role("crystal_md5", "bad")
       }
 
       expect_raises(DB::ConnectionRefused) {
-        DB.open(other_role("crystal_md5", ""))
+        test_role("crystal_md5", "")
       }
 
       PG_DB.exec("drop role if exists crystal_md5")
