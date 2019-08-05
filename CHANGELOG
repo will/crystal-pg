@@ -1,6 +1,14 @@
 v?.?.?     upcoming
 =====================
 
+v0.18.0    2019-08-04
+=====================
+* Add SCRAM-SHA-256 support
+  * NOTE: SASLPrep is missing as of this realease, so not all passwords work
+* Fix reading large number of UUIDs (thanks @asterite)
+* Correctly encode timestamp values to consider microseconds (thanks @asterite)
+* Update crystal db support to 0.6.0 (thanks @bcardiff)
+
 v0.17.0    2019-07-19
 =====================
 * Add `Enumerable` channels overload for `PG.connect_listen` (thanks @vladfaust)
