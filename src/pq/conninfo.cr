@@ -36,7 +36,7 @@ module PQ
     def initialize(host : String? = nil, database : String? = nil, user : String? = nil, @password : String? = nil, port : Int | String? = 5432, sslmode : String | Symbol? = nil)
       @host = default_host host
       db = default_database database
-      @database = db.starts_with?('/') ? db[1..-1] : db
+      @database = db.lchop('/')
       @user = default_user user
       @port = (port || 5432).to_i
       @sslmode = default_sslmode sslmode
@@ -50,7 +50,7 @@ module PQ
         return new if conninfo == ""
 
         args = Hash(String, String).new
-        conninfo.split(' ').each do |pair|
+        conninfo.split ' ' do |pair|
           begin
             k, v = pair.split('=')
             args[k] = v
