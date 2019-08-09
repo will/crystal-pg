@@ -78,4 +78,9 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
       PQ::ConnInfo.from_conninfo_string("hosthost")
     }
   end
+
+  it "parses an IPv6 host" do
+    ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@[::1]:5555/db")
+    ci.host.should eq("::1")
+  end
 end
