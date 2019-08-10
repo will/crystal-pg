@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
 
+v0.18.1    2018-08-09
+=====================
+* bugfix: Fix Time encoding for non-zero-offset times (thanks @straight-shoota)
+
 v0.18.0    2019-08-04
 =====================
 * Add SCRAM-SHA-256 support
