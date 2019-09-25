@@ -200,7 +200,7 @@ module PG
       ]
 
       def decode(io, bytesize, oid)
-        read_u64(io).to_i64
+        read_i64(io)
       end
 
       def type

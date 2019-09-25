@@ -2,18 +2,19 @@ require "../spec_helper"
 
 describe PG::Decoders do
   #           name,             sql,              result
-  test_decode "undefined    ", "'what'       ", "what"
-  test_decode "text         ", "'what'::text ", "what"
-  test_decode "varchar      ", "'wh'::varchar", "wh"
-  test_decode "empty strings", "''           ", ""
-  test_decode "null as nil  ", "null         ", nil
-  test_decode "boolean false", "false        ", false
-  test_decode "boolean true ", "true         ", true
-  test_decode "int2 smallint", "1::int2      ", 1
-  test_decode "int4 int     ", "1::int4      ", 1
-  test_decode "int8 bigint  ", "1::int8      ", 1
-  test_decode "float        ", "-0.123::float", -0.123
-  test_decode "regtype      ", "pg_typeof(3) ", 23
+  test_decode "undefined    ", "'what'         ", "what"
+  test_decode "text         ", "'what'::text   ", "what"
+  test_decode "varchar      ", "'wh'::varchar  ", "wh"
+  test_decode "empty strings", "''             ", ""
+  test_decode "null as nil  ", "null           ", nil
+  test_decode "boolean false", "false          ", false
+  test_decode "boolean true ", "true           ", true
+  test_decode "int2 smallint", "1::int2        ", 1
+  test_decode "int4 int     ", "1::int4        ", 1
+  test_decode "int8 bigint  ", "1::int8        ", 1
+  test_decode "bigint       ", "-12928394059603", -12928394059603
+  test_decode "float        ", "-0.123::float  ", -0.123
+  test_decode "regtype      ", "pg_typeof(3)   ", 23
 
   test_decode "double prec.", "'35.03554004971999'::float8", 35.03554004971999
   test_decode "flot prec.", "'0.10000122'::float4", 0.10000122_f32
