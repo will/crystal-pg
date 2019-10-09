@@ -471,6 +471,44 @@ module PG
       end
     end
 
+    struct RangeDecoder
+      include Decoder
+
+      def_oids [
+        3904, # int4range
+      ]
+
+      def decode(io, bytesize, oid)
+        # General format is here: https://git.io/JeWQX
+        # Specifics for the binary representation are here: https://git.io/JeWQ1
+
+        flags = io.read_byte # first byte is flags. TODO: what do they do?
+
+        # TODO: How to use the *_bound_len to inform `read_*` to support int8range
+        lower_bound_len = read_i32(io) # => 4 or 8
+        lower_bound = read_i32(io)
+        upper_bound_len = read_i32(io) # => 4 or 8
+        upper_bound = read_i32(io)
+
+        # some debug cruft here. TODO: remove before merge
+        # puts "flags: #{flags.to_s}"
+        # puts "lbound len: #{lower_bound_len}"
+        # puts "lbound: #{lower_bound}"
+        # puts "ubound len: #{upper_bound_len}"
+        # puts "ubound: #{upper_bound}"
+
+        # TODO: add `exclusive` flag? Do we need to, or since the decoder
+        # is already receiving a discrete range type, maybe we don't?
+        # Ref https://www.postgresql.org/docs/10/rangetypes.html#RANGETYPES-DISCRETE
+        Range.new(lower_bound, upper_bound)
+      end
+
+      def type
+        # TODO: do I actually need a new PG-specific type, or can we use real Crystal Ranges?
+        Range
+      end
+    end
+
     @@decoders = Hash(Int32, PG::Decoders::Decoder).new(ByteaDecoder.new)
 
     def self.from_oid(oid)
@@ -497,6 +535,7 @@ module PG
     register_decoder Float64Decoder.new
     register_decoder TimeDecoder.new
     register_decoder NumericDecoder.new
+    register_decoder RangeDecoder.new
     register_decoder PointDecoder.new
     register_decoder LineSegmentDecoder.new
     register_decoder PathDecoder.new
