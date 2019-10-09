@@ -10,7 +10,7 @@ Thanks!
 - PostgreSQL server
 
 You may also look into `.circleci/config.yml` and related `steps:` section to see
-the configiration for the automated test suite.
+the configuration for the automated test suite.
 
 ### PostgreSQL Server setup
 
