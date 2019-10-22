@@ -24,6 +24,8 @@ noscram: &noscram
     NOSCRAM: true
 
 jobs:
+  postgresql-12:
+    <<: *testdefault
   postgresql-11:
     <<: *testdefault
   postgresql-10:
@@ -42,6 +44,7 @@ workflows:
   version: 2
   ci:
     jobs:
+      - postgresql-12
       - postgresql-11
       - postgresql-10
       - postgresql-9.6
