@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
+
+v0.20.0    2019-12-17
+=====================
 * bugfix: negative bigint decoding (thanks @asterite)
+* Update crystal db support to 0.8.0 (thanks @bcardiff)
 
 v0.19.0    2019-09-21
 =====================
