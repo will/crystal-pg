@@ -52,6 +52,73 @@ PG_DB.query_one("select '{hello, world}'::text[]", &.read(Array(String))
 # => ["hello", "world"]
 ```
 
+### Error Handling
+It is possible to catch errors and notifications and pass them along to Crystal for further handling.
+```Crystal
+DB.connect("postgres:///") do |cnn|
+  # Capture all exceptions
+  notice = nil
+  cnn.on_notice { |x| notice = "pgSQL #{x}" }
+
+  # A function that raises exceptions
+  cnn.exec(
+    <<-SQL
+      CREATE OR REPLACE FUNCTION foo(IN str TEXT)
+        RETURNS VOID
+        LANGUAGE 'plpgsql'
+        AS $$
+          BEGIN
+            IF str = 'yes' THEN
+              RAISE NOTICE 'Glad we agree!';
+            ELSE
+              RAISE EXCEPTION 'You know nothing John Snow!';
+            END IF;
+          END;
+        $$;
+    SQL
+  )
+  
+  puts notice if notice
+  # => Nothing is printed
+
+  # Notice handling example
+  cnn.exec(
+    <<-SQL
+      SELECT foo('yes');
+    SQL
+  )
+
+  puts notice if notice
+  # => pgSQL NOTICE: Glad we agree!
+
+  # Exception handling example
+  cnn.exec(
+    <<-SQL
+      SELECT foo('no');
+    SQL
+  )
+
+  puts notice if notice
+  # => Unhandled exception: You know nothing John Snow! (PQ::PQError)
+  #     from lib/pg/src/pq/connection.cr:203:7 in 'handle_error'
+  #     from lib/pg/src/pq/connection.cr:186:7 in 'handle_async_frames'
+  #     from lib/pg/src/pq/connection.cr:162:7 in 'read'
+  #     from lib/pg/src/pq/connection.cr:386:18 in 'expect_frame'
+  #     from lib/pg/src/pq/connection.cr:370:9 in 'read_next_row_start'
+  #     from lib/pg/src/pg/result_set.cr:39:8 in 'move_next'
+  #     from lib/pg/src/pg/statement.cr:39:13 in 'perform_exec'
+  #     from lib/db/src/db/statement.cr:82:14 in 'perform_exec_and_release'
+  #     from lib/db/src/db/statement.cr:68:7 in 'exec:args'
+  #     from lib/db/src/db/query_methods.cr:271:7 in 'exec'
+  #     from spec/cerebrum_spec.cr:84:3 in '__crystal_main'
+  #     from /usr/share/crystal/src/crystal/main.cr:97:5 in 'main_user_code'
+  #     from /usr/share/crystal/src/crystal/main.cr:86:7 in 'main'
+  #     from /usr/share/crystal/src/crystal/main.cr:106:3 in 'main'
+  #     from __libc_start_main
+  #     from _start
+  #     from ???
+```
+
 ## Requirements
 
 Crystal-pg is [regularly tested on](https://circleci.com/gh/will/crystal-pg)
