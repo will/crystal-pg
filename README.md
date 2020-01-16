@@ -56,9 +56,8 @@ PG_DB.query_one("select '{hello, world}'::text[]", &.read(Array(String))
 It is possible to catch errors and notifications and pass them along to Crystal for further handling.
 ```Crystal
 DB.connect("postgres:///") do |cnn|
-  # Capture all exceptions
-  notice = nil
-  cnn.on_notice { |x| notice = "pgSQL #{x}" }
+  # Capture and print all exceptions
+  cnn.on_notice { |x| puts "pgSQL #{x}" }
 
   # A function that raises exceptions
   cnn.exec(
@@ -69,7 +68,7 @@ DB.connect("postgres:///") do |cnn|
         AS $$
           BEGIN
             IF str = 'yes' THEN
-              RAISE NOTICE 'Glad we agree!';
+                    RAISE NOTICE 'Glad we agree!';
             ELSE
               RAISE EXCEPTION 'You know nothing John Snow!';
             END IF;
@@ -77,9 +76,6 @@ DB.connect("postgres:///") do |cnn|
         $$;
     SQL
   )
-  
-  puts notice if notice
-  # => Nothing is printed
 
   # Notice handling example
   cnn.exec(
@@ -87,8 +83,6 @@ DB.connect("postgres:///") do |cnn|
       SELECT foo('yes');
     SQL
   )
-
-  puts notice if notice
   # => pgSQL NOTICE: Glad we agree!
 
   # Exception handling example
@@ -97,9 +91,8 @@ DB.connect("postgres:///") do |cnn|
       SELECT foo('no');
     SQL
   )
-
-  puts notice if notice
-  # => Unhandled exception: You know nothing John Snow! (PQ::PQError)
+  # => pgSQL ERROR: You know nothing John Snow!
+  #    Unhandled exception: You know nothing John Snow! (PQ::PQError)
   #     from lib/pg/src/pq/connection.cr:203:7 in 'handle_error'
   #     from lib/pg/src/pq/connection.cr:186:7 in 'handle_async_frames'
   #     from lib/pg/src/pq/connection.cr:162:7 in 'read'
