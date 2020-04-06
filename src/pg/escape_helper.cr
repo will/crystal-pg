@@ -51,6 +51,8 @@ module PG
           num_backslashes += 1
         when quote_char
           num_quotes += 1
+        else
+          # skip
         end
       end
 
@@ -76,6 +78,8 @@ module PG
               build << quote_char
             when '\\'
               build << '\\' unless as_ident
+            else
+              # ignore
             end
             build << c
           end

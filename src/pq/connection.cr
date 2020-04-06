@@ -224,6 +224,8 @@ module PQ
           raise ConnectionError.new(
             "Only on is supported for integer_datetimes, got: #{frame.value.inspect}")
         end
+      else
+        # ignore
       end
     end
 
