@@ -167,8 +167,8 @@ module PQ
         break if @soc.closed?
         begin
           handle_async_frames(read_one_frame(soc.read_char))
-        rescue e : Errno
-          e.errno == Errno::EBADF && @soc.closed? ? break : raise e
+        rescue e : Socket::Error
+          e.os_error.try(&.ebadf?) && @soc.closed? ? break : raise e
         end
       end
     end
