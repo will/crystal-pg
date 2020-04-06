@@ -94,6 +94,8 @@ module PQ
         @sslkey = value
       when "sslrootcert"
         @sslrootcert = value
+      else
+        # ignore
       end
     end
 

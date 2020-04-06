@@ -19,6 +19,8 @@ module PQ
           code = f.message
         when :message
           message = f.message
+        else
+          # ignore
         end
       end
 

@@ -19,6 +19,7 @@ module PQ
           when 'S' then ParameterStatus
           when 'K' then BackendKeyData
           when 'R' then Authentication
+          else          nil
           end
       k ? k.new(bytes) : Unknown.new(type, bytes)
     end
