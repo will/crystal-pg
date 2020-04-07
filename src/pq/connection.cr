@@ -165,11 +165,22 @@ module PQ
     def read_async_frame_loop
       loop do
         break if @soc.closed?
-        begin
-          handle_async_frames(read_one_frame(soc.read_char))
-        rescue e : Socket::Error
-          e.os_error.try(&.ebadf?) && @soc.closed? ? break : raise e
-        end
+        {% if compare_versions(Crystal::VERSION, "0.34.0-0") > 0 %}
+          begin
+            handle_async_frames(read_one_frame(soc.read_char))
+          rescue e : IO::Error
+            @soc.closed? ? break : raise e
+          end
+        {% else %}
+          begin
+            handle_async_frames(read_one_frame(soc.read_char))
+          rescue e : Errno
+            e.errno == Errno::EBADF && @soc.closed? ? break : raise e
+          rescue e : IO::Error
+            # Before 0.34 IO::Error was raised also in some situations
+            @soc.closed? ? break : raise e
+          end
+        {% end %}
       end
     end
 
