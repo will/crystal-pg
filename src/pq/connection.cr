@@ -319,7 +319,11 @@ module PQ
       end
 
       private def sha256(key)
-        OpenSSL::Digest.new("SHA256").update(key).digest
+        {% if compare_versions(Crystal::VERSION, "0.35.0-0") >= 0 %}
+          OpenSSL::Digest.new("SHA256").update(key).final
+        {% else %}
+          OpenSSL::Digest.new("SHA256").update(key).digest
+        {% end %}
       end
     end
 
@@ -359,8 +363,13 @@ module PQ
       inner = Digest::MD5.hexdigest("#{@conninfo.password}#{@conninfo.user}")
 
       pass = Digest::MD5.hexdigest do |ctx|
-        ctx.update(inner.to_unsafe, inner.bytesize.to_u32)
-        ctx.update(salt.to_unsafe, salt.bytesize.to_u32)
+        {% if compare_versions(Crystal::VERSION, "0.35.0-0") >= 0 %}
+          ctx.update(inner)
+          ctx.update(salt)
+        {% else %}
+          ctx.update(inner.to_unsafe, inner.bytesize.to_u32)
+          ctx.update(salt.to_unsafe, salt.bytesize.to_u32)
+        {% end %}
       end
 
       send_password_message "md5#{pass}"
