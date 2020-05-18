@@ -20,7 +20,7 @@ module PQ
     end
 
     def self.encode(val : Time)
-      text Time::Format::RFC_3339.format(val)
+      text Time::Format::RFC_3339.format(val, fraction_digits: 9)
     end
 
     def self.encode(val : PG::Geo::Point)
