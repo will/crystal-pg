@@ -1,3 +1,4 @@
+require "uuid"
 require "../spec_helper"
 
 describe PG::Decoders do
@@ -32,9 +33,9 @@ describe PG::Decoders do
     Slice(UInt8).new(UInt8[].to_unsafe, 0)
 
   test_decode "uuid", "'7d61d548124c4b38bc05cfbb88cfd1d1'::uuid",
-    "7d61d548-124c-4b38-bc05-cfbb88cfd1d1"
+    UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
   test_decode "uuid", "'7d61d548-124c-4b38-bc05-cfbb88cfd1d1'::uuid",
-    "7d61d548-124c-4b38-bc05-cfbb88cfd1d1"
+    UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
 
   if Helper.db_version_gte(9, 2)
     test_decode "json", %('[1,"a",true]'::json), JSON.parse(%([1,"a",true]))
@@ -65,8 +66,8 @@ describe PG::Decoders do
   end
 
   it "decodes many uuids (#148)" do
-    uuid = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    ids = PG_DB.query_all("select '#{uuid}'::uuid from generate_series(1,1000)", as: String)
+    uuid = UUID.new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    ids = PG_DB.query_all("select '#{uuid}'::uuid from generate_series(1,1000)", as: UUID)
     ids.uniq.should eq([uuid])
   end
 

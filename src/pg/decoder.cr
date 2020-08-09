@@ -1,7 +1,8 @@
 require "json"
+require "uuid"
 
 module PG
-  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric
+  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric | UUID
 
   # :nodoc:
   module Decoders
@@ -54,8 +55,6 @@ module PG
     struct StringDecoder
       include Decoder
 
-      UUID_OID = 2950
-
       def_oids [
         19,       # name (internal type)
         25,       # text
@@ -63,52 +62,39 @@ module PG
         705,      # unknown
         1042,     # blchar
         1043,     # varchar
-        UUID_OID, # uuid
       ]
 
       def decode(io, bytesize, oid)
-        if oid == UUID_OID
-          return decode_uuid(io, bytesize)
-        end
-
         String.new(bytesize) do |buffer|
           io.read_fully(Slice.new(buffer, bytesize))
           {bytesize, 0}
         end
       end
 
-      private def decode_uuid(io, bytesize)
-        bytes = uninitialized UInt8[6]
+      def type
+        String
+      end
+    end
 
-        String.new(36) do |buffer|
-          buffer[8] = buffer[13] = buffer[18] = buffer[23] = 45_u8
+    struct UUIDDecoder
+      include Decoder
 
-          slice = bytes.to_slice[0, 4]
+      def_oids [
+        2950, # UUID
+      ]
 
-          io.read_fully(slice)
-          slice.hexstring(buffer + 0)
+      def decode(io, bytesize, _oid)
+        bytes = uninitialized UInt8[16]
 
-          slice = bytes.to_slice[0, 2]
+        slice = Bytes.new(bytes.to_unsafe, 16)
 
-          io.read_fully(slice)
-          slice.hexstring(buffer + 9)
+        io.read_fully slice
 
-          io.read_fully(slice)
-          slice.hexstring(buffer + 14)
-
-          io.read_fully(slice)
-          slice.hexstring(buffer + 19)
-
-          slice = bytes.to_slice
-          io.read_fully(slice)
-          slice.hexstring(buffer + 24)
-
-          {36, 36}
-        end
+        UUID.new(slice)
       end
 
       def type
-        String
+        UUID
       end
     end
 
@@ -488,6 +474,7 @@ module PG
     register_decoder ByteaDecoder.new
     register_decoder CharDecoder.new
     register_decoder StringDecoder.new
+    register_decoder UUIDDecoder.new
     register_decoder Int16Decoder.new
     register_decoder Int32Decoder.new
     register_decoder Int64Decoder.new
