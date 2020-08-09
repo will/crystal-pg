@@ -56,12 +56,12 @@ module PG
       include Decoder
 
       def_oids [
-        19,       # name (internal type)
-        25,       # text
-        142,      # xml
-        705,      # unknown
-        1042,     # blchar
-        1043,     # varchar
+        19,   # name (internal type)
+        25,   # text
+        142,  # xml
+        705,  # unknown
+        1042, # blchar
+        1043, # varchar
       ]
 
       def decode(io, bytesize, oid)
