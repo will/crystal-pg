@@ -418,6 +418,34 @@ module PG
       end
     end
 
+    struct IntervalDecoder
+      include Decoder
+
+      def_oids [
+        1186,
+      ]
+
+      #
+      # An Interval consists of
+      # * time   (8 bytes)
+      # * days   (4 bytes)
+      # * months (4 bytes)
+      #
+      # See: https://github.com/postgres/postgres/blob/a094c8ff53523e88ff9dd28ad467618039e27b58/src/backend/utils/adt/timestamp.c#L1003
+      #
+      def decode(io, bytesize, oid)
+        microseconds = read_i64(io)
+        days = read_i32(io)
+        months = read_i32(io)
+
+        PG::Interval.new(microseconds, days, months)
+      end
+
+      def type
+        PG::Interval
+      end
+    end
+
     struct ByteaDecoder
       include Decoder
 
@@ -483,6 +511,7 @@ module PG
     register_decoder Float32Decoder.new
     register_decoder Float64Decoder.new
     register_decoder TimeDecoder.new
+    register_decoder IntervalDecoder.new
     register_decoder NumericDecoder.new
     register_decoder PointDecoder.new
     register_decoder LineSegmentDecoder.new

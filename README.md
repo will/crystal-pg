@@ -133,6 +133,7 @@ Since it uses protocol version 3, older versions probably also work but are not 
 - regtype
 - geo types: point, box, path, lseg, polygon, circle, line
 - array types: int8, int4, int2, float8, float4, bool, text, numeric, timestamptz, date, timestamp
+- interval (2)
 
 1: A note on numeric: In Postgres this type has arbitrary precision. In this
     driver, it is represented as a `PG::Numeric` which retains all precision, but
@@ -141,3 +142,6 @@ Since it uses protocol version 3, older versions probably also work but are not 
     require `pg_ext/big_rational` which adds `#to_big_r`, but requires that you
     have LibGMP installed.
 
+2: A note on interval: A Postgres interval can not be directly mapped to a built
+    in Crystal datatype. Therfore we provide a `PG::Interval` type that can be converted to
+    `Time::Span` and `Time::MonthSpan`.
