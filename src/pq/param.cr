@@ -92,15 +92,9 @@ module PQ
 
     def self.encode_array(io, value : Array)
       io << "{"
-      {% if compare_versions(Crystal::VERSION, "0.35.0-0") >= 0 %}
-        value.join(io, ",") do |item|
-          encode_array(io, item)
-        end
-      {% else %}
-        value.join(",", io) do |item|
-          encode_array(io, item)
-        end
-      {% end %}
+      value.join(io, ",") do |item|
+        encode_array(io, item)
+      end
 
       io << "}"
     end
