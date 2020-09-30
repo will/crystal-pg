@@ -56,7 +56,6 @@ describe PG::Decoders do
   test_decode "date", "'2015-02-03'::date",
     Time.utc(2015, 2, 3, 0, 0, 0)
 
-
   # -14706000000 = microseconds in -4 hours, -5 minutes -6 seconds
   test_decode "interval", "'P-1Y-2M3DT-4H-5M-6S'::interval", PG::Interval.new(-14706000000, 3, -14)
   test_decode "interval", "'178000000 years'::interval", PG::Interval.new(0, 0, 2_136_000_000)

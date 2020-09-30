@@ -12,7 +12,7 @@ module PG
     #
     # Create a `Time::Span` from this `PG::Interval`
     # If the interval covered in the interval exceeds the range of `Time::Span`
-    # then an exception is raised.
+    #  then an exception is raised.
     #
     def to_span(ignore_overflow = false)
       if !ignore_overflow && months != 0
@@ -35,7 +35,7 @@ module PG
     def to_spans
       {
         to_time_span(false),
-        to_time_month_span
+        to_time_month_span,
       }
     end
   end

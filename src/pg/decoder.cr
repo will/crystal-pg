@@ -436,8 +436,9 @@ module PG
       include Decoder
 
       def_oids [
-        1186
+        1186,
       ]
+
       #
       # An Interval consists of
       # * time   (8 bytes)
