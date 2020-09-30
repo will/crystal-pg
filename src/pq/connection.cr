@@ -165,22 +165,11 @@ module PQ
     def read_async_frame_loop
       loop do
         break if @soc.closed?
-        {% if compare_versions(Crystal::VERSION, "0.34.0-0") > 0 %}
-          begin
-            handle_async_frames(read_one_frame(soc.read_char))
-          rescue e : IO::Error
-            @soc.closed? ? break : raise e
-          end
-        {% else %}
-          begin
-            handle_async_frames(read_one_frame(soc.read_char))
-          rescue e : Errno
-            e.errno == Errno::EBADF && @soc.closed? ? break : raise e
-          rescue e : IO::Error
-            # Before 0.34 IO::Error was raised also in some situations
-            @soc.closed? ? break : raise e
-          end
-        {% end %}
+        begin
+          handle_async_frames(read_one_frame(soc.read_char))
+        rescue e : IO::Error
+          @soc.closed? ? break : raise e
+        end
       end
     end
 
@@ -319,11 +308,7 @@ module PQ
       end
 
       private def sha256(key)
-        {% if compare_versions(Crystal::VERSION, "0.35.0-0") >= 0 %}
-          OpenSSL::Digest.new("SHA256").update(key).final
-        {% else %}
-          OpenSSL::Digest.new("SHA256").update(key).digest
-        {% end %}
+        OpenSSL::Digest.new("SHA256").update(key).final
       end
     end
 
@@ -363,13 +348,8 @@ module PQ
       inner = Digest::MD5.hexdigest("#{@conninfo.password}#{@conninfo.user}")
 
       pass = Digest::MD5.hexdigest do |ctx|
-        {% if compare_versions(Crystal::VERSION, "0.35.0-0") >= 0 %}
-          ctx.update(inner)
-          ctx.update(salt)
-        {% else %}
-          ctx.update(inner.to_unsafe, inner.bytesize.to_u32)
-          ctx.update(salt.to_unsafe, salt.bytesize.to_u32)
-        {% end %}
+        ctx.update(inner)
+        ctx.update(salt)
       end
 
       send_password_message "md5#{pass}"
