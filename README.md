@@ -133,6 +133,7 @@ Since it uses protocol version 3, older versions probably also work but are not 
 - regtype
 - geo types: point, box, path, lseg, polygon, circle, line
 - array types: int8, int4, int2, float8, float4, bool, text, numeric, timestamptz, date, timestamp
+- range: int4range, int8range, daterange, tsrange, tstzrange, numrange
 
 1: A note on numeric: In Postgres this type has arbitrary precision. In this
     driver, it is represented as a `PG::Numeric` which retains all precision, but
@@ -140,4 +141,3 @@ Since it uses protocol version 3, older versions probably also work but are not 
     float first. If you need true arbitrary precision, you can optionally
     require `pg_ext/big_rational` which adds `#to_big_r`, but requires that you
     have LibGMP installed.
-
