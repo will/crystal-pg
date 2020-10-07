@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
+
+v0.22.0    2020-10-07
+=====================
 * (breaking) UUIDs decode into UUID type instead of String (thanks @jgaskins)
+* Update crystal-db to 0.10 for logging support (thanks @bcardiff)
 
 v0.21.1    2020-06-09
 =====================
