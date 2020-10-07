@@ -1,6 +1,6 @@
 class PG::Statement < ::DB::Statement
-  def initialize(connection, @sql : String)
-    super(connection)
+  def initialize(connection, command : String)
+    super(connection, command)
   end
 
   protected def conn
@@ -10,7 +10,7 @@ class PG::Statement < ::DB::Statement
   protected def perform_query(args : Enumerable) : ResultSet
     params = args.map { |arg| PQ::Param.encode(arg) }
     conn = self.conn
-    conn.send_parse_message(@sql)
+    conn.send_parse_message(command)
     conn.send_bind_message params
     conn.send_describe_portal_message
     conn.send_execute_message
