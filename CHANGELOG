@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* add support for decoding interval type (thanks @pascalbetz)
 
 v0.22.1    2020-10-12
 =====================

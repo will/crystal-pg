@@ -22,8 +22,8 @@ describe PG::Interval do
     end
 
     it "allows to ignore overflow" do
-      span = PG::Interval.new(microseconds: 123_000_000, months: -1).to_span(true)
-      span.should eq(Time::Span.new(seconds: 123))
+      span = PG::Interval.new(microseconds: 123_000_000, months: 2).to_span(approx_months: 30)
+      span.should eq(Time::Span.new(days: 60, seconds: 123))
     end
   end
 
