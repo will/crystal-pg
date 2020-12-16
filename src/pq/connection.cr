@@ -261,7 +261,8 @@ module PQ
       when Frame::Authentication::Type::OK
         # no op
       when Frame::Authentication::Type::CleartextPassword
-        raise "Cleartext auth is not supported"
+        raise "Cleartext auth over unencrypted connection is not supported" if !@soc.is_a?(OpenSSL::SSL::Socket::Client)
+        handle_auth_cleartext auth_frame.body
       when Frame::Authentication::Type::SASL
         handle_auth_sasl auth_frame.body
       when Frame::Authentication::Type::MD5Password
@@ -353,6 +354,11 @@ module PQ
       end
 
       send_password_message "md5#{pass}"
+      expect_frame Frame::Authentication
+    end
+
+    private def handle_auth_cleartext(body)
+      send_password_message @conninfo.password
       expect_frame Frame::Authentication
     end
 
