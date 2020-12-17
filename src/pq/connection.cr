@@ -265,6 +265,7 @@ module PQ
 
         handle_auth_cleartext auth_frame.body
       when Frame::Authentication::Type::SASL
+        # check_auth_method! is called in sasl handler
         handle_auth_sasl auth_frame.body
       when Frame::Authentication::Type::MD5Password
         check_auth_method!("md5")
