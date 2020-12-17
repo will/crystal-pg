@@ -12,7 +12,6 @@ testdefault: &testdefault
           bash .circleci/setup.sh
           touch spec/.run_auth_specs
     - run: crystal --version
-    - run: crystal tool format --check
     - run: shards install
     - run:
         name: set DATABASE_URL
@@ -39,6 +38,12 @@ jobs:
   postgresql-9.4:
     <<: *testdefault
     <<: *noscram
+  check_format:
+    docker:
+      - image: crystallang/crystal:latest
+    steps:
+    - checkout
+    - run: crystal tool format --check
 
 workflows:
   version: 2
@@ -50,4 +55,5 @@ workflows:
       - postgresql-9.6
       - postgresql-9.5
       - postgresql-9.4
+      - check_format
 
