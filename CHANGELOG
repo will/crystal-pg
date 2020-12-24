@@ -1,5 +1,9 @@
 v?.?.?     upcoming
 =====================
+* add auth_methods config setting to control which methods the client can
+  accpet. Defaults to `scram-sha-256` and `md5`. Also optionally adds support
+  for `cleartext`, but it is not on by default as simply having this on can let
+  MITM attackers steal your password. (thanks @straight-shoota)
 * add support for decoding interval type (thanks @pascalbetz)
 
 v0.22.1    2020-10-12
