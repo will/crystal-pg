@@ -83,4 +83,25 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@[::1]:5555/db")
     ci.host.should eq("::1")
   end
+
+  it "auth_methods" do
+    ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo")
+    ci.auth_methods.should eq ["scram-sha-256", "md5"]
+
+    ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo?auth_methods=md5")
+    ci.auth_methods.should eq ["md5"]
+
+    ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo?auth_methods=")
+    ci.auth_methods.should eq [] of String
+
+    ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo?auth_methods=cleartext,md5,scram-sha-256")
+    ci.auth_methods.should eq ["cleartext", "md5", "scram-sha-256"]
+
+    expect_raises Exception do
+      PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo?auth_methods=unsupported")
+    end
+    expect_raises Exception do
+      PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo?auth_methods=md5,unsupported")
+    end
+  end
 end

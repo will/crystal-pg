@@ -261,14 +261,27 @@ module PQ
       when Frame::Authentication::Type::OK
         # no op
       when Frame::Authentication::Type::CleartextPassword
-        raise "Cleartext auth is not supported"
+        check_auth_method!("cleartext")
+
+        handle_auth_cleartext auth_frame.body
       when Frame::Authentication::Type::SASL
+        # check_auth_method! is called in sasl handler
         handle_auth_sasl auth_frame.body
       when Frame::Authentication::Type::MD5Password
+        check_auth_method!("md5")
+
         handle_auth_md5 auth_frame.body
       else
         raise ConnectionError.new(
           "unsupported authentication method: #{auth_frame.type}"
+        )
+      end
+    end
+
+    private def check_auth_method!(method)
+      unless @conninfo.auth_methods.includes?(method)
+        raise ConnectionError.new(
+          "server asked for disabled authentication method: #{method}"
         )
       end
     end
@@ -315,6 +328,14 @@ module PQ
     private def handle_auth_sasl(mechanism_list)
       # it is possible in the future for postgres to send something other than
       # SCRAM-SHA-265, but for now ignore the mechanism_list
+      mechanism_list = String.new(mechanism_list).split(Char::ZERO)
+      unless mechanism_list.includes?("SCRAM-SHA-256")
+        raise ConnectionError.new(
+          "unsupported authentication method: #{mechanism_list.join(", ")}"
+        )
+      end
+
+      check_auth_method!("scram-sha-256")
 
       ctx = SamlContext.new(@conninfo.password || "")
 
@@ -353,6 +374,11 @@ module PQ
       end
 
       send_password_message "md5#{pass}"
+      expect_frame Frame::Authentication
+    end
+
+    private def handle_auth_cleartext(body)
+      send_password_message @conninfo.password
       expect_frame Frame::Authentication
     end
 
