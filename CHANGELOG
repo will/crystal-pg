@@ -5,6 +5,9 @@ v?.?.?     upcoming
   for `cleartext`, but it is not on by default as simply having this on can let
   MITM attackers steal your password. (thanks @straight-shoota)
 * add support for decoding interval type (thanks @pascalbetz)
+* Postgres 13 is now officially supported and tested on CI and Postgres 9.4
+  support has ended, though as the postgres protocol itself hasn't changed,
+  it still probably works.
 
 v0.22.1    2020-10-12
 =====================
