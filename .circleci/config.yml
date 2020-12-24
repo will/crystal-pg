@@ -23,6 +23,8 @@ noscram: &noscram
     NOSCRAM: true
 
 jobs:
+  postgresql-13:
+    <<: *testdefault
   postgresql-12:
     <<: *testdefault
   postgresql-11:
@@ -33,9 +35,6 @@ jobs:
     <<: *testdefault
     <<: *noscram
   postgresql-9.5:
-    <<: *testdefault
-    <<: *noscram
-  postgresql-9.4:
     <<: *testdefault
     <<: *noscram
   check_format:
@@ -49,11 +48,11 @@ workflows:
   version: 2
   ci:
     jobs:
+      - postgresql-13
       - postgresql-12
       - postgresql-11
       - postgresql-10
       - postgresql-9.6
       - postgresql-9.5
-      - postgresql-9.4
       - check_format
 
