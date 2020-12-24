@@ -157,34 +157,34 @@ to the `auth_methods` parameter, for example
  DB.open("postgres://example.com/dbname?auth_methods=cleartext,md5,scram-sha-256")
 ```
 
-**DO NOT TURN `cleartext` ON UNLESS YOU ABSOLUTLY NEED IT!** Mearly by having
+**DO NOT TURN `cleartext` ON UNLESS YOU ABSOLUTELY NEED IT!** Mearly by having
 this option enabled exposes a postgres client to downgrade man-in-the-middle
 attacks, even if the server is configured to not support cleartext. Even if you
 use TLS, you are not safe unless you are fully verifying the server's cert, as
 the attacker can terminate TLS and re-negotiate a connection with the server.
 
-```
+
 client                     attacker                     server
 ----------------------------------------------------------------------------
 I want to connect \
                    \->  intercepts, forwards
                         I want to connect \
-                                           \->  receives connection request
+                                           \----->  receives connection request
 
-                                              / I support scram and/or md5 only
-                        intercetps, sends  <-/
+                                                  / I support scram and/or md5 only
+                        intercepts, sends      <-/
                      /  I only support cleartext
 receives attacker <-/
 claiming server
 only supports cleartext
-sends password becuase
+sends password because
 cleartext enabled \
                    \->  receives clear password,
-                        negotaites scram/md5
+                        negotiates scram/md5
                         with real server      \
-                                               \-> accepts scram/md5 auth
+                                               \--> accepts scram/md5 auth
 
 ```
 
-It is a mistkae for any driver to support cleartext by default, and it's a
+It is a mistake for any driver to support cleartext by default, and it's a
 mistake that postgres continues to have this as an option at all.
