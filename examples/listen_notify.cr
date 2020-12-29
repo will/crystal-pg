@@ -1,7 +1,7 @@
 require "../src/pg"
 
-PG.connect_listen("postgres:///", "a", "b") do |n| # connect and  listen on "a" and "b"
-  puts "    got: #{n.payload} on #{n.channel}"     # print notifications as they come in
+PG.connect_listen("postgres://localhost:2345/", "a", "b") do |n| # connect and  listen on "a" and "b"
+  puts "    got: #{n.payload} on #{n.channel}"                   # print notifications as they come in
 end
 
 PG_DB = DB.open("postgres:///")                       # make a normal connection

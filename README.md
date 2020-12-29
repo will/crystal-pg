@@ -164,6 +164,7 @@ use TLS, you are not safe unless you are fully verifying the server's cert, as
 the attacker can terminate TLS and re-negotiate a connection with the server.
 
 
+```
 client                     attacker                     server
 ----------------------------------------------------------------------------
 I want to connect \
