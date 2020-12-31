@@ -95,6 +95,19 @@ describe PG::Driver do
     end
   end
 
+  it "treats Slice(UInt8) as String" do
+    with_db do |db|
+      db.exec "create extension if not exists citext with schema public"
+      db.exec "drop table if exists users"
+      db.exec "create table users (email citext)"
+      db.exec "insert into users values ($1)", "foo@example.com"
+
+      db.query "select email from users limit 1" do |rs|
+        assert_single_read rs, String, "foo@example.com"
+      end
+    end
+  end
+
   describe "transactions" do
     it "can read inside transaction and rollback after" do
       with_db do |db|
