@@ -1,12 +1,31 @@
 #!/usr/bin/env crystal
-require "readline"
 require "../src/pg"
+
+@[Link("readline")]
+{% if flag?(:openbsd) %}
+  @[Link("termcap")]
+{% end %}
+lib LibReadline
+  fun readline(prompt : UInt8*) : UInt8*
+  fun add_history(line : UInt8*)
+end
+
+def readline
+  line = LibReadline.readline("# ")
+  if line
+    LibReadline.add_history(line)
+    String.new(line).tap { LibC.free(line.as(Void*)) }
+  else
+    ""
+  end
+end
 
 url = ARGV[0]? || "postgres:///"
 db = DB.open(url)
 
 loop do
-  query = Readline.readline("# ", true) || ""
+  query = readline
+  exit if query == "\\q"
   has_results = false
   begin
     db.query(query) do |rs|
