@@ -92,6 +92,17 @@ class PG::ResultSet < ::DB::ResultSet
     end
   end
 
+  def read(t : String.class) : String
+    value = read
+    if value.is_a?(String)
+      value
+    elsif value.is_a?(Slice(UInt8))
+      String.new(value)
+    else
+      raise "#{self.class}#read returned a #{value.class}. A String was expected."
+    end
+  end
+
   private def read_array(t : T.class) : T forall T
     col_bytesize = conn.read_i32
     if col_bytesize == -1
