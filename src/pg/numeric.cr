@@ -49,7 +49,8 @@ module PG
     # The approximate representation of the numeric as a 64-bit float.
     #
     # Very small and very large values may be inaccurate and precision will be
-    # lost.
+    # lost. If you require full precision, require the optional big_rational
+    # support and use #to_big_r
     # NaN returns `0.0`.
     def to_f : Float64
       to_f64
@@ -57,9 +58,16 @@ module PG
 
     # ditto
     def to_f64 : Float64
-      num = digits.reduce(0_u64) { |a, i| a*10_000_u64 + i.to_u64 }
+      # simple numerator calculation:
+      #   num = digits.reduce(0_f64) { |a, n| a*10_000_f64 + n }
+      # however reverse and add the smaller digits first to try and not lose as much precision
+      num = digits.reverse.each_with_index.reduce(0_f64) { |a, (n, idx)| a + (n * (10_000_f64**idx)) }
       den = 10_000_f64**(ndigits - 1 - weight)
-      quot = num.to_f64 / den.to_f64
+      quot = num / den
+
+      # this alternate implementation introduces more error in the tests
+      # quot = digits.map_with_index { |n, idx| 10_000_f64**(weight - idx) * n }.reduce(0_f64) { |a, n| a + n }
+
       neg? ? -quot : quot
     end
 

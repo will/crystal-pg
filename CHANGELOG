@@ -8,6 +8,9 @@ v?.?.?     upcoming
 * Postgres 13 is now officially supported and tested on CI and Postgres 9.4
   support has ended, though as the postgres protocol itself hasn't changed,
   it still probably works.
+* Fix overflow for Numeric#to_f for numerics with many digits. This change
+  potentially introduces more floating point errors. If you require full
+  precision use the optional big rational conversion instead.
 
 v0.22.1    2020-10-12
 =====================
