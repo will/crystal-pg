@@ -64,8 +64,8 @@ end
 
 describe PG::Numeric do
   it "#to_f" do
+    ex("nan").to_f.nan?.should be_true
     [
-      {"nan", 0_f64},
       {"0", 0_f64},
       {"0.0", 0_f64},
       {"1", 1_f64},

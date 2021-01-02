@@ -11,6 +11,7 @@ v?.?.?     upcoming
 * Fix overflow for Numeric#to_f for numerics with many digits. This change
   potentially introduces more floating point errors. If you require full
   precision use the optional big rational conversion instead.
+* (breaking) Numeric#to_f for NaN now returns a NaN float instead of 0.0
 
 v0.22.1    2020-10-12
 =====================

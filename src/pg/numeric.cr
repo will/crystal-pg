@@ -58,6 +58,7 @@ module PG
 
     # ditto
     def to_f64 : Float64
+      return Float64::NAN if nan?
       # simple numerator calculation:
       #   num = digits.reduce(0_f64) { |a, n| a*10_000_f64 + n }
       # however reverse and add the smaller digits first to try and not lose as much precision
