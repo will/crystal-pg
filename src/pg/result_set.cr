@@ -93,13 +93,24 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   def read(t : String.class) : String
-    value = read
-    if value.is_a?(String)
-      value
-    elsif value.is_a?(Slice(UInt8))
+    value = read(String | Slice(UInt8))
+
+    case value
+    when Slice(UInt8)
       String.new(value)
     else
-      raise "#{self.class}#read returned a #{value.class}. A String was expected."
+      value
+    end
+  end
+
+  def read(t : String?.class) : String?
+    value = read(String | Slice(UInt8) | Nil)
+
+    case value
+    when Slice(UInt8)
+      String.new(value)
+    else
+      value
     end
   end
 

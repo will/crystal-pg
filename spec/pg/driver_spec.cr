@@ -105,6 +105,10 @@ describe PG::Driver do
       db.query "select email from users limit 1" do |rs|
         assert_single_read rs, String, "foo@example.com"
       end
+
+      db.query "select email from users limit 1" do |rs|
+        assert_single_read rs, String?, "foo@example.com"
+      end
     end
   end
 
