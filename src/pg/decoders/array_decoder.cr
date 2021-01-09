@@ -109,7 +109,7 @@ module PG
       array_decoder(T)
     end
 
-    {% for type in %w(Bool Char Int16 Int32 String Int64 Float32 Float64 Numeric Time).map(&.id) %}
+    {% for type in %w(Bool Char Int16 Int32 String Int64 Float32 Float64 Numeric Time UUID).map(&.id) %}
       def self.array_decoder(t : {{type}}?.class)
         {{type}}Decoder.new
       end
