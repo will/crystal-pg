@@ -1,5 +1,9 @@
 v?.?.?     upcoming
 =====================
+
+v0.23.0    2020-01-12
+=====================
+* (breaking) Numeric#to_f for NaN now returns a NaN float instead of 0.0
 * add auth_methods config setting to control which methods the client can
   accpet. Defaults to `scram-sha-256` and `md5`. Also optionally adds support
   for `cleartext`, but it is not on by default as simply having this on can let
@@ -11,7 +15,6 @@ v?.?.?     upcoming
 * Fix overflow for Numeric#to_f for numerics with many digits. This change
   potentially introduces more floating point errors. If you require full
   precision use the optional big rational conversion instead.
-* (breaking) Numeric#to_f for NaN now returns a NaN float instead of 0.0
 * Read Slice(UInt8) as String if given as type. This allows text datayptes with
   unstable OIDs such as citext to be more easliy used. (thanks @matthewmcgarvey)
 * Add UUIDs to array decoders (thanks @jwoertink)
