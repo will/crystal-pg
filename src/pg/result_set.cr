@@ -1,3 +1,12 @@
+# Remove this monkeypatch when we want to drop support for Crystal < 1.0
+# Crystal versions above 1.0 should have this already, added in this pr:
+# https://github.com/crystal-lang/crystal/pull/10520
+{% unless IO::Sized.has_method?(:read_remaining=) %}
+  class IO::Sized
+    setter read_remaining
+  end
+{% end %}
+
 class PG::ResultSet < ::DB::ResultSet
   getter rows_affected
 
