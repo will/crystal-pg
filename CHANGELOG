@@ -1,6 +1,10 @@
 v?.?.?     upcoming
 =====================
 
+v0.23.2    2020-03-27
+=====================
+* Greatly reduce CPU consumption while reading result sets (thanks @jgaskins)
+
 v0.23.1    2020-01-30
 =====================
 * update for Crystal 0.36.0 (thanks @bcardiff)
