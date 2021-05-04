@@ -1,3 +1,4 @@
+require "uuid"
 require "../spec_helper"
 
 describe PG::Decoders do
@@ -32,9 +33,9 @@ describe PG::Decoders do
     Slice(UInt8).new(UInt8[].to_unsafe, 0)
 
   test_decode "uuid", "'7d61d548124c4b38bc05cfbb88cfd1d1'::uuid",
-    "7d61d548-124c-4b38-bc05-cfbb88cfd1d1"
+    UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
   test_decode "uuid", "'7d61d548-124c-4b38-bc05-cfbb88cfd1d1'::uuid",
-    "7d61d548-124c-4b38-bc05-cfbb88cfd1d1"
+    UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
 
   if Helper.db_version_gte(9, 2)
     test_decode "json", %('[1,"a",true]'::json), JSON.parse(%([1,"a",true]))
@@ -56,6 +57,11 @@ describe PG::Decoders do
   test_decode "date", "'2015-02-03'::date",
     Time.utc(2015, 2, 3, 0, 0, 0)
 
+  # -14706000000 = microseconds in -4 hours, -5 minutes -6 seconds
+  test_decode "interval", "'P-1Y-2M3DT-4H-5M-6S'::interval", PG::Interval.new(-14706000000, 3, -14)
+  test_decode "interval", "'178000000 years'::interval", PG::Interval.new(0, 0, 2_136_000_000)
+  test_decode "interval", "'178000000 years 1 months 5 days 999999 microseconds'::interval", PG::Interval.new(999_999, 5, 2_136_000_001)
+
   it "numeric" do
     x = ->(q : String) do
       PG_DB.query_one "select '#{q}'::numeric", &.read(PG::Numeric)
@@ -65,8 +71,8 @@ describe PG::Decoders do
   end
 
   it "decodes many uuids (#148)" do
-    uuid = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    ids = PG_DB.query_all("select '#{uuid}'::uuid from generate_series(1,1000)", as: String)
+    uuid = UUID.new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    ids = PG_DB.query_all("select '#{uuid}'::uuid from generate_series(1,1000)", as: UUID)
     ids.uniq.should eq([uuid])
   end
 

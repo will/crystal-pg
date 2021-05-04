@@ -1,6 +1,41 @@
 v?.?.?     upcoming
 =====================
 
+v0.23.2    2020-03-27
+=====================
+* Greatly reduce CPU consumption while reading result sets (thanks @jgaskins)
+
+v0.23.1    2020-01-30
+=====================
+* update for Crystal 0.36.0 (thanks @bcardiff)
+
+v0.23.0    2020-01-12
+=====================
+* (breaking) Numeric#to_f for NaN now returns a NaN float instead of 0.0
+* add auth_methods config setting to control which methods the client can
+  accpet. Defaults to `scram-sha-256` and `md5`. Also optionally adds support
+  for `cleartext`, but it is not on by default as simply having this on can let
+  MITM attackers steal your password. (thanks @straight-shoota)
+* add support for decoding interval type (thanks @pascalbetz)
+* Postgres 13 is now officially supported and tested on CI and Postgres 9.4
+  support has ended, though as the postgres protocol itself hasn't changed,
+  it still probably works.
+* Fix overflow for Numeric#to_f for numerics with many digits. This change
+  potentially introduces more floating point errors. If you require full
+  precision use the optional big rational conversion instead.
+* Read Slice(UInt8) as String if given as type. This allows text datayptes with
+  unstable OIDs such as citext to be more easliy used. (thanks @matthewmcgarvey)
+* Add UUIDs to array decoders (thanks @jwoertink)
+
+v0.22.1    2020-10-12
+=====================
+* fix shard.yml mistake in v0.22.0
+
+v0.22.0    2020-10-07
+=====================
+* (breaking) UUIDs decode into UUID type instead of String (thanks @jgaskins)
+* Update crystal-db to 0.10 for logging support (thanks @bcardiff)
+
 v0.21.1    2020-06-09
 =====================
 * Support Crystal v0.35.0 (thanks @bcardiff)

@@ -34,6 +34,6 @@ end
 def test_decode(name, query, expected, file = __FILE__, line = __LINE__)
   it name, file, line do
     value = PG_DB.query_one "select #{query}", &.read
-    value.should eq(expected), file, line
+    value.should eq(expected), file: file, line: line
   end
 end

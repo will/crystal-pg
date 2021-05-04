@@ -75,6 +75,14 @@ describe PG::Decoders do
     values[0].should eq(Time.utc(2017, 1, 3))
   end
 
+  it "reads array of uuid" do
+    values = PG_DB.query_one("select array['56d3839e-dbb6-4b51-aa67-c0bc2a78c9d4'::uuid]", &.read(Array(UUID)))
+    typeof(values).should eq(Array(UUID))
+
+    values.size.should eq(1)
+    values[0].should eq(UUID.new("56d3839e-dbb6-4b51-aa67-c0bc2a78c9d4"))
+  end
+
   it "raises when reading incorrect array type" do
     expect_raises(PG::RuntimeError) do
       PG_DB.query_one("select '{1,2,3}'::numeric[]", &.read(Array(Float64)))

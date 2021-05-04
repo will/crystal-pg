@@ -1,3 +1,12 @@
+# Remove this monkeypatch when we want to drop support for Crystal < 1.0
+# Crystal versions above 1.0 should have this already, added in this pr:
+# https://github.com/crystal-lang/crystal/pull/10520
+{% unless IO::Sized.has_method?(:read_remaining=) %}
+  class IO::Sized
+    setter read_remaining
+  end
+{% end %}
+
 class PG::ResultSet < ::DB::ResultSet
   getter rows_affected
 
@@ -6,6 +15,7 @@ class PG::ResultSet < ::DB::ResultSet
     @column_index = -1 # The current column
     @end = false       # Did we read all the rows?
     @rows_affected = 0_i64
+    @sized_io = IO::Sized.new(conn.soc, 1)
   end
 
   protected def conn
@@ -92,6 +102,28 @@ class PG::ResultSet < ::DB::ResultSet
     end
   end
 
+  def read(t : String.class) : String
+    value = read(String | Slice(UInt8))
+
+    case value
+    when Slice(UInt8)
+      String.new(value)
+    else
+      value
+    end
+  end
+
+  def read(t : String?.class) : String?
+    value = read(String | Slice(UInt8) | Nil)
+
+    case value
+    when Slice(UInt8)
+      String.new(value)
+    else
+      value
+    end
+  end
+
   private def read_array(t : T.class) : T forall T
     col_bytesize = conn.read_i32
     if col_bytesize == -1
@@ -107,15 +139,15 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   private def safe_read(col_bytesize)
-    sized_io = IO::Sized.new(conn.soc, col_bytesize)
+    @sized_io.read_remaining = col_bytesize.to_u64
 
     begin
-      yield sized_io
+      yield @sized_io
     ensure
       # An exception might happen while decoding the value:
       # 1. Make sure to skip the column bytes
       # 2. Make sure to increment the column index
-      conn.soc.skip(sized_io.read_remaining) if sized_io.read_remaining > 0
+      conn.soc.skip(@sized_io.read_remaining) if @sized_io.read_remaining > 0
       @column_index += 1
     end
   end

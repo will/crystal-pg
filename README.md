@@ -134,6 +134,7 @@ Since it uses protocol version 3, older versions probably also work but are not 
 - geo types: point, box, path, lseg, polygon, circle, line
 - array types: int8, int4, int2, float8, float4, bool, text, numeric, timestamptz, date, timestamp
 - range: int4range, int8range, daterange, tsrange, tstzrange, numrange
+- interval (2)
 
 1: A note on numeric: In Postgres this type has arbitrary precision. In this
     driver, it is represented as a `PG::Numeric` which retains all precision, but
@@ -141,3 +142,51 @@ Since it uses protocol version 3, older versions probably also work but are not 
     float first. If you need true arbitrary precision, you can optionally
     require `pg_ext/big_rational` which adds `#to_big_r`, but requires that you
     have LibGMP installed.
+
+2: A note on interval: A Postgres interval can not be directly mapped to a built
+    in Crystal datatype. Therfore we provide a `PG::Interval` type that can be converted to
+    `Time::Span` and `Time::MonthSpan`.
+
+# Authentication Methods
+
+By default this driver will accept `scram-sha-256` and `md5`, as well as
+`trust`. However `cleartext` is disabled by default. You can control exactly
+which auth methods the client will accept by passing in a comma separated list
+to the `auth_methods` parameter, for example
+
+``` crystal
+ DB.open("postgres://example.com/dbname?auth_methods=cleartext,md5,scram-sha-256")
+```
+
+**DO NOT TURN `cleartext` ON UNLESS YOU ABSOLUTELY NEED IT!** Mearly by having
+this option enabled exposes a postgres client to downgrade man-in-the-middle
+attacks, even if the server is configured to not support cleartext. Even if you
+use TLS, you are not safe unless you are fully verifying the server's cert, as
+the attacker can terminate TLS and re-negotiate a connection with the server.
+
+
+```
+client                     attacker                     server
+----------------------------------------------------------------------------
+I want to connect \
+                   \->  intercepts, forwards
+                        I want to connect \
+                                           \----->  receives connection request
+
+                                                  / I support scram and/or md5 only
+                        intercepts, sends      <-/
+                     /  I only support cleartext
+receives attacker <-/
+claiming server
+only supports cleartext
+sends password because
+cleartext enabled \
+                   \->  receives clear password,
+                        negotiates scram/md5
+                        with real server      \
+                                               \--> accepts scram/md5 auth
+
+```
+
+It is a mistake for any driver to support cleartext by default, and it's a
+mistake that postgres continues to have this as an option at all.
