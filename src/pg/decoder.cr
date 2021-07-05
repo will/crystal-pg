@@ -382,11 +382,11 @@ module PG
           io.read_fully(Slice.new(buffer, bytesize))
           {bytesize, 0}
         end
-        JSON.parse(string)
+        JSON::PullParser.new(string)
       end
 
       def type
-        JSON::Any
+        JSON::PullParser
       end
     end
 
