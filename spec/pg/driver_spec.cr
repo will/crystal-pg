@@ -112,6 +112,18 @@ describe PG::Driver do
     end
   end
 
+  it "converts json result into JSON::Any if requested" do
+    with_db do |db|
+      db.exec "drop table if exists users"
+      db.exec "create table users (properties jsonb)"
+      db.exec "insert into users values ($1)", "{\"hello\": \"world\"}"
+
+      db.query "select properties from users limit 1" do |rs|
+        assert_single_read rs, JSON::Any, JSON.parse("{\"hello\": \"world\"}")
+      end
+    end
+  end
+
   describe "transactions" do
     it "can read inside transaction and rollback after" do
       with_db do |db|

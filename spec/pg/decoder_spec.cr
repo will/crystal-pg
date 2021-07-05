@@ -38,11 +38,11 @@ describe PG::Decoders do
     UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
 
   if Helper.db_version_gte(9, 2)
-    test_decode "json", %('[1,"a",true]'::json), JSON.parse(%([1,"a",true]))
-    test_decode "json", %('{"a":1}'::json), JSON.parse(%({"a":1}))
+    test_decode "json", %('[1,"a",true]'::json), JSON::PullParser.new(%([1,"a",true]))
+    test_decode "json", %('{"a":1}'::json), JSON::PullParser.new(%({"a":1}))
   end
   if Helper.db_version_gte(9, 4)
-    test_decode "jsonb", "'[1,2,3]'::jsonb", JSON.parse("[1,2,3]")
+    test_decode "jsonb", "'[1,2,3]'::jsonb", JSON::PullParser.new("[1,2,3]")
   end
 
   test_decode "timestamptz", "'2015-02-03 16:15:13-01'::timestamptz",
