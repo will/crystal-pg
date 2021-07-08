@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* Decode json columns as JSON::PullParser instead of JSON::Any (thanks @matthewmcgarvey)
 
 v0.23.2    2020-03-27
 =====================
