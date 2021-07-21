@@ -1,16 +1,19 @@
 v?.?.?     upcoming
 =====================
+
+v0.24.0    2021-07-21
+=====================
 * Decode json columns as JSON::PullParser instead of JSON::Any (thanks @matthewmcgarvey)
 
-v0.23.2    2020-03-27
+v0.23.2    2021-03-27
 =====================
 * Greatly reduce CPU consumption while reading result sets (thanks @jgaskins)
 
-v0.23.1    2020-01-30
+v0.23.1    2021-01-30
 =====================
 * update for Crystal 0.36.0 (thanks @bcardiff)
 
-v0.23.0    2020-01-12
+v0.23.0    2021-01-12
 =====================
 * (breaking) Numeric#to_f for NaN now returns a NaN float instead of 0.0
 * add auth_methods config setting to control which methods the client can
