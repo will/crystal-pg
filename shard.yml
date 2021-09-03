@@ -3,7 +3,7 @@ version: 0.23.2
 
 dependencies:
   db:
-    github: crystal-lang/crystal-db
-    version: ~> 0.10.0
+    github: place-labs/crystal-db
+    branch: master
 
 crystal: ">= 0.35.0, < 2.0.0"
