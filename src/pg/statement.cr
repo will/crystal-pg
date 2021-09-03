@@ -28,6 +28,7 @@ class PG::Statement < ::DB::Statement
     end
     ResultSet.new(self, fields)
   rescue IO::Error
+    connection.close
     raise DB::ConnectionLost.new(connection)
   end
 
@@ -39,6 +40,7 @@ class PG::Statement < ::DB::Statement
       last_insert_id: 0_i64 # postgres doesn't support this
     )
   rescue IO::Error
+    connection.close
     raise DB::ConnectionLost.new(connection)
   end
 end
