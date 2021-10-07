@@ -445,7 +445,13 @@ module PQ
       write_null
     end
 
-    def send_bind_message(params)
+    # result_format can be 0 or 1. We pick 1 by default to get binary results
+    # as most data types are much smaller over the wire and require less
+    # processing on either end. Nowhere inside the this shard itself uses 0,
+    # however it is a parameter so that people who want to use the protocol
+    # directly can choose text results. The addition of this param though is
+    # experimental, and may go away in future releases.
+    def send_bind_message(params, result_format = 1_i16)
       nparams = params.size
       total_size = params.reduce(0) do |acc, p|
         acc + 4 + (p.size == -1 ? 0 : p.size)
@@ -463,7 +469,7 @@ module PQ
         p.slice.each { |byte| write_byte byte }
       end
       write_i16 1 # number of following return types (1 means apply next for all)
-      write_i16 1 # all results as binary
+      write_i16 result_format
     end
 
     def send_describe_portal_message
