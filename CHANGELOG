@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* Give a name to error notice field V (the same as S/severity but not localized)
 
 v0.24.0    2021-07-21
 =====================
