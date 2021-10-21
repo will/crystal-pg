@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* Add defense-in-depth for CVE-2021-23222
 * Add scram-sha-256-plus "scram with channel binding". If your version of
   postgres does support this, you should provide only this as your
   `auth_methods` in order to exclude the non-plus/non-channel-binding version

@@ -44,15 +44,8 @@ module PQ
       write_i32 8
       write_i32 80877103
       @soc.flush
-      serv_ssl = case c = @soc.read_char
-                 when 'S' then true
-                 when 'N' then false
-                 else
-                   raise ConnectionError.new(
-                     "Unexpected SSL response from server: #{c.inspect}")
-                 end
 
-      if serv_ssl
+      if process_ssl_message
         ctx = OpenSSL::SSL::Context::Client.new
         ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE # currently emulating sslmode 'require' not verify_ca or verify_full
         if sslcert = @conninfo.sslcert
@@ -70,6 +63,23 @@ module PQ
       if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
         close
         raise ConnectionError.new("sslmode=require and server did not establish SSL")
+      end
+    end
+
+    private def process_ssl_message : Bool
+      bytes = Bytes.new(1024)
+      read_count = @soc.read(bytes)
+
+      # Make sure there are no surprise, unencrypted data in the socket, potentially from an attacker
+      unless read_count == 1
+        raise ConnectionError.new("Unexpected data after SSL response:\n#{bytes[0, read_count].hexdump}")
+      end
+
+      case c = bytes[0]
+      when 'S' then true
+      when 'N' then false
+      else
+        raise ConnectionError.new("Unexpected SSL response from server: #{c.inspect}")
       end
     end
 
