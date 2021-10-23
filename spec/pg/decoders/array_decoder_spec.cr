@@ -105,6 +105,7 @@ describe PG::Decoders do
   test_decode "date array", "array[to_date('20170103', 'YYYYMMDD')]", [Time.utc(2017, 1, 3)]
   test_decode "numeric array", "array[1::numeric]", [PG::Numeric.new(ndigits: 1, weight: 0, sign: PG::Numeric::Sign::Pos.value, dscale: 0, digits: [1] of Int16)]
   test_decode "time array", "array[to_date('20170103', 'YYYYMMDD')::timestamp]", [Time.utc(2017, 1, 3)]
+  test_decode "uuid array", "array['f0c66172-f617-4bb4-95f4-5677a093cedb']::uuid[]", [UUID.new("f0c66172-f617-4bb4-95f4-5677a093cedb")]
 
   it "errors when expecting array returns null" do
     expect_raises(PG::RuntimeError, "unexpected NULL, expecting to read Array(String)") do
