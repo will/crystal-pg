@@ -173,4 +173,5 @@ module PG
   array_type String, 1009
   array_type Numeric, 1231
   array_type Time, [1115, 1182]
+  array_type UUID, 2951
 end
