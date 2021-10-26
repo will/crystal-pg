@@ -7,6 +7,7 @@ v?.?.?     upcoming
   on the list. However this driver can't remove support for the non-plus version
   since not all supported versions of postgres support channel binding.
 * Give a name to error notice field V (the same as S/severity but not localized)
+* Add support for decoding arrays of UUIDs (thanks @jwoertink)
 
 v0.24.0    2021-07-21
 =====================
