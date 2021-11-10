@@ -47,7 +47,7 @@ module PG
     end
 
     protected def listen
-      spawn { @connection.read_async_frame_loop }
+      @connection.read_async_frame_loop
     end
 
     def version
