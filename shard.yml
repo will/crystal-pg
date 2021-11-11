@@ -4,6 +4,6 @@ version: 0.25.0
 dependencies:
   db:
     github: crystal-lang/crystal-db
-    version: ~> 0.10.0
+    version: ~> 0.11.0
 
-crystal: ">= 0.35.0, < 2.0.0"
+crystal: ">= 1.0.0, < 2.0.0"

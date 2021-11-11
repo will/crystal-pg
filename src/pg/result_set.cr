@@ -76,6 +76,10 @@ class PG::ResultSet < ::DB::ResultSet
     decoder(index).type
   end
 
+  def next_column_index : Int32
+    @column_index
+  end
+
   def read
     col_bytesize = conn.read_i32
     if col_bytesize == -1
