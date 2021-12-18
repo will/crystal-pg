@@ -68,7 +68,8 @@ module PQ
 
     # Initializes with a `URI`
     def initialize(uri : URI)
-      initialize(uri.hostname, uri.path, uri.user, uri.password, uri.port, :prefer)
+      hostname = uri.hostname.presence || URI::Params.parse(uri.query.to_s).fetch("host", "")
+      initialize(hostname, uri.path, uri.user, uri.password, uri.port, :prefer)
       if q = uri.query
         HTTP::Params.parse(q) do |key, value|
           handle_sslparam(key, value)
