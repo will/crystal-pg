@@ -56,10 +56,11 @@ module PQ
         args = Hash(String, String).new
         conninfo.split ' ' do |pair|
           begin
-            k, v = pair.split('=')
+            k, eq, v = pair.partition('=')
+            if eq.empty?
+              raise ArgumentError.new("invalid paramater: #{pair}")
+            end
             args[k] = v
-          rescue IndexError
-            raise ArgumentError.new("invalid paramater: #{pair}")
           end
         end
         new(args)
