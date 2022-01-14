@@ -41,13 +41,17 @@ module PG
       @connection.notification_handler = on_notification_proc
     end
 
-    protected def listen(channels : Enumerable(String))
+    protected def listen(channels : Enumerable(String), blocking : Bool = false)
       channels.each { |c| exec_all("LISTEN " + escape_identifier(c)) }
-      listen
+      listen(blocking: blocking)
     end
 
-    protected def listen
-      spawn { @connection.read_async_frame_loop }
+    protected def listen(blocking : Bool = false)
+      if blocking
+        @connection.read_async_frame_loop
+      else
+        spawn { @connection.read_async_frame_loop }
+      end
     end
 
     def version

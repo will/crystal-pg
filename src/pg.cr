@@ -14,26 +14,35 @@ module PG
   #   pp notification.channel, notification.payload, notification.pid
   # end
   # ```
-  def self.connect_listen(url, *channels : String, &blk : PQ::Notification ->) : ListenConnection
-    connect_listen(url, channels, &blk)
+  #
+  # By default, this will spawn a fiber to non-blocking listen. If you would
+  # rather handle this yourself, pass true to the blocking parameter.
+  #
+  # ```
+  # PG.connect_listen("postgres:///", "a", "b", blocking: true) { ... }
+  # ```
+
+  def self.connect_listen(url, *channels : String, blocking : Bool = false, &blk : PQ::Notification ->) : ListenConnection
+    connect_listen(url, channels, blocking, &blk)
   end
 
   # ditto
-  def self.connect_listen(url, channels : Enumerable(String), &blk : PQ::Notification ->) : ListenConnection
-    ListenConnection.new(url, channels, &blk)
+  def self.connect_listen(url, channels : Enumerable(String), blocking : Bool = false, &blk : PQ::Notification ->) : ListenConnection
+    ListenConnection.new(url, channels, blocking, &blk)
   end
 
   class ListenConnection
     @conn : PG::Connection
 
-    def self.new(url, *channels : String, &blk : PQ::Notification ->)
-      new(url, channels, &blk)
+    def self.new(url, *channels : String, blocking : Bool = false, &blk : PQ::Notification ->)
+      new(url, channels, blocking, &blk)
     end
 
-    def initialize(url, channels : Enumerable(String), &blk : PQ::Notification ->)
+    def initialize(url, channels : Enumerable(String), blocking : Bool = false, &blk : PQ::Notification ->)
       @conn = DB.connect(url).as(PG::Connection)
       @conn.on_notification(&blk)
-      @conn.listen(channels)
+
+      @conn.listen(channels, blocking: blocking)
     end
 
     # Close the connection.

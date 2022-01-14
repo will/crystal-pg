@@ -10,6 +10,7 @@ v?.?.?     upcoming
 * Give a name to error notice field V (the same as S/severity but not localized)
 * Add support for decoding arrays of UUIDs (thanks @jwoertink)
 * Allow socket connections to have paramaters from URIs (thanks @grepsedawk)
+* Allow blocking connections to PG.connect_listen
 
 v0.24.0    2021-07-21
 =====================
