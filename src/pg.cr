@@ -39,6 +39,7 @@ module PG
     # Close the connection.
     def close
       @conn.close
+    rescue
     end
   end
 end
