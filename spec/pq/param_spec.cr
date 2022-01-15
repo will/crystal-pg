@@ -18,6 +18,7 @@ describe PQ::Param do
       it_encodes_array([%(a), %(\\b~), %(c\\"d), %(\uFF8F)], %({"a","\\\\b~","c\\\\\\"d","\uFF8F"}))
       it_encodes_array(["baz, bar"], %({"baz, bar"}))
       it_encodes_array(["foo}"], %({"foo}"}))
+      it_encodes_array([nil, nil], %({NULL,NULL}))
     end
   end
 end
