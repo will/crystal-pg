@@ -1,7 +1,10 @@
 v?.?.?     upcoming
 =====================
-* Update crystal-db to 0.11
-* Drop official support for all 9.x versions
+
+v0.26.0    2022-01-27
+=====================
+* Update crystal-db to 0.11. This requires Crystal 1.0.0 or later.
+* Drop official support for all 9.x versions.
 
 v0.25.0    2022-01-27
 =====================
