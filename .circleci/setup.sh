@@ -6,11 +6,6 @@ echo "VER=#{$VER}"
 echo "CONF=#{$CONF}"
 
 cp .circleci/pg_hba.conf $CONF
-if [ -v NOSCRAM ]; then
-  echo "not adding scram to pg_hba"
-else
-  echo "host    all       crystal_scram  127.0.0.1/32  scram-sha-256" >> $CONF/pg_hba.conf
-fi
 
 mkdir .cert
 chmod 700 .cert

@@ -18,10 +18,6 @@ testdefault: &testdefault
         command: echo 'export DATABASE_URL=postgres://postgres@localhost/postgres' >> $BASH_ENV
     - run: crystal spec --error-on-warnings
 
-noscram: &noscram
-  environment:
-    NOSCRAM: true
-
 jobs:
   postgresql-14:
     <<: *testdefault
@@ -33,9 +29,6 @@ jobs:
     <<: *testdefault
   postgresql-10:
     <<: *testdefault
-  postgresql-9.6:
-    <<: *testdefault
-    <<: *noscram
   check_format:
     docker:
       - image: crystallang/crystal:latest
@@ -52,6 +45,4 @@ workflows:
       - postgresql-12
       - postgresql-11
       - postgresql-10
-      - postgresql-9.6
       - check_format
-
