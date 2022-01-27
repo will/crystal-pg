@@ -11,6 +11,7 @@ v?.?.?     upcoming
 * Add support for decoding arrays of UUIDs (thanks @jwoertink)
 * Allow socket connections to have paramaters from URIs (thanks @grepsedawk)
 * Allow blocking connections to PG.connect_listen
+* Properly encode null values in arrays (thanks @robcole and @grepsedawk) 
 
 v0.24.0    2021-07-21
 =====================
