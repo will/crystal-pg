@@ -37,3 +37,11 @@ def test_decode(name, query, expected, file = __FILE__, line = __LINE__)
     value.should eq(expected), file: file, line: line
   end
 end
+
+def test_decode(name, query, expected : JSON::PullParser, file = __FILE__, line = __LINE__)
+  it name, file, line do
+    value = PG_DB.query_one "select #{query}", &.read
+    json_value = value.is_a?(JSON::PullParser) ? JSON::Any.new(value) : value
+    json_value.should eq(JSON::Any.new(expected)), file: file, line: line
+  end
+end

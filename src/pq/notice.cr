@@ -1,3 +1,5 @@
+require "./frame"
+
 module PQ
   # http://www.postgresql.org/docs/current/static/protocol-error-fields.html
   struct Notice

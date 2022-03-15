@@ -1,3 +1,5 @@
+require "./field"
+
 module PQ
   # :nodoc:
   abstract struct Frame
@@ -139,9 +141,11 @@ module PQ
         Notice.new(fields)
       end
 
+      # https://www.postgresql.org/docs/current/protocol-error-fields.html
       private def name_from_code(code)
         case code
         when 'S' then :severity
+        when 'V' then :severity_unlocalized
         when 'C' then :code
         when 'M' then :message
         when 'D' then :detail

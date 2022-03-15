@@ -59,6 +59,13 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     assert_custom_params ci
   end
 
+  it "parses postgres host from socket query string host" do
+    ci = PQ::ConnInfo.from_conninfo_string(
+      "postgresql://user:pass@/db?host=/sql/socket")
+
+    ci.host.should eq "/sql/socket"
+  end
+
   it "parses libpq style strings" do
     ci = PQ::ConnInfo.from_conninfo_string(
       "host=host dbname=db user=user password=pass port=5555 sslmode=require")
@@ -86,7 +93,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
 
   it "auth_methods" do
     ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo")
-    ci.auth_methods.should eq ["scram-sha-256", "md5"]
+    ci.auth_methods.should eq ["scram-sha-256-plus", "scram-sha-256", "md5"]
 
     ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo?auth_methods=md5")
     ci.auth_methods.should eq ["md5"]

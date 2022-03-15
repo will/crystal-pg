@@ -1,3 +1,3 @@
 module PG
-  VERSION = "0.23.2"
+  VERSION = "0.26.0"
 end

@@ -112,6 +112,18 @@ describe PG::Driver do
     end
   end
 
+  it "converts json result into JSON::Any if requested" do
+    with_db do |db|
+      db.exec "drop table if exists users"
+      db.exec "create table users (properties jsonb)"
+      db.exec "insert into users values ($1)", "{\"hello\": \"world\"}"
+
+      db.query "select properties from users limit 1" do |rs|
+        assert_single_read rs, JSON::Any, JSON.parse("{\"hello\": \"world\"}")
+      end
+    end
+  end
+
   describe "transactions" do
     it "can read inside transaction and rollback after" do
       with_db do |db|
@@ -172,13 +184,14 @@ describe PG::Driver do
     it "properly skips null columns" do
       no_nulls = StructWithMapping.from_rs(PG_DB.query("select 1 as a, 1 as b")).first
       {no_nulls.a, no_nulls.b}.should eq({1, 1})
+      err = DB::ColumnTypeMismatchError
 
-      message = "PG::ResultSet#read returned a Nil. A Int32 was expected."
-      expect_raises(Exception, message) do
+      expect_raises(err, "In PG::ResultSet#read the column b returned a Nil but a Int32 was expected.") do
         StructWithMapping.from_rs(PG_DB.query("select 2 as a, null as b"))
       end
 
-      expect_raises(Exception, message) do # importantly not an IndexError: Index out of bounds
+      # importantly not an IndexError: Index out of bounds
+      expect_raises(err, "In PG::ResultSet#read the column a returned a Nil but a Int32 was expected.") do
         StructWithMapping.from_rs(PG_DB.query("select null as a, null as b"))
       end
     end

@@ -76,6 +76,10 @@ class PG::ResultSet < ::DB::ResultSet
     decoder(index).type
   end
 
+  def next_column_index : Int32
+    @column_index
+  end
+
   def read
     col_bytesize = conn.read_i32
     if col_bytesize == -1
@@ -122,6 +126,16 @@ class PG::ResultSet < ::DB::ResultSet
     else
       value
     end
+  end
+
+  def read(t : JSON::Any.class) : JSON::Any
+    value = read(JSON::PullParser)
+    JSON::Any.new(value)
+  end
+
+  def read(t : JSON::Any?.class) : JSON::Any?
+    value = read(JSON::PullParser?)
+    JSON::Any.new(value) if value
   end
 
   private def read_array(t : T.class) : T forall T
