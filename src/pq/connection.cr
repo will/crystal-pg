@@ -8,23 +8,25 @@ require "openssl/hmac"
 require "./notice"
 require "../ext/openssl"
 
+struct Tuple
+  def size_i16
+    {{T.size}}_i16
+  end
+end
+
 module PQ
   record Notification, pid : Int32, channel : String, payload : String
 
   # :nodoc:
   class Connection
     getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket::Client
-    getter server_parameters : Hash(String, String)
-    property notice_handler : Notice ->
-    property notification_handler : Notification ->
+    getter server_parameters = Hash(String, String).new
+    property notice_handler = Proc(Notice, Void).new { }
+    property notification_handler = Proc(Notification, Void).new { }
+    @mutex = Mutex.new
+    @established = false
 
     def initialize(@conninfo : ConnInfo)
-      @mutex = Mutex.new
-      @server_parameters = Hash(String, String).new
-      @established = false
-      @notice_handler = Proc(Notice, Void).new { }
-      @notification_handler = Proc(Notification, Void).new { }
-
       begin
         if @conninfo.host[0] == '/'
           soc = UNIXSocket.new(@conninfo.host)
@@ -99,16 +101,8 @@ module PQ
       soc.write_bytes i, IO::ByteFormat::NetworkEndian
     end
 
-    private def write_i32(i)
-      write_i32 i.to_i32
-    end
-
     private def write_i16(i : Int16)
-      soc.write_bytes i, IO::ByteFormat::NetworkEndian
-    end
-
-    private def write_i16(i)
-      write_i16 i.to_i16
+      soc.write_bytes i.to_i16, IO::ByteFormat::NetworkEndian
     end
 
     private def write_null
@@ -485,7 +479,7 @@ module PQ
     # directly can choose text results. The addition of this param though is
     # experimental, and may go away in future releases.
     def send_bind_message(params, result_format = 1_i16)
-      nparams = params.size
+      nparams = params.size_i16
       total_size = params.reduce(0) do |acc, p|
         acc + 4 + (p.size == -1 ? 0 : p.size)
       end
