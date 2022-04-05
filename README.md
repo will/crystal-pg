@@ -14,13 +14,18 @@ querying, etc, can be found at:
 
 ### shards
 
-Add this to your `shard.yml` and run `shards install`
+Add this to your `shard.yml` on a generated crystal project, 
+and run `shards install`
 
 ``` yml
 dependencies:
   pg:
     github: will/crystal-pg
 ```
+
+### More
+
+`crystal-pg` also supports some functionality past the typical `crystal-db` usage:
 
 ### Listen/Notify
 
