@@ -23,6 +23,17 @@ dependencies:
     github: will/crystal-pg
 ```
 
+### Example usage
+
+``` crystal
+require "db"
+require "pg"
+
+DB.connect("postgres://user:pass@host:port/db_name?option1=a&option2=b") do |db|
+   ... use db ...
+end
+```
+
 ### More
 
 `crystal-pg` also supports some functionality past the typical `crystal-db` usage:
