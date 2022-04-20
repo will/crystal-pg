@@ -1,12 +1,22 @@
+require "./decoder"
 require "../pq/*"
 
 module PG
   class Connection < ::DB::Connection
     protected getter connection
 
+    private EXTENSIONS = [] of Extension
+
+    def self.register_extension(extension : Extension)
+      EXTENSIONS << extension
+    end
+
     def initialize(context)
       super
       @connection = uninitialized PQ::Connection
+      @decoders = Hash(Int32, Decoders::Decoder).new do |_, oid|
+        Decoders.from_oid(oid)
+      end
 
       begin
         conn_info = PQ::ConnInfo.new(context.uri)
@@ -15,6 +25,25 @@ module PG
       rescue ex
         raise DB::ConnectionRefused.new(cause: ex)
       end
+
+      auto_release = @auto_release
+      @auto_release = false
+      begin
+        EXTENSIONS.each(&.load(self))
+      ensure
+        @auto_release = auto_release
+      end
+    end
+
+    def register_decoder(decoder : Decoders::Decoder)
+      decoder.oids.each do |oid|
+        @decoders[oid] = decoder
+      end
+    end
+
+    @checked_oids = Set(Int32).new
+    def decoder(oid)
+      @decoders[oid]
     end
 
     def build_prepared_statement(query) : Statement

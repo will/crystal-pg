@@ -171,7 +171,7 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   private def decoder(index = @column_index)
-    Decoders.from_oid(oid(index))
+    statement.connection.decoder(oid(index))
   end
 
   private def oid(index = @column_index)
