@@ -34,7 +34,7 @@ module PG
 
   struct CIText
     def initialize(text : String)
-      @text = text.downcase
+      @text = text
     end
 
     def hash(hasher)
@@ -42,7 +42,7 @@ module PG
     end
 
     def ==(other : self)
-      @text == other.@text
+      self == other.@text
     end
 
     def ==(other : String)
