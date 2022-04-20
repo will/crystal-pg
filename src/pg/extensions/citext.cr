@@ -48,6 +48,10 @@ module PG
     def ==(other : String)
       @text.compare(other, case_insensitive: true)
     end
+
+    def to_s(io)
+      @text.to_s io
+    end
   end
 end
 
