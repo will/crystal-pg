@@ -29,7 +29,7 @@ dependencies:
 require "db"
 require "pg"
 
-DB.connect("postgres://user:pass@host:port/db_name?option1=a&option2=b") do |db|
+DB.open("postgres://user:pass@host:port/db_name?option1=a&option2=b") do |db|
    ... use db ...
 end
 ```
