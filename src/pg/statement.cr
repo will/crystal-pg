@@ -8,25 +8,8 @@ class PG::Statement < ::DB::Statement
   end
 
   protected def perform_query(args : Enumerable) : ResultSet
-    params = args.map { |arg| PQ::Param.encode(arg) }
-    conn = self.conn
-    conn.send_parse_message(command)
-    conn.send_bind_message params
-    conn.send_describe_portal_message
-    conn.send_execute_message
-    conn.send_sync_message
-    conn.expect_frame PQ::Frame::ParseComplete
-    conn.expect_frame PQ::Frame::BindComplete
-    frame = conn.read
-    case frame
-    when PQ::Frame::RowDescription
-      fields = frame.fields
-    when PQ::Frame::NoData
-      fields = nil
-    else
-      raise "expected RowDescription or NoData, got #{frame}"
-    end
-    ResultSet.new(self, fields)
+    send_query args
+    ResultSet.new(self, receive_fields)
   rescue IO::Error
     raise DB::ConnectionLost.new(connection)
   end
@@ -40,5 +23,31 @@ class PG::Statement < ::DB::Statement
     )
   rescue IO::Error
     raise DB::ConnectionLost.new(connection)
+  end
+
+  protected def send_query(args)
+    params = args.map { |arg| PQ::Param.encode(arg) }
+    conn.send_parse_message(command)
+    conn.send_bind_message params
+    conn.send_describe_portal_message
+    conn.send_execute_message
+    conn.send_sync_message
+  end
+
+  protected def receive_fields
+    conn.flush
+    conn.expect_frame PQ::Frame::ParseComplete
+    conn.expect_frame PQ::Frame::BindComplete
+    frame = conn.read
+    case frame
+    when PQ::Frame::RowDescription
+      fields = frame.fields
+    when PQ::Frame::NoData
+      fields = nil
+    else
+      raise "expected RowDescription or NoData, got #{frame}"
+    end
+  end
+
   end
 end

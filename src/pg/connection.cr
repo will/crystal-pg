@@ -27,7 +27,7 @@ module PG
 
     # Execute several statements. No results are returned.
     def exec_all(query : String) : Nil
-      PQ::SimpleQuery.new(@connection, query)
+      PQ::SimpleQuery.new(@connection, query).exec
       nil
     end
 
