@@ -49,5 +49,43 @@ class PG::Statement < ::DB::Statement
     end
   end
 
+  class Pipelined < self
+    protected def perform_query(args : Enumerable) : ResultSet
+      conn.flush
+      case frame = conn.expect_frame(PQ::Frame::ParseComplete | PQ::Frame::CommandComplete)
+      when PQ::Frame::ParseComplete
+        conn.expect_frame PQ::Frame::BindComplete
+      when PQ::Frame::CommandComplete
+        conn.expect_frame PQ::Frame::ReadyForQuery
+        conn.expect_frame PQ::Frame::ParseComplete
+        conn.expect_frame PQ::Frame::BindComplete
+      else
+        raise "Unexpected frame: #{frame.inspect}"
+      end
+
+      frame = conn.read
+      case frame
+      when PQ::Frame::RowDescription
+        fields = frame.fields
+      when PQ::Frame::NoData
+        fields = nil
+      else
+        raise "expected RowDescription or NoData, got #{frame}"
+      end
+      ResultSet.new(self, fields)
+    rescue IO::Error
+      raise DB::ConnectionLost.new(connection)
+    end
+
+    protected def perform_exec(args : Enumerable) : ::DB::ExecResult
+      result = perform_query(args)
+      result.each { }
+      ::DB::ExecResult.new(
+        rows_affected: result.rows_affected,
+        last_insert_id: 0_i64 # postgres doesn't support this
+      )
+    rescue IO::Error
+      raise DB::ConnectionLost.new(connection)
+    end
   end
 end

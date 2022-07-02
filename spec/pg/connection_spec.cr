@@ -104,3 +104,35 @@ describe PG, "#read_next_row_start" do
     end
   end
 end
+
+record PG::ConnectionSpec::TestUser, id : Int32, name : String do
+  include DB::Serializable
+end
+
+describe PG, "#pipeline" do
+  it "allows pipelined queries" do
+    with_connection do |db|
+      result_sets = db.pipeline do |pipe|
+        pipe.query "SELECT 42"
+        pipe.query "SELECT $1::int4 AS exchange, $2::int8 AS suffix", 867, 5309
+        pipe.query "SELECT * FROM generate_series(1, 3)"
+        pipe.query <<-SQL
+          SELECT
+            generate_series AS id,
+            'Person #' || generate_series AS name
+          FROM generate_series(1, 3)
+        SQL
+        50.times { |i| pipe.query "SELECT $1::int4 AS index", i }
+      end
+      result_sets.scalar(Int32).should eq 42
+      result_sets.read_one({Int32, Int64}).should eq({867, 5309})
+      result_sets.read_all(Int32).should eq [1, 2, 3]
+      result_sets.read_all(PG::ConnectionSpec::TestUser).should eq [
+        PG::ConnectionSpec::TestUser.new(1, "Person #1"),
+        PG::ConnectionSpec::TestUser.new(2, "Person #2"),
+        PG::ConnectionSpec::TestUser.new(3, "Person #3"),
+      ]
+      50.times { |i| result_sets.scalar(Int32).should eq i }
+    end
+  end
+end
