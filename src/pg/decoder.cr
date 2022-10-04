@@ -210,6 +210,21 @@ module PG
       end
     end
 
+    struct UInt64Decoder
+      include Decoder
+      def_oids [
+        3220, # lsn
+      ]
+
+      def decode(io, bytesize, oid)
+        read_u64(io)
+      end
+
+      def type
+        UInt64
+      end
+    end
+
     struct Float32Decoder
       include Decoder
 
@@ -507,6 +522,7 @@ module PG
     register_decoder Int32Decoder.new
     register_decoder Int64Decoder.new
     register_decoder UIntDecoder.new
+    register_decoder UInt64Decoder.new
     register_decoder JsonDecoder.new
     register_decoder Float32Decoder.new
     register_decoder Float64Decoder.new
