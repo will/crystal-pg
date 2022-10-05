@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  specs:
+    runs-on: ubuntu-latest
+    container: crystallang/crystal:latest
+    strategy:
+      matrix:
+        pg_version: [10, 11, 12, 13, 14]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up postgres  ${{ matrix.pg_version }}
+      run: |
+        export PG_VERSION=${{matrix.pg_version}}
+        bash .github/install.sh
+        bash .github/setup.sh
+        touch spec/.run_auth_specs
+    - run: crystal --version
+    - run: shards install
+    - name: specs
+      run: |
+         export DATABASE_URL=postgres://postgres@localhost/postgres
+         crystal spec --error-on-warnings
+
+  check_format:
+    runs-on: ubuntu-latest
+    container: crystallang/crystal:latest-alpine
+    steps:
+    - uses: actions/checkout@v2
+    - run: crystal tool format --check

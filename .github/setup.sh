@@ -1,11 +1,10 @@
 set -e
 
-VER=$(crystal eval 'puts ENV["CIRCLE_JOB"].split("-").last')
-CONF=/etc/postgresql/$VER/main
-echo "VER=#{$VER}"
+CONF=/etc/postgresql/$PG_VERSION/main
+echo "VER=#{$PG_VERSION}"
 echo "CONF=#{$CONF}"
 
-cp .circleci/pg_hba.conf $CONF
+cp .github/pg_hba.conf $CONF
 
 mkdir .cert
 chmod 700 .cert
@@ -33,4 +32,4 @@ echo "ssl_cert_file = '$CONF/server-cert.pem'" >> $CONF/postgresql.conf
 echo "ssl_key_file  = '$CONF/server-key.pem'"  >> $CONF/postgresql.conf
 echo "ssl_ca_file   = '$CONF/ca-cert.pem'"     >> $CONF/postgresql.conf
 
-pg_ctlcluster $VER main restart
+pg_ctlcluster $PG_VERSION main restart
