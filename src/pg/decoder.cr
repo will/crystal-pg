@@ -83,7 +83,7 @@ module PG
         2950, # UUID
       ]
 
-      def decode(io, bytesize, _oid)
+      def decode(io, bytesize, oid)
         bytes = uninitialized UInt8[16]
 
         slice = Bytes.new(bytes.to_unsafe, 16)
