@@ -1,5 +1,6 @@
 v?.?.?     upcoming
 =====================
+* Add support for LSN data type (thanks @louiseGrandjonc)
 
 v0.26.0    2022-01-27
 =====================
