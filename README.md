@@ -1,8 +1,7 @@
 # crystal-pg
 A native, non-blocking Postgres driver for Crystal
 
-[![Build Status](https://circleci.com/gh/will/crystal-pg/tree/master.svg?style=svg)](https://circleci.com/gh/will/crystal-pg/tree/master)
-
+[![CI](https://github.com/will/crystal-pg/actions/workflows/config.yml/badge.svg)](https://github.com/will/crystal-pg/actions/workflows/config.yml)
 
 ## usage
 
@@ -130,7 +129,7 @@ DB.connect("postgres:///") do |cnn|
 
 ## Requirements
 
-Crystal-pg is [regularly tested on](https://circleci.com/gh/will/crystal-pg)
+Crystal-pg is [regularly tested on](https://github.com/will/crystal-pg/actions)
 the Postgres versions the [Postgres project itself supports](https://www.postgresql.org/support/versioning/).
 Since it uses protocol version 3, older versions probably also work but are not guaranteed.
 
