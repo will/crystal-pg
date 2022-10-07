@@ -22,7 +22,7 @@ describe PG::Decoders do
   test_decode "float        ", "-0.123::float  ", -0.123
   test_decode "regtype      ", "pg_typeof(3)   ", 23
 
-  test_decode "uint64       ", "'FFFFFFFF/FFFFFFFF'::pg_lsn", 18446744073709551615
+  test_decode "uint64       ", "'FFFFFFFF/FFFFFFFF'::pg_lsn", 18446744073709551615_u64
 
   test_decode "double prec.", "'35.03554004971999'::float8", 35.03554004971999
   test_decode "flot prec.", "'0.10000122'::float4", 0.10000122_f32
