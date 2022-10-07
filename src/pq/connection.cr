@@ -14,17 +14,13 @@ module PQ
   # :nodoc:
   class Connection
     getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket::Client
-    getter server_parameters : Hash(String, String)
-    property notice_handler : Notice ->
-    property notification_handler : Notification ->
+    getter server_parameters = Hash(String, String).new
+    property notice_handler = Proc(Notice, Void).new { }
+    property notification_handler = Proc(Notification, Void).new { }
+    @mutex = Mutex.new
+    @established = false
 
     def initialize(@conninfo : ConnInfo)
-      @mutex = Mutex.new
-      @server_parameters = Hash(String, String).new
-      @established = false
-      @notice_handler = Proc(Notice, Void).new { }
-      @notification_handler = Proc(Notification, Void).new { }
-
       begin
         if @conninfo.host[0] == '/'
           soc = UNIXSocket.new(@conninfo.host)
