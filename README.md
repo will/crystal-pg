@@ -172,7 +172,7 @@ to the `auth_methods` parameter, for example
  DB.open("postgres://example.com/dbname?auth_methods=cleartext,md5,scram-sha-256")
 ```
 
-**DO NOT TURN `cleartext` ON UNLESS YOU ABSOLUTELY NEED IT!** Mearly by having
+**DO NOT TURN `cleartext` ON UNLESS YOU ABSOLUTELY NEED IT!** Merely by having
 this option enabled exposes a postgres client to downgrade man-in-the-middle
 attacks, even if the server is configured to not support cleartext. Even if you
 use TLS, you are not safe unless you are fully verifying the server's cert, as
