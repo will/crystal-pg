@@ -13,6 +13,20 @@ private def bytes(*values)
   Slice(UInt8).new(Array(UInt8).new.push(*values.map(&.to_u8)).to_unsafe, values.size)
 end
 
+# Force re-use of existing connection instead of making a new connection each time in the shared specs
+class DB::DriverSpecs(DBAnyType)
+  def with_db(options = nil)
+    @before.call
+    db = PG_DB
+    db.exec(sql_drop_table("table1"))
+    db.exec(sql_drop_table("table2"))
+    db.exec(sql_drop_table("person"))
+    yield db
+  ensure
+    @after.call
+  end
+end
+
 DB::DriverSpecs(DB::Any).run do
   connection_string DB_URL
 
