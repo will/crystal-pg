@@ -1,5 +1,6 @@
 require "uri"
 require "http"
+require "system/user"
 
 module PQ
   struct ConnInfo
@@ -127,12 +128,12 @@ module PQ
       if db && db != "/"
         db
       else
-        `whoami`.chomp
+        current_user_name
       end
     end
 
     private def default_user(u)
-      u || `whoami`.chomp
+      u || current_user_name
     end
 
     private def default_sslmode(mode)
@@ -152,6 +153,10 @@ module PQ
       else
         raise ArgumentError.new("sslmode #{mode} not supported")
       end
+    end
+
+    private def current_user_name
+      System::User.find_by(id: LibC.getuid.to_s).username
     end
   end
 end
