@@ -38,13 +38,14 @@ module PQ
     getter auth_methods : Array(String) = %w[scram-sha-256-plus scram-sha-256 md5]
 
     # Create a new ConnInfo from all parts
-    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, @password : String? = nil, port : Int | String? = 5432, sslmode : String | Symbol? = nil)
+    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, password : String? = nil, port : Int | String? = nil, sslmode : String | Symbol? = nil)
       @host = default_host host
       db = default_database database
       @database = db.lchop('/')
       @user = default_user user
-      @port = (port || 5432).to_i
+      @port = (port || ENV.fetch("PGPORT", "5432")).to_i
       @sslmode = default_sslmode sslmode
+      @password = password || ENV.fetch("PGPASSWORD", PgPass.locate(@host, @port, @database, @user))
     end
 
     # Initialize with either "postgres://" urls or postgres "key=value" pairs
@@ -117,6 +118,8 @@ module PQ
     private def default_host(h)
       return h if h && !h.blank?
 
+      return ENV["PGHOST"] if ENV.has_key?("PGHOST")
+
       SOCKET_SEARCH.each do |s|
         return s if File.exists?(s)
       end
@@ -128,12 +131,12 @@ module PQ
       if db && db != "/"
         db
       else
-        current_user_name
+        ENV.fetch("PGDATABASE", current_user_name)
       end
     end
 
     private def default_user(u)
-      u || current_user_name
+      u || ENV.fetch("PGUSER", current_user_name)
     end
 
     private def default_sslmode(mode)
