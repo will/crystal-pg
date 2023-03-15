@@ -1,7 +1,7 @@
 module PQ
   class PgPass
     def self.locate(host : String, port : Int, db : String, user : String) : String?
-      filename = ENV.fetch("PGPASS", Path["~/.pgpass"].expand(home: true).to_s)
+      filename = ENV.fetch("PGPASSFILE", Path["~/.pgpass"].expand(home: true).to_s)
 
       unless (File.exists?(filename))
         Log.info { "No pgpass file available" }
@@ -10,7 +10,7 @@ module PQ
       end
 
       unless (File.info(filename).permissions.to_i & 0o7177).zero?
-        Log.info { "Cannot use pgpass file - permissions are inappropriate must be 0600 or less" }
+        Log.warn { "Cannot use pgpass file - permissions are inappropriate must be 0600 or less" }
       end
 
       File.open(filename) do |f|
@@ -19,7 +19,10 @@ module PQ
 
           fields = line.split(":")
 
-          next unless fields.size == 5
+          unless fields.size == 5
+            Log.warn { "PGPass file does not appear to be properly formatted - errors may occur" }
+            next
+          end
 
           next unless fields[0] == "*" || host == fields[0]
           next unless fields[1] == "*" || port == fields[1].to_i

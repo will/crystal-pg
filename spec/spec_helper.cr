@@ -45,3 +45,22 @@ def test_decode(name, query, expected : JSON::PullParser, file = __FILE__, line 
     json_value.should eq(JSON::Any.new(expected)), file: file, line: line
   end
 end
+
+def env_var_bubble
+  orig_vals = Hash(String, String).new
+  vars = ["PGDATABASE", "PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGPASSFILE"]
+  begin
+    vars.each do |var|
+      if ENV.has_key?(var)
+        orig_vals[var] = ENV[var]
+        ENV.delete(var)
+      end
+    end
+    yield
+  ensure
+    vars.each do |var|
+      ENV.delete(var)
+      ENV[var] = orig_vals[var] if orig_vals.has_key?(var)
+    end
+  end
+end

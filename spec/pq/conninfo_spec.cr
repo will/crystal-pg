@@ -1,4 +1,4 @@
-require "spec"
+require "../spec_helper"
 require "../../src/pq/conninfo"
 
 private def assert_default_params(ci)
@@ -29,8 +29,10 @@ end
 
 describe PQ::ConnInfo, "parts" do
   it "can have all defaults" do
-    ci = PQ::ConnInfo.new
-    assert_default_params ci
+    env_var_bubble do
+      ci = PQ::ConnInfo.new
+      assert_default_params ci
+    end
   end
 
   it "can take settings" do
@@ -41,8 +43,10 @@ end
 
 describe PQ::ConnInfo, ".from_conninfo_string" do
   it "parses short postgres urls" do
-    ci = PQ::ConnInfo.from_conninfo_string("postgres:///")
-    assert_default_params ci
+    env_var_bubble do
+      ci = PQ::ConnInfo.from_conninfo_string("postgres:///")
+      assert_default_params ci
+    end
   end
 
   it "parses postgres urls" do
@@ -78,8 +82,10 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     ci = PQ::ConnInfo.from_conninfo_string("host=host")
     ci.host.should eq("host")
 
-    ci = PQ::ConnInfo.from_conninfo_string("")
-    assert_default_params ci
+    env_var_bubble do
+      ci = PQ::ConnInfo.from_conninfo_string("")
+      assert_default_params ci
+    end
 
     expect_raises(ArgumentError) {
       PQ::ConnInfo.from_conninfo_string("hosthost")
@@ -109,6 +115,22 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     end
     expect_raises Exception do
       PQ::ConnInfo.from_conninfo_string("postgres://user:pass@localhost/foo?auth_methods=md5,unsupported")
+    end
+  end
+
+  it "uses environment variables" do
+    env_var_bubble do
+      ENV["PGDATABASE"] = "A"
+      ENV["PGHOST"] = "B"
+      ENV["PGPASSWORD"] = "C"
+      ENV["PGPORT"] = "1"
+      ENV["PGUSER"] = "D"
+      ci = PQ::ConnInfo.from_conninfo_string("postgres://")
+      ci.database.should eq("A")
+      ci.host.should eq("B")
+      ci.password.should eq("C")
+      ci.port.should eq(1)
+      ci.user.should eq("D")
     end
   end
 end

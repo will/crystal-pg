@@ -128,7 +128,7 @@ module PQ
     end
 
     private def default_database(db)
-      if db && db != "/"
+      if db && db != "/" && !db.empty?
         db
       else
         ENV.fetch("PGDATABASE", current_user_name)
