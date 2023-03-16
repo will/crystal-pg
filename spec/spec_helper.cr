@@ -31,10 +31,23 @@ module Helper
   end
 end
 
-def test_decode(name, query, expected, file = __FILE__, line = __LINE__)
+def test_decode(name, query, expected, file = __FILE__, line = __LINE__, *, time_zone : Time::Location? = nil)
   it name, file, line do
-    value = PG_DB.query_one "select #{query}", &.read
-    value.should eq(expected), file: file, line: line
+    old_time_zone = Time::Location.local
+    PG_DB.using_connection do |c|
+      old_time_zone = c.time_zone
+      c = c.as PG::Connection
+      if time_zone
+        old_time_zone = c.time_zone
+        c.time_zone = time_zone
+      end
+      value = c.query_one "select #{query}", &.read
+      value.should eq(expected), file: file, line: line
+    ensure
+      if time_zone
+        c.time_zone = old_time_zone
+      end
+    end
   end
 end
 
