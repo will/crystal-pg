@@ -15,7 +15,7 @@ class PG::ResultSet < ::DB::ResultSet
     @column_index = -1 # The current column
     @end = false       # Did we read all the rows?
     @rows_affected = 0_i64
-    @sized_io = IO::Sized.new(conn.soc, 1)
+    @sized_io = Buffer.new(conn.soc, 1, statement.connection)
   end
 
   protected def conn
@@ -210,5 +210,13 @@ class PG::ResultSet < ::DB::ResultSet
   rescue DB::ConnectionLost
     # if the connection is lost there is nothing to be
     # done since the result set is no longer needed
+  end
+
+  private class Buffer < IO::Sized
+    getter connection : PG::Connection
+
+    def initialize(io, read_size, @connection)
+      super io, read_size
+    end
   end
 end

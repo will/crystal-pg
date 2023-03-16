@@ -408,23 +408,29 @@ module PG
     struct TimeDecoder
       include Decoder
 
-      DATE_OID = 1082
+      enum OID
+        DATE        = 1082
+        TIMESTAMP   = 1114
+        TIMESTAMPTZ = 1184
+      end
       JAN_1_2K = Time.utc(2000, 1, 1)
 
-      def_oids [
-        DATE_OID, # date
-        1114,     # timestamp
-        1184,     # timestamptz
-      ]
+      def_oids OID.values.map(&.value)
 
       def decode(io, bytesize, oid)
-        if oid == DATE_OID
+        case oid = OID.new(oid)
+        in .date?
           v = read_i32(io)
           JAN_1_2K + Time::Span.new(days: v, hours: 0, minutes: 0, seconds: 0)
-        else
+        in .timestamp?
           v = read_i64(io) # microseconds
           sec, m = v.divmod(1_000_000)
           JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
+        in .timestamptz?
+          v = read_i64(io) # microseconds
+          sec, m = v.divmod(1_000_000)
+          time = JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
+          time.in io.connection.time_zone
         end
       end
 

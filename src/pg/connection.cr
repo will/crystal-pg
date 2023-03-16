@@ -2,6 +2,7 @@ require "../pq/*"
 
 module PG
   class Connection < ::DB::Connection
+    property time_zone = Time::Location.local
     protected getter connection
 
     def initialize(context)

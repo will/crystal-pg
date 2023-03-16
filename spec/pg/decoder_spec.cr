@@ -53,6 +53,10 @@ describe PG::Decoders do
   test_decode "timestamptz", "'2015-02-03 16:15:14.23-01'::timestamptz",
     Time.utc(2015, 2, 3, 17, 15, 14, nanosecond: 230_000_000)
 
+  test_decode "timestamptz", "'2015-02-03 16:15:14.23 America/New_York'::timestamptz",
+    Time.local(2015, 2, 3, 16, 15, 14, nanosecond: 230_000_000, location: Time::Location.load("America/New_York")),
+    time_zone: Time::Location.load("America/New_York")
+
   test_decode "timestamp", "'2015-02-03 16:15:15'::timestamp",
     Time.utc(2015, 2, 3, 16, 15, 15)
 
