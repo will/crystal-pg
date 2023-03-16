@@ -420,16 +420,11 @@ module PG
       def decode(io, bytesize, oid)
         case oid = OID.new(oid)
         in .date?
-          v = read_i32(io)
-          JAN_1_2K + Time::Span.new(days: v, hours: 0, minutes: 0, seconds: 0)
+          JAN_1_2K + read_i32(io).days
         in .timestamp?
-          v = read_i64(io) # microseconds
-          sec, m = v.divmod(1_000_000)
-          JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
+          JAN_1_2K + read_i64(io).microseconds
         in .timestamptz?
-          v = read_i64(io) # microseconds
-          sec, m = v.divmod(1_000_000)
-          time = JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
+          time = JAN_1_2K + read_i64(io).microseconds
           time.in io.connection.time_zone
         end
       end
