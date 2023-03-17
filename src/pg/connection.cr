@@ -55,10 +55,6 @@ module PG
       end
     end
 
-    def time_zone=(location : Time::Location)
-      exec "SET TIME ZONE '#{location.name}'"
-    end
-
     protected def listen(channels : Enumerable(String), blocking : Bool = false)
       channels.each { |c| exec_all("LISTEN " + escape_identifier(c)) }
       listen(blocking: blocking)

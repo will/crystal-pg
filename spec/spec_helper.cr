@@ -33,19 +33,20 @@ end
 
 def test_decode(name, query, expected, file = __FILE__, line = __LINE__, *, time_zone : Time::Location? = nil)
   it name, file, line do
-    old_time_zone = Time::Location.local
     PG_DB.using_connection do |c|
       old_time_zone = c.time_zone
       c = c.as PG::Connection
-      if time_zone
-        old_time_zone = c.time_zone
-        c.time_zone = time_zone
-      end
-      value = c.query_one "select #{query}", &.read
-      value.should eq(expected), file: file, line: line
-    ensure
-      if time_zone
-        c.time_zone = old_time_zone
+      begin
+        if time_zone
+          old_time_zone = c.time_zone
+          c.exec "SET TIME ZONE '#{time_zone.name}'"
+        end
+        value = c.query_one "select #{query}", &.read
+        value.should eq(expected), file: file, line: line
+      ensure
+        if old_time_zone
+          c.exec "SET TIME ZONE '#{old_time_zone.name}'"
+        end
       end
     end
   end
