@@ -104,3 +104,23 @@ describe PG, "#read_next_row_start" do
     end
   end
 end
+
+describe PG, "#time_zone" do
+  it "reads time zones from server parameters" do
+    with_connection do |db|
+      db.exec "SET TIME ZONE 'America/Los_Angeles'"
+      now = db.query_one "SELECT now()", as: Time
+
+      now.location.should eq Time::Location.load("America/Los_Angeles")
+
+      db.transaction do |txn|
+        db.exec "SET LOCAL TIME ZONE 'America/New_York'"
+        now = db.query_one "SELECT now()", as: Time
+        now.location.should eq Time::Location.load("America/New_York")
+      end
+
+      now = db.query_one "SELECT now()", as: Time
+      now.location.should eq Time::Location.load("America/Los_Angeles")
+    end
+  end
+end
