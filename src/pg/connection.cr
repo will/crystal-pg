@@ -44,7 +44,7 @@ module PG
     # `Time::Location.load` doesn't do any caching, so we cache it here to avoid
     # a time-zone lookup on every call to `time_zone`.
     @@location_cache = Hash(String, Time::Location).new do |cache, zone_name|
-      Time::Location.load(zone_name)
+      cache[zone_name] = Time::Location.load(zone_name)
     end
 
     def time_zone
