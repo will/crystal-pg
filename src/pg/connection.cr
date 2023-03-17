@@ -2,7 +2,6 @@ require "../pq/*"
 
 module PG
   class Connection < ::DB::Connection
-    property time_zone = Time::Location.local
     protected getter connection
 
     def initialize(context)
@@ -40,6 +39,24 @@ module PG
     # Set the callback block for notifications from Listen/Notify.
     def on_notification(&on_notification_proc : PQ::Notification ->)
       @connection.notification_handler = on_notification_proc
+    end
+
+    # `Time::Location.load` doesn't do any caching, so we cache it here to avoid
+    # a time-zone lookup on every call to `time_zone`.
+    @@location_cache = Hash(String, Time::Location).new do |cache, zone_name|
+      Time::Location.load(zone_name)
+    end
+
+    def time_zone
+      if zone_name = @connection.server_parameters["TimeZone"]?
+        @@location_cache[zone_name]
+      else
+        Time::Location::UTC
+      end
+    end
+
+    def time_zone=(location : Time::Location)
+      exec "SET TIME ZONE '#{location.name}'"
     end
 
     protected def listen(channels : Enumerable(String), blocking : Bool = false)
