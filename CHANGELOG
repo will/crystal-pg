@@ -1,6 +1,8 @@
 v?.?.?     upcoming
 =====================
 * Add support for LSN data type (thanks @louiseGrandjonc)
+* Add support for ENV vars (PGPORT, PGUSER, PGHOST, PGDATABASE, PGPASS) and
+  pgpass files (thanks @wishdev)
 
 v0.26.0    2022-01-27
 =====================

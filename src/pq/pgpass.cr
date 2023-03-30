@@ -4,7 +4,7 @@ module PQ
       filename = ENV.fetch("PGPASSFILE", Path["~/.pgpass"].expand(home: true).to_s)
 
       unless (File.exists?(filename))
-        Log.info { "No pgpass file available" }
+        Log.debug { "No pgpass file available" }
 
         return
       end
