@@ -124,3 +124,11 @@ describe PG, "#time_zone" do
     end
   end
 end
+
+describe PG, "#clear_time_zone_cache" do
+  it "returns an empty hash, trusting that that means it's been cleared" do
+    with_connection do |db|
+      db.clear_time_zone_cache.should be_empty
+    end
+  end
+end

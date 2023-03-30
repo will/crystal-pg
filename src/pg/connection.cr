@@ -47,6 +47,11 @@ module PG
       cache[zone_name] = Time::Location.load(zone_name)
     end
 
+    # Clears the cache for situations where the tzdata file has changed
+    def clear_time_zone_cache
+      @@location_cache.clear
+    end
+
     def time_zone
       if zone_name = @connection.server_parameters["TimeZone"]?
         @@location_cache[zone_name]
