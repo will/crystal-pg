@@ -1,4 +1,6 @@
 require "../pq/*"
+require "./statement"
+require "./result_set"
 
 module PG
   class Connection < ::DB::Connection
@@ -25,9 +27,15 @@ module PG
       Statement.new(self, query)
     end
 
+    def pipeline
+      pipeline = Pipeline.new(self)
+      yield pipeline
+      pipeline.results
+    end
+
     # Execute several statements. No results are returned.
     def exec_all(query : String) : Nil
-      PQ::SimpleQuery.new(@connection, query)
+      PQ::SimpleQuery.new(@connection, query).exec
       nil
     end
 
@@ -66,6 +74,75 @@ module PG
         @connection.close
       rescue
       end
+    end
+  end
+
+  struct Pipeline
+    def initialize(@connection : Connection)
+      @queries = [] of PQ::ExtendedQuery
+    end
+
+    def query(query, *args_, args : Array? = nil) : self
+      ext_query = PQ::ExtendedQuery.new(@connection.connection, query, DB::EnumerableConcat.build(args_, args))
+      @queries << ext_query.tap(&.send)
+      self
+    end
+
+    def results
+      @iterator ||= Results.new(@connection, @queries.each)
+    end
+
+    struct Results
+      def initialize(@connection : Connection, @result_sets : Iterator(PQ::ExtendedQuery))
+      end
+
+      def scalar(type : T.class) forall T
+        each type do |value|
+          return value
+        end
+      end
+
+      def read_one(type : T.class) forall T
+        each(type) { |value| return value }
+      end
+
+      def read_one(types : Tuple)
+        each(*types) { |value| return value }
+      end
+
+      def read_all(type : T.class) forall T
+        results = Array(T).new
+
+        each(type) do |row|
+          results << row
+        end
+        results
+      end
+
+      def each(*type) forall T
+        rs = self.next
+
+        begin
+          rs.each do
+            yield rs.read(*type)
+          end
+        ensure
+          rs.close
+        end
+      end
+
+      def next
+        case result = @result_sets.next
+        when PQ::ExtendedQuery
+          Statement::Pipelined.new(@connection, result.query).perform_query(result.params)
+        else
+          raise "Vespene geyser exhausted"
+        end
+      end
+    end
+
+    def close
+      each
     end
   end
 end
