@@ -33,7 +33,7 @@ module PQ
       end
 
       @soc = soc
-      negotiate_ssl if @soc.is_a?(TCPSocket)
+      negotiate_ssl if @soc.is_a?(TCPSocket) && @conninfo.sslmode != :disable
     end
 
     private def negotiate_ssl
