@@ -4,6 +4,7 @@ v?.?.?     upcoming
 * Add support for ENV vars (PGPORT, PGUSER, PGHOST, PGDATABASE, PGPASS) and
   pgpass files (thanks @wishdev)
 * timestamptz now parse into the connection's timezone if set (thanks @jgaskins)
+* add `sslmode=disable` to prevent TLS negotiation (thanks @ellmetha)
 
 v0.26.0    2022-01-27
 =====================
