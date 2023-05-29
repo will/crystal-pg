@@ -5,11 +5,18 @@ module PG
     protected getter connection
 
     def initialize(options : ::DB::Connection::Options, conn_info : PQ::ConnInfo)
+      begin
+        connection = PQ::Connection.new(conn_info)
+      rescue ex
+        raise DB::ConnectionRefused.new(cause: ex)
+      end
+      initialize(options, connection)
+    end
+
+    def initialize(options : ::DB::Connection::Options, @connection : PQ::Connection)
       super(options)
 
-      @connection = uninitialized PQ::Connection
       begin
-        @connection = PQ::Connection.new(conn_info)
         @connection.connect
       rescue ex
         raise DB::ConnectionRefused.new(cause: ex)
