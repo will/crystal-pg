@@ -36,6 +36,9 @@ module PQ
       negotiate_ssl if @soc.is_a?(TCPSocket) && @conninfo.sslmode != :disable
     end
 
+    def initialize(@soc, @conninfo)
+    end
+
     private def negotiate_ssl
       write_i32 8
       write_i32 80877103
