@@ -118,7 +118,9 @@ module PQ
     private def default_host(h)
       return h if h && !h.blank?
 
-      return ENV["PGHOST"] if ENV.has_key?("PGHOST")
+      if pghost = ENV["PGHOST"]?
+        return pghost[0] == '/' ? "#{pghost}/.s.PGSQL.5432" : pghost
+      end
 
       SOCKET_SEARCH.each do |s|
         return s if File.exists?(s)
