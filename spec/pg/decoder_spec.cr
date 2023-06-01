@@ -1,4 +1,6 @@
 require "uuid"
+# Extensions must be loaded before spec_helper connects to the DB
+require "../../src/pg/extensions/citext"
 require "../spec_helper"
 
 describe PG::Decoders do
@@ -98,4 +100,15 @@ describe PG::Decoders do
   test_decode "path ", "'(1,2,3,4)'::path ", PG::Geo::Path.new([PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0)], closed: true)
   test_decode "path ", "'[1,2,3,4,5,6]'::path", PG::Geo::Path.new([PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0), PG::Geo::Point.new(5.0, 6.0)], closed: false)
   test_decode "polygon", "'1,2,3,4,5,6'::polygon", PG::Geo::Polygon.new([PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0), PG::Geo::Point.new(5.0, 6.0)])
+
+  it "decodes extension types on a per-connection basis" do
+    PG_DB.exec "CREATE EXTENSION IF NOT EXISTS citext"
+    PG_DB.query "select 'OMG lol'::citext" do |rs|
+      rs.each do
+        text = rs.read
+        text.should be_a PG::CIText
+        text.should eq "omg LOL"
+      end
+    end
+  end
 end
