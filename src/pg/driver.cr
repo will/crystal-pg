@@ -1,9 +1,16 @@
 class PG::Driver < ::DB::Driver
-  def connection_builder(uri : URI) : Proc(::DB::Connection)
+  class ConnectionBuilder < ::DB::ConnectionBuilder
+    def initialize(@options : ::DB::Connection::Options, @conn_info : PQ::ConnInfo)
+    end
+
+    def build : ::DB::Connection
+      PG::Connection.new(@options, @conn_info)
+    end
+  end
+
+  def connection_builder(uri : URI) : ::DB::ConnectionBuilder
     params = HTTP::Params.parse(uri.query || "")
-    options = connection_options(params)
-    conn_info = PQ::ConnInfo.new(uri)
-    ->{ Connection.new(options, conn_info).as(::DB::Connection) }
+    ConnectionBuilder.new(connection_options(params), PQ::ConnInfo.new(uri))
   end
 end
 
