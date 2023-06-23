@@ -6,11 +6,16 @@ require "../spec_helper"
 #     just your user
 # Because of this, most of these specs are disabled by default. To enable them
 # place an empty file called .run_auth_specs in /spec
+#
+# Alternatively, if CRYSTAL_PG_CERT_DIR is set, it's assumed it's set to the
+# nix store path containing all of the necessary test certs, and therefore the
+# specs are running in the provided nix environment, and all auth specs can run.
 
 CURRENT_DATABASE = PG_DB.query_one("select current_database()", &.read)
+PORT             = ENV["PGPORT"]? || "5432"
 
 private def test_role(role, pass)
-  url = "postgres://#{role}:#{pass}@127.0.0.1/#{CURRENT_DATABASE}"
+  url = "postgres://#{role}:#{pass}@127.0.0.1:#{PORT}/#{CURRENT_DATABASE}"
   DB.open(url) do |db|
     db.query_one("select 1", &.read).should eq(1)
   end
@@ -27,7 +32,7 @@ describe PQ::Connection, "nologin role" do
   end
 end
 
-if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
+if ENV["CRYSTAL_PG_CERT_DIR"]? || File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
   describe PQ::Connection, "scram auth" do
     it "works when given the correct password" do
       PG_DB.exec("drop role if exists crystal_scram")
@@ -61,7 +66,7 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("create role crystal_scram login encrypted password 'pass'")
 
       exc = expect_raises(DB::ConnectionRefused) {
-        DB.open("postgres://crystal_scram:pass@127.0.0.1?auth_methods=cleartext,md5")
+        DB.open("postgres://crystal_scram:pass@127.0.0.1:#{PORT}/?auth_methods=cleartext,md5")
       }
       exc.cause.try(&.message).to_s.should contain "server asked for disabled authentication method: scram-sha-256"
 
@@ -100,7 +105,7 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("create role crystal_md5 login encrypted password 'pass'")
 
       exc = expect_raises(DB::ConnectionRefused) {
-        DB.open("postgres://crystal_md5:pass@127.0.0.1?auth_methods=cleartext,scram-sha-256")
+        DB.open("postgres://crystal_md5:pass@127.0.0.1:#{PORT}?auth_methods=cleartext,scram-sha-256")
       }
       exc.cause.try(&.message).to_s.should contain "server asked for disabled authentication method: md5"
 
@@ -113,8 +118,8 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("drop role if exists crystal_ssl")
       PG_DB.exec("create role crystal_ssl login encrypted password 'pass'")
       db = PG_DB.query_one("select current_database()", &.read)
-      certs = File.join Dir.current, ".cert"
-      uri = "postgres://crystal_ssl@127.0.0.1/#{db}?sslmode=verify-full&sslcert=#{certs}/crystal_ssl.crt&sslkey=#{certs}/crystal_ssl.key&sslrootcert=#{certs}/root.crt"
+      certs = ENV["CRYSTAL_PG_CERT_DIR"]? || File.join Dir.current, ".cert"
+      uri = "postgres://crystal_ssl@127.0.0.1:#{PORT}/#{db}?sslmode=verify-full&sslcert=#{certs}/client-cert.pem&sslkey=#{certs}/client-key.pem&sslrootcert=#{certs}/ca-cert.pem"
       DB.open(uri) do |db|
         db.query_one("select current_user", &.read).should eq("crystal_ssl")
       end
@@ -128,12 +133,12 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("create role crystal_clear login encrypted password 'pass'")
 
       exc = expect_raises(DB::ConnectionRefused) {
-        DB.open("postgres://crystal_clear:pass@127.0.0.1")
+        DB.open("postgres://crystal_clear:pass@127.0.0.1:#{PORT}")
       }
       exc.cause.try(&.message).to_s.should contain "server asked for disabled authentication method: cleartext"
 
       exc = expect_raises(DB::ConnectionRefused) {
-        DB.open("postgres://crystal_clear:pass@127.0.0.1?auth_methods=md5,scram-sha-256")
+        DB.open("postgres://crystal_clear:pass@127.0.0.1:#{PORT}/?auth_methods=md5,scram-sha-256")
       }
       exc.cause.try(&.message).to_s.should contain "server asked for disabled authentication method: cleartext"
 
@@ -144,9 +149,9 @@ if File.exists?(File.join(File.dirname(__FILE__), "../.run_auth_specs"))
       PG_DB.exec("drop role if exists crystal_clear")
       PG_DB.exec("create role crystal_clear login encrypted password 'pass'")
 
-      DB.open("postgres://crystal_clear:pass@127.0.0.1/#{CURRENT_DATABASE}?auth_methods=cleartext") { }
+      DB.open("postgres://crystal_clear:pass@127.0.0.1:#{PORT}/#{CURRENT_DATABASE}?auth_methods=cleartext") { }
 
-      DB.open("postgres://crystal_clear:pass@127.0.0.1/#{CURRENT_DATABASE}?auth_methods=cleartext,md5,scram-sha-256") { }
+      DB.open("postgres://crystal_clear:pass@127.0.0.1:#{PORT}/#{CURRENT_DATABASE}?auth_methods=cleartext,md5,scram-sha-256") { }
 
       PG_DB.exec("drop role if exists crystal_clear")
     end
