@@ -1,7 +1,7 @@
 # crystal-pg
 A native, non-blocking Postgres driver for Crystal
 
-[![CI](https://github.com/will/crystal-pg/actions/workflows/config.yml/badge.svg)](https://github.com/will/crystal-pg/actions/workflows/config.yml)
+[![CI](https://github.com/will/crystal-pg/actions/workflows/ci.yml/badge.svg)](https://github.com/will/crystal-pg/actions/workflows/ci.yml)
 
 ## usage
 

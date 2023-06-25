@@ -1,7 +1,7 @@
 v?.?.?     upcoming
 =====================
 
-v0.27.0     upcoming
+v0.27.0    2023-06-25
 =====================
 * Add support for LSN data type (thanks @louiseGrandjonc)
 * Add support for ENV vars (PGPORT, PGUSER, PGHOST, PGDATABASE, PGPASS) and
