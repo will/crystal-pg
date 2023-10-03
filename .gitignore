@@ -8,3 +8,4 @@ spec/.run_auth_specs
 .cert
 .envrc
 result
+.direnv

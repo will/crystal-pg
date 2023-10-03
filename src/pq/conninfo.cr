@@ -35,10 +35,13 @@ module PQ
     # The sslrootcert. Optional.
     getter sslrootcert : String?
 
+    # The application name. Optional (defaults to "crystal").
+    getter application_name : String
+
     getter auth_methods : Array(String) = %w[scram-sha-256-plus scram-sha-256 md5]
 
     # Create a new ConnInfo from all parts
-    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, password : String? = nil, port : Int | String? = nil, sslmode : String | Symbol? = nil)
+    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, password : String? = nil, port : Int | String? = nil, sslmode : String | Symbol? = nil, application_name : String? = nil)
       @host = default_host host
       db = default_database database
       @database = db.lchop('/')
@@ -46,6 +49,7 @@ module PQ
       @port = (port || ENV.fetch("PGPORT", "5432")).to_i
       @sslmode = default_sslmode sslmode
       @password = password || ENV.fetch("PGPASSWORD", PgPass.locate(@host, @port, @database, @user))
+      @application_name = default_application_name application_name
     end
 
     # Initialize with either "postgres://" urls or postgres "key=value" pairs
@@ -71,8 +75,9 @@ module PQ
 
     # Initializes with a `URI`
     def initialize(uri : URI)
-      hostname = uri.hostname.presence || URI::Params.parse(uri.query.to_s).fetch("host", "")
-      initialize(hostname, uri.path, uri.user, uri.password, uri.port, :prefer)
+      params = URI::Params.parse(uri.query.to_s)
+      hostname = uri.hostname.presence || params.fetch("host", "")
+      initialize(hostname, uri.path, uri.user, uri.password, uri.port, :prefer, params.fetch("application_name", nil))
       if q = uri.query
         HTTP::Params.parse(q) do |key, value|
           handle_sslparam(key, value)
@@ -83,10 +88,11 @@ module PQ
     # Initialize with a `Hash`
     #
     # Valid keys match Postgres "conninfo" keys and are `"host"`, `"dbname"`,
-    # `"user"`, `"password"`, `"port"`, `"sslmode"`, `"sslcert"`, `"sslkey"` and `"sslrootcert"`
+    # `"user"`, `"password"`, `"port"`, `"sslmode"`, `"sslcert"`, `"sslkey"`,
+    # `"sslrootcert"` and `"application_name"`.
     def initialize(params : Hash)
       initialize(params["host"]?, params["dbname"]?, params["user"]?,
-        params["password"]?, params["port"]?, params["sslmode"]?)
+        params["password"]?, params["port"]?, params["sslmode"]?, params["application_name"]?)
       params.each do |key, value|
         handle_sslparam(key, value)
       end
@@ -135,6 +141,10 @@ module PQ
       else
         ENV.fetch("PGDATABASE", current_user_name)
       end
+    end
+
+    private def default_application_name(application_name, fallback_application_name = "crystal")
+      application_name || ENV.fetch("PGAPPNAME", nil) || fallback_application_name
     end
 
     private def default_user(u)

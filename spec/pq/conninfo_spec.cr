@@ -9,6 +9,7 @@ private def assert_default_params(ci)
   ci.password.should eq(nil)
   ci.port.should eq(5432)
   ci.sslmode.should eq(:prefer)
+  ci.application_name.should eq("crystal")
 end
 
 private def assert_custom_params(ci)
@@ -18,6 +19,7 @@ private def assert_custom_params(ci)
   ci.password.should eq("pass")
   ci.port.should eq(5555)
   ci.sslmode.should eq(:require)
+  ci.application_name.should eq("specs")
 end
 
 private def assert_ssl_params(ci)
@@ -36,7 +38,7 @@ describe PQ::ConnInfo, "parts" do
   end
 
   it "can take settings" do
-    ci = PQ::ConnInfo.new("host", "db", "user", "pass", 5555, :require)
+    ci = PQ::ConnInfo.new("host", "db", "user", "pass", 5555, :require, "specs")
     assert_custom_params ci
   end
 end
@@ -51,7 +53,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
 
   it "parses postgres urls" do
     ci = PQ::ConnInfo.from_conninfo_string(
-      "postgres://user:pass@host:5555/db?sslmode=require&otherparam=ignore")
+      "postgres://user:pass@host:5555/db?sslmode=require&otherparam=ignore&application_name=specs")
     assert_custom_params ci
 
     ci = PQ::ConnInfo.from_conninfo_string(
@@ -59,7 +61,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     assert_ssl_params ci
 
     ci = PQ::ConnInfo.from_conninfo_string(
-      "postgresql://user:pass@host:5555/db?sslmode=require")
+      "postgresql://user:pass@host:5555/db?sslmode=require&application_name=specs")
     assert_custom_params ci
   end
 
@@ -72,7 +74,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
 
   it "parses libpq style strings" do
     ci = PQ::ConnInfo.from_conninfo_string(
-      "host=host dbname=db user=user password=pass port=5555 sslmode=require")
+      "host=host dbname=db user=user password=pass port=5555 sslmode=require application_name=specs")
     assert_custom_params ci
 
     ci = PQ::ConnInfo.from_conninfo_string(
@@ -125,12 +127,14 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
       ENV["PGPASSWORD"] = "C"
       ENV["PGPORT"] = "1"
       ENV["PGUSER"] = "D"
+      ENV["PGAPPNAME"] = "S"
       ci = PQ::ConnInfo.from_conninfo_string("postgres://")
       ci.database.should eq("A")
       ci.host.should eq("B")
       ci.password.should eq("C")
       ci.port.should eq(1)
       ci.user.should eq("D")
+      ci.application_name.should eq("S")
     end
 
     env_var_bubble do

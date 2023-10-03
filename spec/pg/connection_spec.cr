@@ -6,6 +6,15 @@ describe PG::Connection, "#initialize" do
       DB.open("postgres://localhost:5433")
     }
   end
+
+  it "set application name" do
+    URI.parse(DB_URL).tap do |uri|
+      uri.query = "application_name=specs"
+      DB.open(uri.to_s) do |db|
+        db.query_one("SHOW application_name", as: String).should eq("specs")
+      end
+    end
+  end
 end
 
 describe PG::Connection, "#on_notice" do
