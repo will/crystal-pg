@@ -1,5 +1,7 @@
 v?.?.?     upcoming
 =====================
+* Add support for application_name in UIR paramaters and the
+  PGAPPNAME env var (thanks @cyberdelia)
 
 v0.27.0    2023-06-25
 =====================
