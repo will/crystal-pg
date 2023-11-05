@@ -15,7 +15,7 @@ class PG::ResultSet < ::DB::ResultSet
     @column_index = -1 # The current column
     @end = false       # Did we read all the rows?
     @rows_affected = 0_i64
-    @sized_io = Buffer.new(conn.soc, 1, statement.connection)
+    @sized_io = Buffer.new(conn.soc, 1, statement.connection.as(PG::Connection))
   end
 
   protected def conn
