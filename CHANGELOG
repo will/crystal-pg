@@ -2,6 +2,7 @@ v?.?.?     upcoming
 =====================
 * Add support for application_name in UIR paramaters and the
   PGAPPNAME env var (thanks @cyberdelia)
+* Fix error when used with non-postgres database drivers (thanks @ysbaddaden)
 
 v0.27.0    2023-06-25
 =====================
