@@ -50,6 +50,9 @@ describe PG::Decoders do
   test_decode "timestamptz", "'2015-02-03 16:15:13-01'::timestamptz",
     Time.utc(2015, 2, 3, 17, 15, 13)
 
+  test_decode "timestamptz", "'0005-02-03 16:15:15-05:17:32'::timestamptz",
+    Time.local(5, 2, 3, 16, 15, 15, location: Time::Location.load("America/Montreal"))
+
   test_decode "timestamptz", "'2015-02-03 16:15:14.23-01'::timestamptz",
     Time.utc(2015, 2, 3, 17, 15, 14, nanosecond: 230_000_000)
 
@@ -60,8 +63,14 @@ describe PG::Decoders do
   test_decode "timestamp", "'2015-02-03 16:15:15'::timestamp",
     Time.utc(2015, 2, 3, 16, 15, 15)
 
+  test_decode "timestamp", "'0005-02-03 16:15:15'::timestamp",
+    Time.utc(5, 2, 3, 16, 15, 15)
+
   test_decode "date", "'2015-02-03'::date",
     Time.utc(2015, 2, 3, 0, 0, 0)
+
+  test_decode "date", "'0005-02-03'::date",
+    Time.utc(5, 2, 3, 0, 0, 0)
 
   # -14706000000 = microseconds in -4 hours, -5 minutes -6 seconds
   test_decode "interval", "'P-1Y-2M3DT-4H-5M-6S'::interval", PG::Interval.new(-14706000000, 3, -14)

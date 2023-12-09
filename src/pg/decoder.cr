@@ -422,9 +422,13 @@ module PG
         in .date?
           JAN_1_2K + read_i32(io).days
         in .timestamp?
-          JAN_1_2K + read_i64(io).microseconds
+          v = read_i64(io) # microseconds
+          sec, m = v.divmod(1_000_000)
+          JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
         in .timestamptz?
-          time = JAN_1_2K + read_i64(io).microseconds
+          v = read_i64(io) # microseconds
+          sec, m = v.divmod(1_000_000)
+          time = JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
           time.in io.connection.time_zone
         end
       end
