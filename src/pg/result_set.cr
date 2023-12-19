@@ -57,8 +57,8 @@ class PG::ResultSet < ::DB::ResultSet
       @end = true
       false
     end
-  rescue IO::Error
-    raise DB::ConnectionLost.new(statement.connection)
+  rescue e : IO::Error
+    raise DB::ConnectionLost.new(statement.connection, cause: e)
   rescue ex
     @end = true
     raise ex
@@ -90,8 +90,8 @@ class PG::ResultSet < ::DB::ResultSet
     safe_read(col_bytesize) do |io|
       decoder.decode(io, col_bytesize, oid)
     end
-  rescue IO::Error
-    raise DB::ConnectionLost.new(statement.connection)
+  rescue e : IO::Error
+    raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
   def read(t : Array(T).class) : Array(T) forall T
@@ -148,8 +148,8 @@ class PG::ResultSet < ::DB::ResultSet
     safe_read(col_bytesize) do |io|
       Decoders.decode_array(io, col_bytesize, T)
     end
-  rescue IO::Error
-    raise DB::ConnectionLost.new(statement.connection)
+  rescue e : IO::Error
+    raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
   private def safe_read(col_bytesize)
@@ -182,8 +182,8 @@ class PG::ResultSet < ::DB::ResultSet
     col_size = conn.read_i32
     conn.skip_bytes(col_size) if col_size != -1
     @column_index += 1
-  rescue IO::Error
-    raise DB::ConnectionLost.new(statement.connection)
+  rescue e : IO::Error
+    raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
   protected def do_close
