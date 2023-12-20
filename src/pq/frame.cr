@@ -21,6 +21,8 @@ module PQ
           when 'S' then ParameterStatus
           when 'K' then BackendKeyData
           when 'R' then Authentication
+          when 'c' then CopyDone
+          when 'H' then CopyOutResponse
           else          nil
           end
       k ? k.new(bytes) : Unknown.new(type, bytes)
@@ -244,6 +246,12 @@ module PQ
     end
 
     struct EmptyQueryResponse < Frame
+    end
+
+    struct CopyDone < Frame
+    end
+
+    struct CopyOutResponse < Frame
     end
   end
 end
