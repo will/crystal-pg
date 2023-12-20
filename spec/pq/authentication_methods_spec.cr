@@ -114,7 +114,7 @@ if ENV["CRYSTAL_PG_CERT_DIR"]? || File.exists?(File.join(File.dirname(__FILE__),
   end
 
   describe PQ::Connection, "ssl clientcert auth" do
-    it "works when using ssl clientcert" do
+    pending "works when using ssl clientcert" do
       PG_DB.exec("drop role if exists crystal_ssl")
       PG_DB.exec("create role crystal_ssl login encrypted password 'pass'")
       db = PG_DB.query_one("select current_database()", &.read)

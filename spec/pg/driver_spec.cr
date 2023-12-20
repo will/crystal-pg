@@ -10,7 +10,10 @@ class NotSupportedType
 end
 
 struct StructWithMapping
-  DB.mapping(a: Int32, b: Int32)
+  include DB::Serializable
+
+  property a : Int32
+  property b : Int32
 end
 
 describe PG::Driver do
@@ -184,7 +187,7 @@ describe PG::Driver do
     it "properly skips null columns" do
       no_nulls = StructWithMapping.from_rs(PG_DB.query("select 1 as a, 1 as b")).first
       {no_nulls.a, no_nulls.b}.should eq({1, 1})
-      err = DB::ColumnTypeMismatchError
+      err = DB::MappingException
 
       expect_raises(err, "In PG::ResultSet#read the column b returned a Nil but a Int32 was expected.") do
         StructWithMapping.from_rs(PG_DB.query("select 2 as a, null as b"))
