@@ -37,6 +37,18 @@ module PG
       nil
     end
 
+    # Execute a "COPY .. TO STDOUT" query and return an IO object to read from.
+    # The IO *must* be closed before using the connection again.
+    #
+    # ```
+    # io = conn.copy_out "COPY table TO STDOUT"
+    # data = io.gets_to_end
+    # io.close
+    # ```
+    def copy_out(query : String) : CopyOut
+      CopyOut.new connection, query
+    end
+
     # Set the callback block for notices and errors.
     def on_notice(&on_notice_proc : PQ::Notice ->)
       @connection.notice_handler = on_notice_proc
