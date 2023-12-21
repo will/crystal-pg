@@ -37,16 +37,20 @@ module PG
       nil
     end
 
-    # Execute a "COPY .. TO STDOUT" query and return an IO object to read from.
-    # The IO *must* be closed before using the connection again.
+    # Execute a "COPY" query and return an IO object to read from or write to,
+    # depending on the query.
     #
     # ```
-    # io = conn.copy_out "COPY table TO STDOUT"
-    # data = io.gets_to_end
-    # io.close
+    # data = conn.exec_copy("COPY table TO STDOUT").gets_to_end
     # ```
-    def copy_out(query : String) : CopyOut
-      CopyOut.new connection, query
+    #
+    # ```
+    # writer = conn.exec_copy "COPY table FROM STDIN")
+    # writer << data
+    # writer.close
+    # ```
+    def exec_copy(query : String) : CopyResult
+      CopyResult.new connection, query
     end
 
     # Set the callback block for notices and errors.
