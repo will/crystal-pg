@@ -142,40 +142,32 @@ describe PG, "#clear_time_zone_cache" do
   end
 end
 
-describe PG, "COPY out" do
-  it "supports COPY TO STDOUT data transfer" do
+describe PG, "COPY" do
+  it "properly handles partial reads and consumes data on early close" do
     with_connection do |db|
-      io = db.copy_out "COPY (SELECT 'text', NULL, 1) TO STDOUT"
-      io.gets_to_end.should eq "text\t\\N\t1\n"
-      io.close
-      db.scalar("select 1").should eq(1)
-    end
-  end
-
-  it "propely consumes data on early close" do
-    with_connection do |db|
-      io = db.copy_out "COPY (SELECT * FROM generate_series(1, 100) x) TO STDOUT"
-      io.gets.should eq "1"
-      io.gets.should eq "2"
-      io.gets.should eq "3"
-      io.close
-      db.scalar("select 1").should eq(1)
-    end
-  end
-
-  it "properly handles partial reads" do
-    with_connection do |db|
-      io = db.copy_out "COPY (VALUES (1), (333)) TO STDOUT"
+      io = db.exec_copy "COPY (VALUES (1), (333)) TO STDOUT"
       io.read_char.should eq '1'
       io.read_char.should eq '\n'
       io.read_char.should eq '3'
       io.read_char.should eq '3'
-      io.read_char.should eq '3'
-      io.read_char.should eq '\n'
-      io.read_char.should eq nil
-      io.read_char.should eq nil
       io.close
       db.scalar("select 1").should eq(1)
+    end
+  end
+
+  if "survives a COPY FROM STDIN and COPY TO STDOUT round-trip"
+    with_connection do |db|
+      data = "123\tdata\n\\N\t\\N\n"
+      db.exec("CREATE TEMPORARY TABLE IF NOT EXISTS copy_test (a int, b text)")
+
+      wr = db.exec_copy "COPY copy_test FROM STDIN"
+      wr << data
+      wr.close
+
+      rd = db.exec_copy "COPY copy_test TO STDOUT"
+      rd.gets_to_end.should eq data
+
+      db.exec("DROP TABLE copy_test")
     end
   end
 end

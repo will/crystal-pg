@@ -550,5 +550,17 @@ module PQ
       write_chr 'X'
       write_i32 4
     end
+
+    def send_copy_data_message(slice)
+      write_chr 'd'
+      write_i32 4 + slice.size
+      soc.write slice
+    end
+
+    def send_copy_done_message
+      write_chr 'c'
+      write_i32 4
+      soc.flush
+    end
   end
 end

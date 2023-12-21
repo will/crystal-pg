@@ -22,6 +22,7 @@ module PQ
           when 'K' then BackendKeyData
           when 'R' then Authentication
           when 'c' then CopyDone
+          when 'G' then CopyInResponse
           when 'H' then CopyOutResponse
           else          nil
           end
@@ -249,6 +250,9 @@ module PQ
     end
 
     struct CopyDone < Frame
+    end
+
+    struct CopyInResponse < Frame
     end
 
     struct CopyOutResponse < Frame
