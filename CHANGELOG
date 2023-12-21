@@ -1,8 +1,9 @@
-v?.?.?     upcoming
+v0.28.0    2023-12-21
 =====================
 * Add support for application_name in UIR paramaters and the
   PGAPPNAME env var (thanks @cyberdelia)
 * Fix error when used with non-postgres database drivers (thanks @ysbaddaden)
+* Update crystal-db to 0.13 (thanks @jgaskins, @bcardiff)
 
 v0.27.0    2023-06-25
 =====================
@@ -31,7 +32,7 @@ v0.25.0    2022-01-27
 * Add support for decoding arrays of UUIDs (thanks @jwoertink)
 * Allow socket connections to have paramaters from URIs (thanks @grepsedawk)
 * Allow blocking connections to PG.connect_listen
-* Properly encode null values in arrays (thanks @robcole and @grepsedawk) 
+* Properly encode null values in arrays (thanks @robcole and @grepsedawk)
 
 v0.24.0    2021-07-21
 =====================
