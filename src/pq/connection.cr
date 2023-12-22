@@ -136,6 +136,10 @@ module PQ
       data
     end
 
+    def read_direct(slice)
+      soc.read(slice)
+    end
+
     def skip_bytes(count)
       soc.skip(count)
     end
@@ -442,6 +446,24 @@ module PQ
       expect_frame Frame::CommandComplete, type
     end
 
+    def read_next_copy_start
+      type = soc.read_char
+
+      while type == 'N'
+        # NoticeResponse
+        frame = read_one_frame('N')
+        handle_async_frames(frame)
+        type = soc.read_char
+      end
+
+      if type == 'd'
+        true
+      else
+        expect_frame Frame::CopyDone, type
+        false
+      end
+    end
+
     def expect_frame(frame_class, type = nil)
       f = type ? read(type) : read
       raise "Expected #{frame_class} but got #{f}" unless frame_class === f
@@ -527,6 +549,18 @@ module PQ
     def send_terminate_message
       write_chr 'X'
       write_i32 4
+    end
+
+    def send_copy_data_message(slice)
+      write_chr 'd'
+      write_i32 4 + slice.size
+      soc.write slice
+    end
+
+    def send_copy_done_message
+      write_chr 'c'
+      write_i32 4
+      soc.flush
     end
   end
 end
