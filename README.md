@@ -1,8 +1,7 @@
 # crystal-pg
 A native, non-blocking Postgres driver for Crystal
 
-[![Build Status](https://circleci.com/gh/will/crystal-pg/tree/master.svg?style=svg)](https://circleci.com/gh/will/crystal-pg/tree/master)
-
+[![CI](https://github.com/will/crystal-pg/actions/workflows/ci.yml/badge.svg)](https://github.com/will/crystal-pg/actions/workflows/ci.yml)
 
 ## usage
 
@@ -14,13 +13,29 @@ querying, etc, can be found at:
 
 ### shards
 
-Add this to your `shard.yml` and run `shards install`
+Add this to your `shard.yml` on a generated crystal project, 
+and run `shards install`
 
 ``` yml
 dependencies:
   pg:
     github: will/crystal-pg
 ```
+
+### Example usage
+
+``` crystal
+require "db"
+require "pg"
+
+DB.open("postgres://user:pass@host:port/db_name?option1=a&option2=b") do |db|
+   ... use db ...
+end
+```
+
+### More
+
+`crystal-pg` also supports some functionality past the typical `crystal-db` usage:
 
 ### Listen/Notify
 
@@ -114,7 +129,7 @@ DB.connect("postgres:///") do |cnn|
 
 ## Requirements
 
-Crystal-pg is [regularly tested on](https://circleci.com/gh/will/crystal-pg)
+Crystal-pg is [regularly tested on](https://github.com/will/crystal-pg/actions)
 the Postgres versions the [Postgres project itself supports](https://www.postgresql.org/support/versioning/).
 Since it uses protocol version 3, older versions probably also work but are not guaranteed.
 
@@ -158,7 +173,7 @@ to the `auth_methods` parameter, for example
  DB.open("postgres://example.com/dbname?auth_methods=cleartext,md5,scram-sha-256")
 ```
 
-**DO NOT TURN `cleartext` ON UNLESS YOU ABSOLUTELY NEED IT!** Mearly by having
+**DO NOT TURN `cleartext` ON UNLESS YOU ABSOLUTELY NEED IT!** Merely by having
 this option enabled exposes a postgres client to downgrade man-in-the-middle
 attacks, even if the server is configured to not support cleartext. Even if you
 use TLS, you are not safe unless you are fully verifying the server's cert, as

@@ -1,9 +1,9 @@
 name: pg
-version: 0.23.2
+version: 0.28.0
 
 dependencies:
   db:
     github: crystal-lang/crystal-db
-    version: ~> 0.10.0
+    version: ~> 0.13.0
 
-crystal: ">= 0.35.0, < 2.0.0"
+crystal: ">= 1.0.0, < 2.0.0"

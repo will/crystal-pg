@@ -15,7 +15,7 @@ class PG::ResultSet < ::DB::ResultSet
     @column_index = -1 # The current column
     @end = false       # Did we read all the rows?
     @rows_affected = 0_i64
-    @sized_io = IO::Sized.new(conn.soc, 1)
+    @sized_io = Buffer.new(conn.soc, 1, statement.connection.as(PG::Connection))
   end
 
   protected def conn
@@ -57,8 +57,8 @@ class PG::ResultSet < ::DB::ResultSet
       @end = true
       false
     end
-  rescue IO::Error
-    raise DB::ConnectionLost.new(statement.connection)
+  rescue e : IO::Error
+    raise DB::ConnectionLost.new(statement.connection, cause: e)
   rescue ex
     @end = true
     raise ex
@@ -76,6 +76,10 @@ class PG::ResultSet < ::DB::ResultSet
     decoder(index).type
   end
 
+  def next_column_index : Int32
+    @column_index
+  end
+
   def read
     col_bytesize = conn.read_i32
     if col_bytesize == -1
@@ -86,8 +90,8 @@ class PG::ResultSet < ::DB::ResultSet
     safe_read(col_bytesize) do |io|
       decoder.decode(io, col_bytesize, oid)
     end
-  rescue IO::Error
-    raise DB::ConnectionLost.new(statement.connection)
+  rescue e : IO::Error
+    raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
   def read(t : Array(T).class) : Array(T) forall T
@@ -124,6 +128,16 @@ class PG::ResultSet < ::DB::ResultSet
     end
   end
 
+  def read(t : JSON::Any.class) : JSON::Any
+    value = read(JSON::PullParser)
+    JSON::Any.new(value)
+  end
+
+  def read(t : JSON::Any?.class) : JSON::Any?
+    value = read(JSON::PullParser?)
+    JSON::Any.new(value) if value
+  end
+
   private def read_array(t : T.class) : T forall T
     col_bytesize = conn.read_i32
     if col_bytesize == -1
@@ -134,8 +148,8 @@ class PG::ResultSet < ::DB::ResultSet
     safe_read(col_bytesize) do |io|
       Decoders.decode_array(io, col_bytesize, T)
     end
-  rescue IO::Error
-    raise DB::ConnectionLost.new(statement.connection)
+  rescue e : IO::Error
+    raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
   private def safe_read(col_bytesize)
@@ -168,8 +182,8 @@ class PG::ResultSet < ::DB::ResultSet
     col_size = conn.read_i32
     conn.skip_bytes(col_size) if col_size != -1
     @column_index += 1
-  rescue IO::Error
-    raise DB::ConnectionLost.new(statement.connection)
+  rescue e : IO::Error
+    raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
   protected def do_close
@@ -196,5 +210,13 @@ class PG::ResultSet < ::DB::ResultSet
   rescue DB::ConnectionLost
     # if the connection is lost there is nothing to be
     # done since the result set is no longer needed
+  end
+
+  private class Buffer < IO::Sized
+    getter connection : PG::Connection
+
+    def initialize(io, read_size, @connection)
+      super io, read_size
+    end
   end
 end

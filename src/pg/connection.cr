@@ -4,13 +4,19 @@ module PG
   class Connection < ::DB::Connection
     protected getter connection
 
-    def initialize(context)
-      super
-      @connection = uninitialized PQ::Connection
+    def initialize(options : ::DB::Connection::Options, conn_info : PQ::ConnInfo)
+      begin
+        connection = PQ::Connection.new(conn_info)
+      rescue ex
+        raise DB::ConnectionRefused.new(cause: ex)
+      end
+      initialize(options, connection)
+    end
+
+    def initialize(options : ::DB::Connection::Options, @connection : PQ::Connection)
+      super(options)
 
       begin
-        conn_info = PQ::ConnInfo.new(context.uri)
-        @connection = PQ::Connection.new(conn_info)
         @connection.connect
       rescue ex
         raise DB::ConnectionRefused.new(cause: ex)
@@ -41,13 +47,36 @@ module PG
       @connection.notification_handler = on_notification_proc
     end
 
-    protected def listen(channels : Enumerable(String))
-      channels.each { |c| exec_all("LISTEN " + escape_identifier(c)) }
-      listen
+    # `Time::Location.load` doesn't do any caching, so we cache it here to avoid
+    # a time-zone lookup on every call to `time_zone`.
+    @@location_cache = Hash(String, Time::Location).new do |cache, zone_name|
+      cache[zone_name] = Time::Location.load(zone_name)
     end
 
-    protected def listen
-      spawn { @connection.read_async_frame_loop }
+    # Clears the cache for situations where the tzdata file has changed
+    def clear_time_zone_cache
+      @@location_cache.clear
+    end
+
+    def time_zone
+      if zone_name = @connection.server_parameters["TimeZone"]?
+        @@location_cache[zone_name]
+      else
+        Time::Location::UTC
+      end
+    end
+
+    protected def listen(channels : Enumerable(String), blocking : Bool = false)
+      channels.each { |c| exec_all("LISTEN " + escape_identifier(c)) }
+      listen(blocking: blocking)
+    end
+
+    protected def listen(blocking : Bool = false)
+      if blocking
+        @connection.read_async_frame_loop
+      else
+        spawn { @connection.read_async_frame_loop }
+      end
     end
 
     def version

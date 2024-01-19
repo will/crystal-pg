@@ -83,7 +83,7 @@ module PG
         2950, # UUID
       ]
 
-      def decode(io, bytesize, _oid)
+      def decode(io, bytesize, oid)
         bytes = uninitialized UInt8[16]
 
         slice = Bytes.new(bytes.to_unsafe, 16)
@@ -207,6 +207,21 @@ module PG
 
       def type
         UInt32
+      end
+    end
+
+    struct UInt64Decoder
+      include Decoder
+      def_oids [
+        3220, # lsn
+      ]
+
+      def decode(io, bytesize, oid)
+        read_u64(io)
+      end
+
+      def type
+        UInt64
       end
     end
 
@@ -382,34 +397,35 @@ module PG
           io.read_fully(Slice.new(buffer, bytesize))
           {bytesize, 0}
         end
-        JSON.parse(string)
+        JSON::PullParser.new(string)
       end
 
       def type
-        JSON::Any
+        JSON::PullParser
       end
     end
 
     struct TimeDecoder
       include Decoder
 
-      DATE_OID = 1082
+      enum OID
+        DATE        = 1082
+        TIMESTAMP   = 1114
+        TIMESTAMPTZ = 1184
+      end
       JAN_1_2K = Time.utc(2000, 1, 1)
 
-      def_oids [
-        DATE_OID, # date
-        1114,     # timestamp
-        1184,     # timestamptz
-      ]
+      def_oids OID.values.map(&.value)
 
       def decode(io, bytesize, oid)
-        if oid == DATE_OID
-          v = read_i32(io)
-          JAN_1_2K + Time::Span.new(days: v, hours: 0, minutes: 0, seconds: 0)
-        else
-          v = read_i64(io) # microseconds
-          sec, m = v.divmod(1_000_000)
-          JAN_1_2K + Time::Span.new(seconds: sec, nanoseconds: m*1000)
+        case oid = OID.new(oid)
+        in .date?
+          JAN_1_2K + read_i32(io).days
+        in .timestamp?
+          JAN_1_2K + read_i64(io).microseconds
+        in .timestamptz?
+          time = JAN_1_2K + read_i64(io).microseconds
+          time.in io.connection.time_zone
         end
       end
 
@@ -507,6 +523,7 @@ module PG
     register_decoder Int32Decoder.new
     register_decoder Int64Decoder.new
     register_decoder UIntDecoder.new
+    register_decoder UInt64Decoder.new
     register_decoder JsonDecoder.new
     register_decoder Float32Decoder.new
     register_decoder Float64Decoder.new

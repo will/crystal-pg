@@ -1,11 +1,12 @@
 require "uri"
 require "http"
+require "system/user"
 
 module PQ
   struct ConnInfo
     SOCKET_SEARCH = %w(/run/postgresql/.s.PGSQL.5432 /tmp/.s.PGSQL.5432 /var/run/postgresql/.s.PGSQL.5432)
 
-    SUPPORTED_AUTH_METHODS = ["cleartext", "md5", "scram-sha-256"]
+    SUPPORTED_AUTH_METHODS = %w[cleartext md5 scram-sha-256 scram-sha-256-plus]
 
     # The host. If starts with a / it is assumed to be a local Unix socket.
     getter host : String
@@ -34,16 +35,21 @@ module PQ
     # The sslrootcert. Optional.
     getter sslrootcert : String?
 
-    getter auth_methods : Array(String) = ["scram-sha-256", "md5"] of String
+    # The application name. Optional (defaults to "crystal").
+    getter application_name : String
+
+    getter auth_methods : Array(String) = %w[scram-sha-256-plus scram-sha-256 md5]
 
     # Create a new ConnInfo from all parts
-    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, @password : String? = nil, port : Int | String? = 5432, sslmode : String | Symbol? = nil)
+    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, password : String? = nil, port : Int | String? = nil, sslmode : String | Symbol? = nil, application_name : String? = nil)
       @host = default_host host
       db = default_database database
       @database = db.lchop('/')
       @user = default_user user
-      @port = (port || 5432).to_i
+      @port = (port || ENV.fetch("PGPORT", "5432")).to_i
       @sslmode = default_sslmode sslmode
+      @password = password || ENV.fetch("PGPASSWORD", PgPass.locate(@host, @port, @database, @user))
+      @application_name = default_application_name application_name
     end
 
     # Initialize with either "postgres://" urls or postgres "key=value" pairs
@@ -56,10 +62,11 @@ module PQ
         args = Hash(String, String).new
         conninfo.split ' ' do |pair|
           begin
-            k, v = pair.split('=')
+            k, eq, v = pair.partition('=')
+            if eq.empty?
+              raise ArgumentError.new("invalid paramater: #{pair}")
+            end
             args[k] = v
-          rescue IndexError
-            raise ArgumentError.new("invalid paramater: #{pair}")
           end
         end
         new(args)
@@ -68,7 +75,9 @@ module PQ
 
     # Initializes with a `URI`
     def initialize(uri : URI)
-      initialize(uri.hostname, uri.path, uri.user, uri.password, uri.port, :prefer)
+      params = URI::Params.parse(uri.query.to_s)
+      hostname = uri.hostname.presence || params.fetch("host", "")
+      initialize(hostname, uri.path, uri.user, uri.password, uri.port, :prefer, params.fetch("application_name", nil))
       if q = uri.query
         HTTP::Params.parse(q) do |key, value|
           handle_sslparam(key, value)
@@ -79,10 +88,11 @@ module PQ
     # Initialize with a `Hash`
     #
     # Valid keys match Postgres "conninfo" keys and are `"host"`, `"dbname"`,
-    # `"user"`, `"password"`, `"port"`, `"sslmode"`, `"sslcert"`, `"sslkey"` and `"sslrootcert"`
+    # `"user"`, `"password"`, `"port"`, `"sslmode"`, `"sslcert"`, `"sslkey"`,
+    # `"sslrootcert"` and `"application_name"`.
     def initialize(params : Hash)
       initialize(params["host"]?, params["dbname"]?, params["user"]?,
-        params["password"]?, params["port"]?, params["sslmode"]?)
+        params["password"]?, params["port"]?, params["sslmode"]?, params["application_name"]?)
       params.each do |key, value|
         handle_sslparam(key, value)
       end
@@ -114,6 +124,10 @@ module PQ
     private def default_host(h)
       return h if h && !h.blank?
 
+      if pghost = ENV["PGHOST"]?
+        return pghost[0] == '/' ? "#{pghost}/.s.PGSQL.5432" : pghost
+      end
+
       SOCKET_SEARCH.each do |s|
         return s if File.exists?(s)
       end
@@ -122,15 +136,19 @@ module PQ
     end
 
     private def default_database(db)
-      if db && db != "/"
+      if db && db != "/" && !db.empty?
         db
       else
-        `whoami`.chomp
+        ENV.fetch("PGDATABASE", current_user_name)
       end
     end
 
+    private def default_application_name(application_name, fallback_application_name = "crystal")
+      application_name || ENV.fetch("PGAPPNAME", nil) || fallback_application_name
+    end
+
     private def default_user(u)
-      u || `whoami`.chomp
+      u || ENV.fetch("PGUSER", current_user_name)
     end
 
     private def default_sslmode(mode)
@@ -150,6 +168,10 @@ module PQ
       else
         raise ArgumentError.new("sslmode #{mode} not supported")
       end
+    end
+
+    private def current_user_name
+      System::User.find_by(id: LibC.getuid.to_s).username
     end
   end
 end

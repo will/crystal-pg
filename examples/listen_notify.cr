@@ -1,21 +1,28 @@
+#!/usr/bin/env crystal
+
 require "../src/pg"
 
-PG.connect_listen("postgres://localhost:2345/", "a", "b") do |n| # connect and  listen on "a" and "b"
-  puts "    got: #{n.payload} on #{n.channel}"                   # print notifications as they come in
+# connect and  listen on "a" and "b"
+listen_conn = PG.connect_listen("postgres:///", "a", "b") do |n|
+  puts "    got: #{n.payload} on #{n.channel}" # print notifications as they come in
 end
 
-PG_DB = DB.open("postgres:///")                       # make a normal connection
-spawn do                                              # spawn a coroutine
-  10.times do |i|                                     #
-    chan = rand > 0.5 ? "a" : "b"                     # pick a channel
-    puts "sending: #{i}"                              # prints always before "got:"
-    PG_DB.exec("SELECT pg_notify($1, $2)", [chan, i]) # send notification
-    puts "   sent: #{i}"                              # may print before or after "got:"
-    sleep 1
+ch = Channel(Nil).new
+
+PG_DB = DB.open("postgres:///")                     # make a normal connection
+spawn do                                            # spawn a coroutine
+  10.times do |i|                                   #
+    chan = rand > 0.5 ? "a" : "b"                   # pick a channel
+    puts "sending: #{i}"                            # prints always before "got:"
+    PG_DB.exec("SELECT pg_notify($1, $2)", chan, i) # send notification
+    puts "   sent: #{i}"                            # may print before or after "got:"
+    sleep 0.25
   end
+  ch.send nil
 end
 
-sleep 6 #                                          # wait a bit before exiting
+ch.receive
+listen_conn.close
 
 # Example output. Ordering and channels will vary.
 #

@@ -1,15 +1,52 @@
-v?.?.?     upcoming
+v0.28.0    2023-12-21
 =====================
+* Add support for application_name in UIR paramaters and the
+  PGAPPNAME env var (thanks @cyberdelia)
+* Fix error when used with non-postgres database drivers (thanks @ysbaddaden)
+* Update crystal-db to 0.13 (thanks @jgaskins, @bcardiff)
 
-v0.23.2    2020-03-27
+v0.27.0    2023-06-25
+=====================
+* Add support for LSN data type (thanks @louiseGrandjonc)
+* Add support for ENV vars (PGPORT, PGUSER, PGHOST, PGDATABASE, PGPASS) and
+  pgpass files (thanks @wishdev)
+* timestamptz now parse into the connection's timezone if set (thanks @jgaskins)
+* add `sslmode=disable` to prevent TLS negotiation (thanks @ellmetha)
+* update to crystal-db 0.12.0 (refactor connection factory) (thanks @bcardiff)
+
+v0.26.0    2022-01-27
+=====================
+* Update crystal-db to 0.11. This requires Crystal 1.0.0 or later.
+* Drop official support for all 9.x versions.
+
+v0.25.0    2022-01-27
+=====================
+* Add defense-in-depth for CVE-2021-23222
+* Add scram-sha-256-plus "scram with channel binding". If your version of
+  postgres does support this, you should provide only this as your
+  `auth_methods` in order to exclude the non-plus/non-channel-binding version
+  of scram, as it's possible for a MITM to downgrade if the non-plus version is
+  on the list. However this driver can't remove support for the non-plus version
+  since not all supported versions of postgres support channel binding.
+* Give a name to error notice field V (the same as S/severity but not localized)
+* Add support for decoding arrays of UUIDs (thanks @jwoertink)
+* Allow socket connections to have paramaters from URIs (thanks @grepsedawk)
+* Allow blocking connections to PG.connect_listen
+* Properly encode null values in arrays (thanks @robcole and @grepsedawk)
+
+v0.24.0    2021-07-21
+=====================
+* Decode json columns as JSON::PullParser instead of JSON::Any (thanks @matthewmcgarvey)
+
+v0.23.2    2021-03-27
 =====================
 * Greatly reduce CPU consumption while reading result sets (thanks @jgaskins)
 
-v0.23.1    2020-01-30
+v0.23.1    2021-01-30
 =====================
 * update for Crystal 0.36.0 (thanks @bcardiff)
 
-v0.23.0    2020-01-12
+v0.23.0    2021-01-12
 =====================
 * (breaking) Numeric#to_f for NaN now returns a NaN float instead of 0.0
 * add auth_methods config setting to control which methods the client can

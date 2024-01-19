@@ -22,6 +22,8 @@ describe PG::Decoders do
   test_decode "float        ", "-0.123::float  ", -0.123
   test_decode "regtype      ", "pg_typeof(3)   ", 23
 
+  test_decode "uint64       ", "'FFFFFFFF/FFFFFFFF'::pg_lsn", 18446744073709551615_u64
+
   test_decode "double prec.", "'35.03554004971999'::float8", 35.03554004971999
   test_decode "flot prec.", "'0.10000122'::float4", 0.10000122_f32
 
@@ -38,11 +40,11 @@ describe PG::Decoders do
     UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
 
   if Helper.db_version_gte(9, 2)
-    test_decode "json", %('[1,"a",true]'::json), JSON.parse(%([1,"a",true]))
-    test_decode "json", %('{"a":1}'::json), JSON.parse(%({"a":1}))
+    test_decode "json", %('[1,"a",true]'::json), JSON::PullParser.new(%([1,"a",true]))
+    test_decode "json", %('{"a":1}'::json), JSON::PullParser.new(%({"a":1}))
   end
   if Helper.db_version_gte(9, 4)
-    test_decode "jsonb", "'[1,2,3]'::jsonb", JSON.parse("[1,2,3]")
+    test_decode "jsonb", "'[1,2,3]'::jsonb", JSON::PullParser.new("[1,2,3]")
   end
 
   test_decode "timestamptz", "'2015-02-03 16:15:13-01'::timestamptz",
@@ -50,6 +52,10 @@ describe PG::Decoders do
 
   test_decode "timestamptz", "'2015-02-03 16:15:14.23-01'::timestamptz",
     Time.utc(2015, 2, 3, 17, 15, 14, nanosecond: 230_000_000)
+
+  test_decode "timestamptz", "'2015-02-03 16:15:14.23 America/New_York'::timestamptz",
+    Time.local(2015, 2, 3, 16, 15, 14, nanosecond: 230_000_000, location: Time::Location.load("America/New_York")),
+    time_zone: Time::Location.load("America/New_York")
 
   test_decode "timestamp", "'2015-02-03 16:15:15'::timestamp",
     Time.utc(2015, 2, 3, 16, 15, 15)

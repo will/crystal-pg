@@ -6,6 +6,15 @@ describe PG::Connection, "#initialize" do
       DB.open("postgres://localhost:5433")
     }
   end
+
+  it "set application name" do
+    URI.parse(DB_URL).tap do |uri|
+      uri.query = "application_name=specs"
+      DB.open(uri.to_s) do |db|
+        db.query_one("SHOW application_name", as: String).should eq("specs")
+      end
+    end
+  end
 end
 
 describe PG::Connection, "#on_notice" do
@@ -101,6 +110,34 @@ describe PG, "#read_next_row_start" do
       received_notices.should eq ["foo", "bar"]
 
       db.exec("DROP FUNCTION foo()")
+    end
+  end
+end
+
+describe PG, "#time_zone" do
+  it "reads time zones from server parameters" do
+    with_connection do |db|
+      db.exec "SET TIME ZONE 'America/Los_Angeles'"
+      now = db.query_one "SELECT now()", as: Time
+
+      now.location.should eq Time::Location.load("America/Los_Angeles")
+
+      db.transaction do |txn|
+        db.exec "SET LOCAL TIME ZONE 'America/New_York'"
+        now = db.query_one "SELECT now()", as: Time
+        now.location.should eq Time::Location.load("America/New_York")
+      end
+
+      now = db.query_one "SELECT now()", as: Time
+      now.location.should eq Time::Location.load("America/Los_Angeles")
+    end
+  end
+end
+
+describe PG, "#clear_time_zone_cache" do
+  it "returns an empty hash, trusting that that means it's been cleared" do
+    with_connection do |db|
+      db.clear_time_zone_cache.should be_empty
     end
   end
 end

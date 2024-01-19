@@ -103,6 +103,10 @@ module PQ
       io << value
     end
 
+    def self.encode_array(io, value : Nil)
+      io << "NULL"
+    end
+
     def self.encode_array(io, value : Bool)
       io << (value ? 't' : 'f')
     end
