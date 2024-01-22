@@ -56,7 +56,7 @@ module PQ
         if sslrootcert = @conninfo.sslrootcert
           ctx.ca_certificates = sslrootcert
         end
-        @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true)
+        @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true, hostname: @conninfo.host)
       end
 
       if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
