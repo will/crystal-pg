@@ -68,6 +68,11 @@ module PQ
       text string
     end
 
+    def self.encode(val : PG::Interval)
+      # https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
+      text "#{val.months} months #{val.days} days #{val.microseconds} microseconds"
+    end
+
     def self.encode(val)
       text val.to_s
     end

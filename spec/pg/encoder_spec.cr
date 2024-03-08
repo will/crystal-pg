@@ -41,6 +41,9 @@ describe PG::Driver, "encoder" do
   test_insert_and_read "text[]", ["baz, bar"]
   test_insert_and_read "text[]", ["foo}"]
 
+  test_insert_and_read "interval", PG::Interval.new
+  test_insert_and_read "interval", PG::Interval.new(days: 400, microseconds: 5000000)
+
   describe "geo" do
     test_insert_and_read "point", PG::Geo::Point.new(1.2, 3.4)
     if Helper.db_version_gte(9, 4)
