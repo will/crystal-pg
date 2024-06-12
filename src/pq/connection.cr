@@ -297,7 +297,7 @@ module PQ
       end
     end
 
-    struct SamlContext
+    struct SaslContext
       SCRAM_NAME      = "SCRAM-SHA-256"
       SCRAM_PLUS_NAME = "SCRAM-SHA-256-PLUS"
 
@@ -359,17 +359,17 @@ module PQ
 
     private def handle_auth_sasl(mechanism_list)
       mechs = String.new(mechanism_list).split(Char::ZERO)
-      cbind = if mechs.includes?(SamlContext::SCRAM_PLUS_NAME)
+      cbind = if mechs.includes?(SaslContext::SCRAM_PLUS_NAME)
                 check_auth_method!("scram-sha-256-plus")
                 true
-              elsif mechs.includes?(SamlContext::SCRAM_NAME)
+              elsif mechs.includes?(SaslContext::SCRAM_NAME)
                 check_auth_method!("scram-sha-256")
                 false
               else
                 raise ConnectionError.new("no known sasl mechanism in list: #{mechs.join(", ")}")
               end
 
-      ctx = SamlContext.new(@conninfo.password || "", cbind, soc)
+      ctx = SaslContext.new(@conninfo.password || "", cbind, soc)
 
       # send client-first-message
       write_chr 'p' # SASLInitialResponse
