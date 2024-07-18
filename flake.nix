@@ -14,7 +14,7 @@
         crystal-pkgs = nixpkgs-crunchy.packages.${system};
         crystal = crystal-pkgs.crystal;
 
-        pg_versions = builtins.map builtins.toString [ 16 15 14 13 12 11 ];
+        pg_versions = builtins.map builtins.toString [ 16 15 14 13 12 ];
         default_pg = pkgs."postgresql_${builtins.head pg_versions}";
 
         certs = pkgs.stdenvNoCC.mkDerivation {
