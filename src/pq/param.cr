@@ -23,6 +23,10 @@ module PQ
       text Time::Format::RFC_3339.format(val, fraction_digits: 9)
     end
 
+    def self.encode(val : Enum)
+      encode val.value
+    end
+
     def self.encode(val : PG::Geo::Point)
       text "(#{val.x},#{val.y})"
     end
