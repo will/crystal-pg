@@ -141,3 +141,33 @@ describe PG, "#clear_time_zone_cache" do
     end
   end
 end
+
+describe PG, "COPY" do
+  it "properly handles partial reads and consumes data on early close" do
+    with_connection do |db|
+      io = db.exec_copy "COPY (VALUES (1), (333)) TO STDOUT"
+      io.read_char.should eq '1'
+      io.read_char.should eq '\n'
+      io.read_char.should eq '3'
+      io.read_char.should eq '3'
+      io.close
+      db.scalar("select 1").should eq(1)
+    end
+  end
+
+  if "survives a COPY FROM STDIN and COPY TO STDOUT round-trip"
+    with_connection do |db|
+      data = "123\tdata\n\\N\t\\N\n"
+      db.exec("CREATE TEMPORARY TABLE IF NOT EXISTS copy_test (a int, b text)")
+
+      wr = db.exec_copy "COPY copy_test FROM STDIN"
+      wr << data
+      wr.close
+
+      rd = db.exec_copy "COPY copy_test TO STDOUT"
+      rd.gets_to_end.should eq data
+
+      db.exec("DROP TABLE copy_test")
+    end
+  end
+end
