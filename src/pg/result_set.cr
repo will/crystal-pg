@@ -138,7 +138,7 @@ class PG::ResultSet < ::DB::ResultSet
     JSON::Any.new(value) if value
   end
 
-  private def read_array(t : T.class) : T forall T
+  private def read_array(t : T.class, &) : T forall T
     col_bytesize = conn.read_i32
     if col_bytesize == -1
       @column_index += 1
@@ -152,7 +152,7 @@ class PG::ResultSet < ::DB::ResultSet
     raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
-  private def safe_read(col_bytesize)
+  private def safe_read(col_bytesize, &)
     @sized_io.read_remaining = col_bytesize.to_u64
 
     begin

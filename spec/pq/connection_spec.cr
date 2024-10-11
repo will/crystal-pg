@@ -8,7 +8,7 @@ end
 
 describe PQ::Connection, "#server_parameters" do
   it "ParameterStatus frames in response to set are handeled" do
-    get = ->{ PG_DB.using_connection &.connection.server_parameters["standard_conforming_strings"] }
+    get = -> { PG_DB.using_connection &.connection.server_parameters["standard_conforming_strings"] }
     get.call.should eq("on")
     PG_DB.exec "set standard_conforming_strings to on"
     get.call.should eq("on")

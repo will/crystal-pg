@@ -15,7 +15,7 @@ end
 
 # Force re-use of existing connection instead of making a new connection each time in the shared specs
 class DB::DriverSpecs(DBAnyType)
-  def with_db(options = nil)
+  def with_db(options = nil, &)
     @before.call
     db = PG_DB
     db.exec(sql_drop_table("table1"))
