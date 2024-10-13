@@ -121,8 +121,10 @@ module PQ
     end
 
     def self.encode_array(io, value : Bytes)
-      io << '"'
-      io << String.new(value).gsub(%("), %(\\"))
+      io << %{"\\\\x}
+      value.each do |byte|
+        byte.to_s io, base: 16, precision: 2
+      end
       io << '"'
     end
 
