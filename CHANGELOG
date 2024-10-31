@@ -5,6 +5,7 @@ v? upcoming
 * Support encoding PG::Interval params (thanks @Blacksmoke16)
 * Encode Crystal enum args as integers (thanks @jgaskins)
 * Handle Array(Bytes) encoding for query params containing non-Unicode text (thanks @jgaskins)
+* Avoid calling LibC.getuid on windows
 
 
 v0.28.0    2023-12-21
