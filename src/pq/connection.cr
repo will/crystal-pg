@@ -90,7 +90,7 @@ module PQ
       end
     end
 
-    def synchronize
+    def synchronize(&)
       @mutex.synchronize { yield }
     end
 
@@ -149,7 +149,7 @@ module PQ
       soc.flush
     end
 
-    def read_data_row
+    def read_data_row(&)
       size = read_i32
       ncols = read_i16
       row = Array(Slice(UInt8)?).new(ncols.to_i32) do
@@ -432,7 +432,7 @@ module PQ
       end
     end
 
-    def read_all_data_rows
+    def read_all_data_rows(&)
       type = soc.read_char
       loop do
         break unless type == 'D'

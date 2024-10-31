@@ -4,13 +4,13 @@ require "../src/pg"
 DB_URL = ENV["DATABASE_URL"]? || "postgres:///"
 PG_DB  = DB.open(DB_URL)
 
-def with_db
+def with_db(&)
   DB.open(DB_URL) do |db|
     yield db
   end
 end
 
-def with_connection
+def with_connection(&)
   DB.connect(DB_URL) do |conn|
     yield conn
   end
@@ -60,7 +60,7 @@ def test_decode(name, query, expected : JSON::PullParser, file = __FILE__, line 
   end
 end
 
-def env_var_bubble
+def env_var_bubble(&)
   orig_vals = Hash(String, String).new
   vars = ["PGDATABASE", "PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGPASSFILE"]
   begin

@@ -32,7 +32,7 @@ module PQ
       @got_data = false
     end
 
-    def get_data
+    def get_data(&)
       raise "already read data" if @got_data
       if @has_data
         conn.read_all_data_rows { |row| yield row }
