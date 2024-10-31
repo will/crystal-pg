@@ -171,7 +171,13 @@ module PQ
     end
 
     private def current_user_name
-      System::User.find_by(id: LibC.getuid.to_s).username
+      {% if flag?(:windows) %}
+        # NOTE: actually getting the current username on windows would be better
+        #       https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getusernamew
+        "postgres"
+      {% else %}
+        System::User.find_by(id: LibC.getuid.to_s).username
+      {% end %}
     end
   end
 end
