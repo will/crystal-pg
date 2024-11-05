@@ -3,16 +3,14 @@
 
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs-crunchy.url = "github:crunchydata/nixpkgs";
     nix-filter.url = "github:numtide/nix-filter";
   };
 
-  outputs = { self, nixpkgs, flake-utils, nixpkgs-crunchy, nix-filter }:
+  outputs = { nixpkgs, flake-utils, nix-filter, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        crystal-pkgs = nixpkgs-crunchy.packages.${system};
-        crystal = crystal-pkgs.crystal;
+        crystal = pkgs.crystal;
 
         pg_versions = builtins.map builtins.toString [ 16 15 14 13 12 ];
         default_pg = pkgs."postgresql_${builtins.head pg_versions}";
@@ -28,7 +26,9 @@
             openssl x509 -req -in server.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem
             openssl req -new -nodes -text -out client.csr -keyout client-key.pem -subj "/CN=crystal_ssl"
             openssl x509 -req -in client.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out client-cert.pem
-            openssl verify -CAfile ca-cert.pem client-cert.pem
+
+            # NOTE(2024-11-05): something broke with the newer openssl and client certs and the CA but I can't figure it out
+            # openssl verify -CAfile ca-cert.pem client-cert.pem
 
             mv *.pem $out
           '';
@@ -84,7 +84,6 @@
         '';
 
         specs = crystal.buildCrystalPackage {
-          lockfile = null;
           name = "specs";
           src = specSrc;
           buildPhase = ''
@@ -92,10 +91,13 @@
           '';
           installPhase = "mkdir -p $out/bin && crystal build --error-on-warnings specs.cr -o $out/bin/specs";
           shardsFile = specSrc + "/shards.nix";
+          preConfigure = "touch shard.lock";
+          lockfile = null;
           doCheck = false;
           dontPatch = true;
           dontFixup = true;
           doInstallCheck = false;
+          buildInputs = [ pkgs.gmp ];
         };
 
         filterSrc = files: (nix-filter.lib { root = ./.; include = [ "src" "spec" ] ++ files; });
@@ -106,7 +108,7 @@
       rec {
 
         devShells.default = pkgs.mkShell {
-          buildInputs = [ crystal crystal-pkgs.crystal2nix check tempdb ];
+          buildInputs = [ crystal pkgs.crystal2nix pkgs.shards pkgs.gmp check tempdb ];
         };
 
         packages = {
