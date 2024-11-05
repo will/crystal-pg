@@ -1,5 +1,8 @@
 v? upcoming
 =====================
+
+v0.29.0    2024-11-05
+=====================
 * fix: enable SNI (thanks @conradludgate)
 * Drop official support for Postgres v11
 * Support encoding PG::Interval params (thanks @Blacksmoke16)
