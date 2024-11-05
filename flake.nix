@@ -12,7 +12,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
         crystal = pkgs.crystal;
 
-        pg_versions = builtins.map builtins.toString [ 16 15 14 13 12 ];
+        pg_versions = builtins.map builtins.toString [ 17 16 15 14 13 ];
         default_pg = pkgs."postgresql_${builtins.head pg_versions}";
 
         certs = pkgs.stdenvNoCC.mkDerivation {
