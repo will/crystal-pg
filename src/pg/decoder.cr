@@ -501,7 +501,8 @@ module PG
       end
     end
 
-    @@decoders = Hash(Int32, PG::Decoders::Decoder).new(ByteaDecoder.new)
+    # :nodoc:
+    class_getter decoders = Hash(Int32, PG::Decoders::Decoder).new(ByteaDecoder.new)
 
     def self.from_oid(oid)
       @@decoders[oid]
