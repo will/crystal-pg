@@ -5,7 +5,6 @@ module PQ
   # :nodoc:
   record Param, slice : Slice(UInt8), size : Int32, format : Format do
     enum Format : Int16
-      None   = -1
       Text   =  0
       Binary =  1
     end
@@ -54,7 +53,6 @@ module PQ
     {% for type in %w[Int16 Int32 Int64 Float32 Float64] %}
       def self.encode(val : {{type.id}}, into slice : Bytes = Bytes.new(sizeof(typeof(val))))
         IO::ByteFormat::NetworkEndian.encode val, slice
-        # pp value: val, type: typeof(val), slice: slice
         binary slice
       end
     {% end %}
