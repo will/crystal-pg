@@ -52,6 +52,7 @@ describe PG::Driver, "encoder" do
   test_insert_and_read "integer[][][]", [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
 
   test_insert_and_read "text[]", ["t", "f", "t"]
+  test_insert_and_read "text[]", ["non-nil value", nil]
   test_insert_and_read "text[]", [%("a), %(\\b~), %(c\\"d), %(\uFF8F)]
   test_insert_and_read "text[]", ["baz, bar"]
   test_insert_and_read "text[]", ["foo}"]

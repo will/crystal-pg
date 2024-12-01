@@ -13,7 +13,11 @@ module PQ
     #  Internal wrapper to represent an encoded parameter
 
     def self.encode(val : Nil)
-      binary Bytes.empty, -1
+      encode val, into: Bytes.empty
+    end
+
+    def self.encode(val : Nil, into slice : Bytes)
+      binary slice, -1
     end
 
     def self.encode(val : Bool, into slice : Bytes = Bytes.new(1))
@@ -176,7 +180,11 @@ module PQ
     } of String => Int32
 
     protected def self.oid_for(type : T.class) forall T
-      OID_MAP[type.name]
+      {% if T.union? %}
+        oid_for({{T.union_types.reject(&.nilable?).first}})
+      {% else %}
+        OID_MAP[type.name]
+      {% end %}
     end
 
     protected def self.oid_for(type : Array(T).class) forall T
@@ -188,7 +196,9 @@ module PQ
       # expression like `1 + 1 + 1 + 0` for a 3-dimensional array, which will be
       # inlined into the numeric literal `3` at compile time.
       macro dimension_count(type)
-        {% if type.resolve < Array %}
+        {% if type.is_a? Expressions %}
+          ::PQ::Param::ArrayEncoder.dimension_count(Union({{type}}))
+        {% elsif type.resolve < Array %}
           1 + dimension_count({{type.resolve.type_vars.first}})
         {% else %}
           0
@@ -232,7 +242,11 @@ module PQ
         data_offset = dimensions_offset + 8 * collect_dimensions.size
         flat_data.each do |element|
           # pp encoding: element, into: data_offset
-          size = size_for(element)
+          if element.nil?
+            size = -1
+          else
+            size = size_for(element)
+          end
           Param.encode size, into: bytes + data_offset
           Param.encode element, into: bytes + data_offset + 4
           data_offset += size + 4
@@ -249,13 +263,21 @@ module PQ
         Int32.name   => sizeof(Int32),
         Int64.name   => sizeof(Int64),
         Float64.name => sizeof(Float64),
-        UUID.name => sizeof(UUID),
+        UUID.name    => sizeof(UUID),
       }
 
       def size_for(value : T) forall T
-        SIZE_MAP.fetch(T.name) do
-          raise "Could not determine encoding size for #{T}"
-        end
+        {% if T.union? %}
+          if value.nil?
+            0
+          else
+            size_for(value.as({{T.union_types.reject(&.nilable?).first}}))
+          end
+        {% else %}
+          SIZE_MAP.fetch(value.class.name) do
+            raise "Could not determine encoding size for #{T}"
+          end
+        {% end %}
       end
 
       def size_for(value : Bool)
