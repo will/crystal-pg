@@ -1,5 +1,6 @@
 require "../spec_helper"
 require "../../src/pg_ext/big_rational"
+require "../../src/pg_ext/big_decimal"
 
 private def n(nd, w, s, ds, d)
   PG::Numeric.new(nd.to_i16, w.to_i16, s.to_i16, ds.to_i16, d.map(&.to_i16))
@@ -7,6 +8,14 @@ end
 
 private def br(n, d)
   BigRational.new(n, d)
+end
+
+private def bd(n, scale)
+  BigDecimal.new(n, scale)
+end
+
+private def bd(value : String)
+  BigDecimal.new(value)
 end
 
 private def ex(which)
@@ -79,8 +88,8 @@ describe PG::Numeric do
       {"-0.0000009", -0.0000009_f64},
       {"-0.00000009", -0.00000009_f64},
       {"0.0...9", 0.0000000000000000000000000000000000009999999_f64},
-    ].each do |x|
-      ex(x[0]).to_f.should be_close(x[1], 1e-50)
+    ].each do |string, float|
+      ex(string).to_f.should be_close(float, 1e-50)
     end
   end
 
@@ -99,8 +108,32 @@ describe PG::Numeric do
       {"-0.0000009", br(-9, 10000000)},
       {"-0.00000009", br(-9, 100000000)},
       {"0.0...9", br(BigInt.new(9999999), BigInt.new(10)**43)},
-    ].each do |x|
-      ex(x[0]).to_big_r.should eq(x[1])
+    ].each do |string, big_rational|
+      ex(string).to_big_r.should eq(big_rational)
+    end
+  end
+
+  describe "#to_big_d" do
+    [
+      {"nan", bd(0, 1)},
+      {"0", bd(0, 1)},
+      {"0.0", bd(0, 1)},
+      {"1", bd(1, 1)},
+      {"-1", bd(-1, 1)},
+      {"1.3", bd(13, 1)},
+      {"1.30", bd(13, 1)},
+      {"12345.6789123", bd(123456789123, 7)},
+      {"2566.1918905000002000", bd("2566.1918905000002000")},
+      {"-0.00009", bd(-9, 5)},
+      {"-0.000009", bd(-9, 6)},
+      {"-0.0000009", bd(-9, 7)},
+      {"-0.00000009", bd(-9, 8)},
+      {"0.0...9", bd(BigInt.new(9999999), 43)},
+    ].each do |string, big_decimal|
+      numeric = ex(string)
+      it "converts #{numeric} to #{big_decimal}" do
+        numeric.to_big_d.should eq(big_decimal)
+      end
     end
   end
 
@@ -129,9 +162,9 @@ describe PG::Numeric do
       {"500000093", "500000093"},
       {"0.0000006000000", "0.0000006000000"},
       {"50093.60754417", "50093.60754417"},
-    ].each do |x|
-      ex(x[0]).to_s.should eq(x[1])
-      ex(x[0]).inspect.should eq(x[1])
+    ].each do |source_string, result_string|
+      ex(source_string).to_s.should eq(result_string)
+      ex(source_string).inspect.should eq(result_string)
     end
   end
 
