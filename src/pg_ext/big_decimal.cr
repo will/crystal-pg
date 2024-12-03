@@ -16,11 +16,11 @@ module PG
   end
 
   class ResultSet
-    def read(t : BigRational.class)
+    def read(t : BigDecimal.class)
       read(PG::Numeric).to_big_d
     end
 
-    def read(t : BigRational?.class)
+    def read(t : BigDecimal?.class)
       read(PG::Numeric?).try &.to_big_d
     end
   end
