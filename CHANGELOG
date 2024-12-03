@@ -1,5 +1,6 @@
 v? upcoming
 =====================
+* Add support for `BigDecimal` via `PG::Numeric#to_big_d` (thanks @jgaskins)
 
 v0.29.0    2024-11-05
 =====================
