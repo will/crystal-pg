@@ -498,7 +498,7 @@ module PQ
       write_i16 nparams # number of params to follow
       params.each do |p|
         write_i32 p.size
-        p.slice.each { |byte| write_byte byte }
+        soc.write(p.slice)
       end
       write_i16 1 # number of following return types (1 means apply next for all)
       write_i16 result_format
