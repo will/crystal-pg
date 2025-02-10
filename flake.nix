@@ -108,7 +108,9 @@
       rec {
 
         devShells.default = pkgs.mkShell {
-          buildInputs = [ crystal pkgs.crystal2nix pkgs.shards pkgs.gmp check tempdb ];
+          buildInputs = [ crystal pkgs.crystal2nix pkgs.shards pkgs.gmp check tempdb ]
+            # ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [ pkgs.apple-sdk_15 ]
+            ;
         };
 
         packages = {

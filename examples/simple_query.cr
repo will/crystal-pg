@@ -40,11 +40,7 @@ end
 
 conn = SimpleConnection.connect PQ::ConnInfo.new
 
-conn.sq("select generate_series(1,10), now()") { |row| p row }
-conn.sq("notify foo")
-conn.sq("")
-conn.sq("select 1/0") { |r| p r } rescue "caught error"
-conn.sq("select 'hello', null, 7*2, 'ok'") { |r| p r }
+p conn.sq("select generate_series(1,10), now()")
 
 # Will not work:
 # conn.sq("select 1; select 2") { |r| p r }
