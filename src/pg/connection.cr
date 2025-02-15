@@ -37,6 +37,22 @@ module PG
       nil
     end
 
+    # Execute a "COPY" query and return an IO object to read from or write to,
+    # depending on the query.
+    #
+    # ```
+    # data = conn.exec_copy("COPY table TO STDOUT").gets_to_end
+    # ```
+    #
+    # ```
+    # writer = conn.exec_copy "COPY table FROM STDIN")
+    # writer << data
+    # writer.close
+    # ```
+    def exec_copy(query : String) : CopyResult
+      CopyResult.new connection, query
+    end
+
     # Set the callback block for notices and errors.
     def on_notice(&on_notice_proc : PQ::Notice ->)
       @connection.notice_handler = on_notice_proc
