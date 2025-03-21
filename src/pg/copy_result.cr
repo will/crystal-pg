@@ -3,13 +3,13 @@ class PG::CopyResult < IO
   getter? closed : Bool
 
   def initialize(@connection : PQ::Connection, query : String)
-      @connection.send_query_message query
-      response = @connection.expect_frame PQ::Frame::CopyOutResponse | PQ::Frame::CopyInResponse
+    @connection.send_query_message query
+    response = @connection.expect_frame PQ::Frame::CopyOutResponse | PQ::Frame::CopyInResponse
 
-      @reading = response.is_a? PQ::Frame::CopyOutResponse
-      @frame_size = 0
-      @end = false
-      @closed = false
+    @reading = response.is_a? PQ::Frame::CopyOutResponse
+    @frame_size = 0
+    @end = false
+    @closed = false
   end
 
   private def read_final(done)
