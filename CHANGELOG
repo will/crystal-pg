@@ -2,6 +2,7 @@ v? upcoming
 =====================
 * Add support for `BigDecimal` via `PG::Numeric#to_big_d` (thanks @jgaskins)
 * ~2x to ~10x+ speedup when sending large query parameters (thanks @compumike)
+* Add support for COPY (thanks @17dec)
 
 v0.29.0    2024-11-05
 =====================
