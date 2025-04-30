@@ -1,4 +1,6 @@
 module PQ
+  Log = ::Log.for("pg")
+
   class PgPass
     def self.locate(host : String, port : Int, db : String, user : String) : String?
       filename = ENV.fetch("PGPASSFILE", Path["~/.pgpass"].expand(home: true).to_s)

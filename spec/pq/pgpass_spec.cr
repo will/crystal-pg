@@ -57,7 +57,7 @@ describe PQ::PgPass, ".parsing" do
       create_valid_pgpass_file do |filename|
         File.chmod(filename, 0o0700)
         ENV["PGPASSFILE"] = filename
-        Log.capture {
+        Log.capture("pg") {
           ci = PQ::ConnInfo.from_conninfo_string("postgres://")
         }.itself
           .check(:warn, "Cannot use pgpass file - permissions are inappropriate must be 0600 or less")
@@ -70,7 +70,7 @@ describe PQ::PgPass, ".parsing" do
     env_var_bubble do
       create_invalid_pgpass_file do |filename|
         ENV["PGPASSFILE"] = filename
-        Log.capture {
+        Log.capture("pg") {
           ci = PQ::ConnInfo.from_conninfo_string("postgres://")
         }.itself
           .check(:warn, "PGPass file does not appear to be properly formatted - errors may occur")
