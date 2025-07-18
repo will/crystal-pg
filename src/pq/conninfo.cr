@@ -38,10 +38,12 @@ module PQ
     # The application name. Optional (defaults to "crystal").
     getter application_name : String
 
+    getter replication : String?
+
     getter auth_methods : Array(String) = %w[scram-sha-256-plus scram-sha-256 md5]
 
     # Create a new ConnInfo from all parts
-    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, password : String? = nil, port : Int | String? = nil, sslmode : String | Symbol? = nil, application_name : String? = nil)
+    def initialize(host : String? = nil, database : String? = nil, user : String? = nil, password : String? = nil, port : Int | String? = nil, sslmode : String | Symbol? = nil, application_name : String? = nil, @replication = nil)
       @port = (port || ENV.fetch("PGPORT", "5432")).to_i
       @host = default_host(host, @port)
       db = default_database database
@@ -78,7 +80,7 @@ module PQ
       params = URI::Params.parse(uri.query.to_s)
       hostname = uri.hostname.presence || params.fetch("host", "")
       port = uri.port || params["port"]?
-      initialize(hostname, uri.path, uri.user, uri.password, port, :prefer, params.fetch("application_name", nil))
+      initialize(hostname, uri.path, uri.user, uri.password, port, :prefer, params.fetch("application_name", nil), params["replication"]?)
       if q = uri.query
         HTTP::Params.parse(q) do |key, value|
           handle_sslparam(key, value)
@@ -90,10 +92,10 @@ module PQ
     #
     # Valid keys match Postgres "conninfo" keys and are `"host"`, `"dbname"`,
     # `"user"`, `"password"`, `"port"`, `"sslmode"`, `"sslcert"`, `"sslkey"`,
-    # `"sslrootcert"` and `"application_name"`.
+    # `"sslrootcert"`, `"application_name"`, and `"replication"`.
     def initialize(params : Hash)
       initialize(params["host"]?, params["dbname"]?, params["user"]?,
-        params["password"]?, params["port"]?, params["sslmode"]?, params["application_name"]?)
+        params["password"]?, params["port"]?, params["sslmode"]?, params["application_name"]?, params["replication"]?)
       params.each do |key, value|
         handle_sslparam(key, value)
       end

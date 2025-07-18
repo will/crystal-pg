@@ -17,7 +17,7 @@ module PG
       super(options)
 
       begin
-        @connection.connect
+        @connection.connect(replication: @connection.conninfo.replication)
       rescue ex
         raise DB::ConnectionRefused.new(cause: ex)
       end
@@ -92,6 +92,14 @@ module PG
         @connection.read_async_frame_loop
       else
         spawn { @connection.read_async_frame_loop }
+      end
+    end
+
+    protected def listen_replication(publication_name : String, slot_name : String, blocking : Bool = false, &block : Replication::Frame ->)
+      if blocking
+        @connection.start_replication_frame_loop(publication_name, slot_name, &block)
+      else
+        spawn { @connection.start_replication_frame_loop(publication_name, slot_name, &block) }
       end
     end
 
