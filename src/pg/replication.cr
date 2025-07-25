@@ -1,5 +1,31 @@
 module PG::Replication
   module Handler
+    # This method must be defined in order to tell the `Connection` how much of
+    # the WAL has been flushed and applied.
+    #
+    # ```
+    # connection = PG.listen_replication db_url,
+    #   handler: MyHandler.new,
+    #   publication_name: "my_publication",
+    #   slot_name: "my_replication_slot"
+    #
+    # class MyHandler
+    #   include PG::Replication::Handler
+    #
+    #   @last_wal_byte_flushed = 0i64
+    #   @last_wal_byte_applied = 0i64
+    #
+    #   def received(msg : PG::Replication::XLogData, connection : PG::Replication::Connection, &)
+    #     yield
+    #     connection.last_wal_byte_flushed = msg.wal_end
+    #     if msg.data.is_a? PG::Replication::Commit
+    #       connection.last_wal_byte_applied = msg.wal_end
+    #     end
+    #   end
+    # end
+    # ```
+    abstract def received(data : PG::Replication::XLogData, connection : PG::Replication::Connection, &)
+
     def received(frame)
     end
   end
@@ -8,8 +34,12 @@ module PG::Replication
     getter handler : Handler
     getter publication_name : String
     getter slot_name : String
-    @latest_wal = 0i64
+    getter last_wal_byte_received = 0i64
+    property last_wal_byte_flushed = 0i64
+    property last_wal_byte_applied = 0i64
+    getter? closed = false
 
+    # :nodoc:
     def initialize(uri : URI | String, @handler, *, @publication_name, @slot_name, blocking : Bool = false)
       if uri.is_a? String
         uri = URI.parse(uri)
@@ -29,26 +59,37 @@ module PG::Replication
       end
 
       spawn do
-        loop do
+        until closed?
           sleep 10.seconds
-          send_keepalive
+          begin
+            send_keepalive
+          rescue ex : IO::Error
+            break if closed?
+            raise ex
+          end
         end
       end
     end
 
+    # :nodoc:
     def received(frame : CopyBoth)
     end
 
+    # :nodoc:
     def received(frame : CopyData)
       received frame.data
     end
 
+    # Handle the `XLogData` message that wraps `WALMessage`s
     def received(data : XLogData)
-      handler.received data.message
+      @last_wal_byte_received = data.wal_end
+      handler.received data, self do
+        handler.received data.message
+      end
     end
 
+    # :nodoc:
     def received(keepalive : KeepAlive)
-      @latest_wal = keepalive.wal_end
       send_keepalive if keepalive.response_expected?
     end
 
@@ -59,8 +100,13 @@ module PG::Replication
     end
 
     def close
+      return if closed?
+      # We attempt to send off one last keepalive to let the server know where
+      # we left off.
       send_keepalive
       @conn.close
+    ensure
+      @closed = true
     end
 
     def send_keepalive
@@ -70,21 +116,28 @@ module PG::Replication
     private def send_keepalive! : Nil
       CopyData.new(
         StandbyStatusUpdate.new(
-          last_wal_byte_received: @latest_wal,
-          last_wal_byte_flushed: @latest_wal,
-          last_wal_byte_applied: @latest_wal,
+          last_wal_byte_received: last_wal_byte_received,
+          last_wal_byte_flushed: last_wal_byte_flushed,
+          last_wal_byte_applied: last_wal_byte_applied,
         )
-      )
-        .to_io @conn.connection.soc
+      ).to_io socket
 
-      @conn.connection.soc.flush
+      flush
     end
 
     private def write(&)
       write_mutex.synchronize { yield }
     end
 
-    getter write_mutex = Mutex.new
+    private getter write_mutex = Mutex.new
+
+    private def flush
+      socket.flush
+    end
+
+    private def socket
+      @conn.connection.soc
+    end
   end
 
   abstract struct Frame
