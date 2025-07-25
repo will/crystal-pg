@@ -11,6 +11,12 @@ class TestMessageHandler
     h[k] = {} of Bytes => PG::Replication::WALMessage::TupleData
   }
 
+  def received(data : PG::Replication::XLogData, connection : PG::Replication::Connection, &)
+    yield
+    connection.last_wal_byte_flushed = data.wal_end
+    connection.last_wal_byte_applied = data.wal_end
+  end
+
   def received(msg : PG::Replication::Begin)
     if transaction
       raise "We are already running a transaction"
