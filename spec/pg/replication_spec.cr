@@ -289,8 +289,8 @@ private def it_consumes_wal(name : String, **options, &block : TestMessageHandle
     ensure
       subscriber.try &.close
       PG_DB.exec "SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE slot_name LIKE 'test_slot_%'"
-      PG_DB.query_each "SELECT pubname::text FROM pg_publication_tables WHERE schemaname = 'public' and pubname::text LIKE 'test_publication_%' GROUP BY 1" do |rs|
-        PG_DB.exec "DROP PUBLICATION IF EXISTS #{rs.read(String)}"
+      PG_DB.query_each "SELECT DISTINCT pubname::text FROM pg_publication_tables WHERE schemaname = 'public' and pubname::text LIKE 'test_publication_%'" do |rs|
+        PG_DB.exec "DROP PUBLICATION #{rs.read(String)}"
       end
       PG_DB.query_each "SELECT tablename::text FROM pg_tables WHERE schemaname = 'public' and tablename LIKE 'test_table_%'" do |rs|
         PG_DB.exec "DROP TABLE IF EXISTS #{rs.read(String)}"
@@ -314,6 +314,6 @@ private def wait_for(condition = "the block to return truthy", timeout : Time::S
     if Time.monotonic - start > 2.seconds
       raise "Timed out waiting for #{condition}"
     end
-    sleep 1.millisecond
+    sleep 5.milliseconds
   end
 end
