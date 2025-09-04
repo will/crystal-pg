@@ -4,6 +4,7 @@ v? upcoming
 * ~2x to ~10x+ speedup when sending large query parameters (thanks @compumike)
 * Add support for COPY (thanks @17dec)
 * Add pg log source to log entries (thanks @hugopl)
+* Update crystal-db to 0.14 (thanks @bcardiff)
 
 v0.29.0    2024-11-05
 =====================
