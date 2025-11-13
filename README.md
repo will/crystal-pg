@@ -13,7 +13,7 @@ querying, etc, can be found at:
 
 ### shards
 
-Add this to your `shard.yml` on a generated crystal project, 
+Add this to your `shard.yml` on a generated crystal project,
 and run `shards install`
 
 ``` yml
@@ -147,6 +147,8 @@ Since it uses protocol version 3, older versions probably also work but are not 
 - varchar
 - regtype
 - geo types: point, box, path, lseg, polygon, circle, line
+- range types: int4range, int8range, daterange, tsrange, tstzrange, numrange (3)
+- multirange types: int4multirange, int8multirange, datemultirange, tsmultirange, tstzmultirange, nummultirange (4)
 - array types: int8, int4, int2, float8, float4, bool, text, numeric, timestamptz, date, timestamp
 - interval (2)
 
@@ -160,6 +162,14 @@ Since it uses protocol version 3, older versions probably also work but are not 
 2: A note on interval: A Postgres interval can not be directly mapped to a built
     in Crystal datatype. Therfore we provide a `PG::Interval` type that can be converted to
     `Time::Span` and `Time::MonthSpan`.
+
+3: A note on ranges: PostgreSQL range types map to Crystal's `Range` type with support
+    for all boundary combinations (`[]`, `()`, etc.), empty ranges, and infinite bounds using
+    beginless/endless syntax (`..10`, `5..`, `..`). Discrete types (int/date) are canonicalized
+    to `[lower,upper)` form, while continuous types (timestamp/numeric) preserve exact boundaries.
+
+4: A note on multiranges: PostgreSQL multirange types (PostgreSQL 14+) map to Crystal's
+    `Array(Range)` type, supporting ordered lists of non-contiguous ranges.
 
 # Authentication Methods
 

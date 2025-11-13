@@ -1,6 +1,13 @@
 require "db"
 require "./pg/*"
 
+module DB::MetadataValueConverter
+  # Log Range as string representation rather than array
+  def self.arg_to_log(arg : Range) : ::Log::Metadata::Value
+    ::Log::Metadata::Value.new(arg.to_s)
+  end
+end
+
 module PG
   # Establish a connection to the database
   def self.connect(url)

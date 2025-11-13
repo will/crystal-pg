@@ -2,7 +2,7 @@ require "json"
 require "uuid"
 
 module PG
-  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric | UUID
+  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric | UUID | Range(Int32?, Int32?) | Range(Int64?, Int64?) | Range(Time?, Time?) | Range(PG::Numeric?, PG::Numeric?) | Array(Range(Int32?, Int32?)) | Array(Range(Int64?, Int64?)) | Array(Range(Time?, Time?)) | Array(Range(PG::Numeric?, PG::Numeric?))
 
   # :nodoc:
   module Decoders
@@ -537,6 +537,18 @@ module PG
     register_decoder PolygonDecoder.new
     register_decoder LineDecoder.new
     register_decoder CircleDecoder.new
+    register_decoder Int4RangeDecoder.new
+    register_decoder Int8RangeDecoder.new
+    register_decoder DateRangeDecoder.new
+    register_decoder TsRangeDecoder.new
+    register_decoder TstzRangeDecoder.new
+    register_decoder NumRangeDecoder.new
+    register_decoder Int4MultiRangeDecoder.new
+    register_decoder Int8MultiRangeDecoder.new
+    register_decoder DateMultiRangeDecoder.new
+    register_decoder TsMultiRangeDecoder.new
+    register_decoder TstzMultiRangeDecoder.new
+    register_decoder NumMultiRangeDecoder.new
   end
 end
 
