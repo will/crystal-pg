@@ -130,7 +130,7 @@ describe PG::Driver, "encoder" do
       # int4range
       test_insert_object_and_read_range "int4range", 1...10, 1...10
       test_insert_object_and_read_range "int4range", 1..10, 1...11
-      test_insert_object_and_read_range "int4range", 1...1, 1...1
+      test_insert_object_and_read_range "int4range", 1...1, 0...0 # empty range
       test_insert_object_and_read_range "int4range", 1..1, 1...2
       test_insert_object_and_read_range "int4range", nil..nil, nil...nil
       test_insert_object_and_read_range "int4range", nil...nil, 0...0 # empty range
