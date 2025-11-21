@@ -22,8 +22,10 @@ module PQ
 
     def initialize(@conninfo : ConnInfo)
       begin
-        if @conninfo.host[0] == '/'
-          soc = UNIXSocket.new(@conninfo.host)
+        if Path.new(@conninfo.host).absolute?
+          socket_name = ".s.PGSQL.#{@conninfo.port}"
+          socket_path = File.join(@conninfo.host, socket_name)
+          soc = UNIXSocket.new(socket_path)
         else
           soc = TCPSocket.new(@conninfo.host, @conninfo.port)
         end
