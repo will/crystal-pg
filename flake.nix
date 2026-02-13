@@ -12,7 +12,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
         crystal = pkgs.crystal;
 
-        pg_versions = builtins.map builtins.toString [ 17 16 15 14 13 ];
+        pg_versions = builtins.map builtins.toString [ 18 17 16 15 14 ];
         default_pg = pkgs."postgresql_${builtins.head pg_versions}";
 
         certs = pkgs.stdenvNoCC.mkDerivation {
@@ -144,9 +144,4 @@
       }
 
     );
-
-  nixConfig = {
-    extra-substituters = "https://crunchy-public.cachix.org";
-    extra-trusted-public-keys = "crunchy-public.cachix.org-1:bsv90PlrrUAFcIA7NoajCWDpddTY2GGXX7XG+C1BMzQ=";
-  };
 }

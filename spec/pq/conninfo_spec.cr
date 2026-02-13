@@ -140,7 +140,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     env_var_bubble do
       ENV["PGHOST"] = "/path"
       ci = PQ::ConnInfo.from_conninfo_string("postgres://")
-      ci.host.should eq("/path/.s.PGSQL.5432")
+      ci.host.should eq("/path")
     end
   end
 end
