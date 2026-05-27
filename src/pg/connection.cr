@@ -95,11 +95,11 @@ module PG
       end
     end
 
-    protected def listen_replication(publication_name : String, slot_name : String, blocking : Bool = false, &block : Replication::Frame ->)
+    protected def listen_replication(publication_name : String, slot_name : String, start_lsn : Int64 = 0i64, blocking : Bool = false, &block : Replication::Frame ->)
       if blocking
-        @connection.start_replication_frame_loop(publication_name, slot_name, &block)
+        @connection.start_replication_frame_loop(publication_name, slot_name, start_lsn, &block)
       else
-        spawn { @connection.start_replication_frame_loop(publication_name, slot_name, &block) }
+        spawn { @connection.start_replication_frame_loop(publication_name, slot_name, start_lsn, &block) }
       end
     end
 
