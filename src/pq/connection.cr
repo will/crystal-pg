@@ -191,16 +191,19 @@ module PQ
       end
     end
 
-    def start_replication_frame_loop(publication_name : String, slot_name : String, &block : PG::Replication::Frame ->)
-      command = "START_REPLICATION SLOT #{slot_name} LOGICAL 0/0 (proto_version '1', binary 'true', publication_names '#{publication_name}')"
+    def start_replication_frame_loop(publication_name : String, slot_name : String, start_lsn : Int64 = 0i64, &block : PG::Replication::Frame ->)
+      lsn = "%X/%X" % {start_lsn >> 32, start_lsn & 0xFFFF_FFFF}
+      command = "START_REPLICATION SLOT #{slot_name} LOGICAL #{lsn} (proto_version '1', binary 'true', publication_names '#{publication_name}')"
       send_query_message command
       loop do
         break if soc.closed?
-        block.call PG::Replication::Frame.from_io(soc)
-      rescue e : IO::Error
-        raise e unless soc.closed?
-      rescue e
-        Log.error(exception: e) { }
+        begin
+          block.call PG::Replication::Frame.from_io(soc)
+        rescue e : IO::Error
+          soc.closed? ? break : raise e
+        rescue e
+          Log.error(exception: e) { }
+        end
       end
     end
 
