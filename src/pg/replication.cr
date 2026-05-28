@@ -56,13 +56,26 @@ module PG::Replication
     getter publication_name : String
     getter slot_name : String
     @uri : URI
+    # How often the backstop fiber sends a standby status update to keep the
+    # server from tripping its `wal_sender_timeout`. Ideally set to less than
+    # half of that timeout to avoid being disconnected by the Postgres server.
+    # Defaults to 10 seconds.
+    getter keepalive_interval : Time::Span
     getter last_wal_byte_received = 0i64
     property last_wal_byte_flushed = 0i64
     property last_wal_byte_applied = 0i64
     getter? closed = false
 
     # :nodoc:
-    def initialize(uri : URI | String, @handler, *, @publication_name, @slot_name, blocking : Bool = false)
+    def initialize(
+      uri : URI | String,
+      @handler,
+      *,
+      @publication_name,
+      @slot_name,
+      @keepalive_interval = 10.seconds,
+      blocking : Bool = false,
+    )
       if uri.is_a? String
         uri = URI.parse(uri)
       else
@@ -79,7 +92,7 @@ module PG::Replication
       # segments we've already processed and keep the connection alive.
       spawn do
         until closed?
-          sleep 10.seconds
+          sleep keepalive_interval
           begin
             send_keepalive
           rescue IO::Error
