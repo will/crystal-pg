@@ -36,8 +36,8 @@ describe PG::Decoders do
     end
 
     describe "tsrange" do
-      test_decode "(lower,upper) - both exclusive", "'(2023-01-01 10:30:00,2023-12-31 15:45:00)'::tsrange", Time.utc(2023, 1, 1, 10, 30, 0)...Time.utc(2023, 12, 31, 15, 45, 0)
-      test_decode "(lower,upper] - exclusive lower, inclusive upper", "'(2023-01-01 10:30:00,2023-12-31 15:45:00]'::tsrange", Time.utc(2023, 1, 1, 10, 30, 0)..Time.utc(2023, 12, 31, 15, 45, 0) # Crystal can't represent exclusive lower
+      test_decode "(lower,upper) - both exclusive", "'(2023-01-01 10:30:00,2023-12-31 15:45:00)'::tsrange", PG::Range.new(Time.utc(2023, 1, 1, 10, 30, 0), Time.utc(2023, 12, 31, 15, 45, 0), lower_inclusive: false)
+      test_decode "(lower,upper] - exclusive lower, inclusive upper", "'(2023-01-01 10:30:00,2023-12-31 15:45:00]'::tsrange", PG::Range.new(Time.utc(2023, 1, 1, 10, 30, 0), Time.utc(2023, 12, 31, 15, 45, 0), lower_inclusive: false, upper_inclusive: true)
       test_decode "[lower,upper) - inclusive lower, exclusive upper", "'[2023-01-01 10:30:00,2023-12-31 15:45:00)'::tsrange", Time.utc(2023, 1, 1, 10, 30, 0)...Time.utc(2023, 12, 31, 15, 45, 0)
       test_decode "[lower,upper] - both inclusive", "'[2023-01-01 10:30:00,2023-12-31 15:45:00]'::tsrange", Time.utc(2023, 1, 1, 10, 30, 0)..Time.utc(2023, 12, 31, 15, 45, 0)
       test_decode "empty range", "'empty'::tsrange", Time.unix(0)...Time.unix(0)
@@ -59,8 +59,8 @@ describe PG::Decoders do
     end
 
     describe "tstzrange" do
-      test_decode "(lower,upper) - both exclusive", "'(2023-01-01 10:30:00+00,2023-12-31 15:45:00+00)'::tstzrange", Time.utc(2023, 1, 1, 10, 30, 0)...Time.utc(2023, 12, 31, 15, 45, 0)
-      test_decode "(lower,upper] - exclusive lower, inclusive upper", "'(2023-01-01 10:30:00+00,2023-12-31 15:45:00+00]'::tstzrange", Time.utc(2023, 1, 1, 10, 30, 0)..Time.utc(2023, 12, 31, 15, 45, 0)
+      test_decode "(lower,upper) - both exclusive", "'(2023-01-01 10:30:00+00,2023-12-31 15:45:00+00)'::tstzrange", PG::Range.new(Time.utc(2023, 1, 1, 10, 30, 0), Time.utc(2023, 12, 31, 15, 45, 0), lower_inclusive: false)
+      test_decode "(lower,upper] - exclusive lower, inclusive upper", "'(2023-01-01 10:30:00+00,2023-12-31 15:45:00+00]'::tstzrange", PG::Range.new(Time.utc(2023, 1, 1, 10, 30, 0), Time.utc(2023, 12, 31, 15, 45, 0), lower_inclusive: false, upper_inclusive: true)
       test_decode "[lower,upper) - inclusive lower, exclusive upper", "'[2023-01-01 10:30:00+00,2023-12-31 15:45:00+00)'::tstzrange", Time.utc(2023, 1, 1, 10, 30, 0)...Time.utc(2023, 12, 31, 15, 45, 0)
       test_decode "[lower,upper] - both inclusive", "'[2023-01-01 10:30:00+00,2023-12-31 15:45:00+00]'::tstzrange", Time.utc(2023, 1, 1, 10, 30, 0)..Time.utc(2023, 12, 31, 15, 45, 0)
       test_decode "empty range", "'empty'::tstzrange", Time.unix(0)...Time.unix(0)
@@ -70,8 +70,8 @@ describe PG::Decoders do
     end
 
     describe "numrange" do
-      test_decode "(lower,upper) - both exclusive", "'(1.5,10.75)'::numrange", PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])...PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])
-      test_decode "(lower,upper] - exclusive lower, inclusive upper", "'(1.5,10.75]'::numrange", PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])..PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])
+      test_decode "(lower,upper) - both exclusive", "'(1.5,10.75)'::numrange", PG::Range.new(PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16]), PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16]), lower_inclusive: false)
+      test_decode "(lower,upper] - exclusive lower, inclusive upper", "'(1.5,10.75]'::numrange", PG::Range.new(PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16]), PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16]), lower_inclusive: false, upper_inclusive: true)
       test_decode "[lower,upper) - inclusive lower, exclusive upper", "'[1.5,10.75)'::numrange", PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])...PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])
       test_decode "[lower,upper] - both inclusive", "'[1.5,10.75]'::numrange", PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])..PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])
       test_decode "empty range", "'empty'::numrange", PG::Numeric.new(1_i16, 0_i16, 0_i16, 0_i16, [0_i16])...PG::Numeric.new(1_i16, 0_i16, 0_i16, 0_i16, [0_i16])
