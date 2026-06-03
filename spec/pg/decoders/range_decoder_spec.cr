@@ -44,6 +44,18 @@ describe PG::Decoders do
       test_decode "(-infinity,upper] - infinite lower bound", "'(,2023-12-31 15:45:00]'::tsrange", nil..Time.utc(2023, 12, 31, 15, 45, 0)
       test_decode "[lower,+infinity) - infinite upper bound", "'[2023-01-01 10:30:00,)'::tsrange", Time.utc(2023, 1, 1, 10, 30, 0)...nil
       test_decode "(-infinity,+infinity) - both bounds infinite", "'(,)'::tsrange", nil...nil
+
+      it "preserves lower-bound exclusivity" do
+        lower = Time.utc(2023, 1, 1, 10, 30, 0)
+        upper = Time.utc(2023, 12, 31, 15, 45, 0)
+
+        exclusive_lower = PG_DB.query_one "select '(2023-01-01 10:30:00,2023-12-31 15:45:00)'::tsrange", &.read
+        inclusive_lower = PG_DB.query_one "select '[2023-01-01 10:30:00,2023-12-31 15:45:00)'::tsrange", &.read
+
+        exclusive_lower.should eq(PG::Range.new(lower, upper, lower_inclusive: false))
+        inclusive_lower.should eq(PG::Range.new(lower, upper))
+        exclusive_lower.should_not eq(inclusive_lower)
+      end
     end
 
     describe "tstzrange" do
@@ -66,6 +78,18 @@ describe PG::Decoders do
       test_decode "(-infinity,upper] - infinite lower bound", "'(,10.75]'::numrange", nil..PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])
       test_decode "[lower,+infinity) - infinite upper bound", "'[1.5,)'::numrange", PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])...nil
       test_decode "(-infinity,+infinity) - both bounds infinite", "'(,)'::numrange", nil...nil
+
+      it "preserves lower-bound exclusivity" do
+        lower = PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])
+        upper = PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])
+
+        exclusive_lower = PG_DB.query_one "select '(1.5,10.75)'::numrange", &.read
+        inclusive_lower = PG_DB.query_one "select '[1.5,10.75)'::numrange", &.read
+
+        exclusive_lower.should eq(PG::Range.new(lower, upper, lower_inclusive: false))
+        inclusive_lower.should eq(PG::Range.new(lower, upper))
+        exclusive_lower.should_not eq(inclusive_lower)
+      end
     end
   end
 

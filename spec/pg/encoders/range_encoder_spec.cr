@@ -171,6 +171,9 @@ describe PG::Driver, "encoder" do
         Time.utc(2023, 1, 1, 10, 30)..Time.utc(2023, 1, 1, 15, 30),
         Time.utc(2023, 1, 1, 10, 30)..Time.utc(2023, 1, 1, 15, 30)
       test_insert_object_and_read_range "tsrange",
+        PG::Range.new(Time.utc(2023, 1, 1, 10, 30), Time.utc(2023, 1, 1, 15, 30), lower_inclusive: false),
+        PG::Range.new(Time.utc(2023, 1, 1, 10, 30), Time.utc(2023, 1, 1, 15, 30), lower_inclusive: false)
+      test_insert_object_and_read_range "tsrange",
         Time.utc(2023, 1, 1)...nil,
         Time.utc(2023, 1, 1)...nil
       test_insert_object_and_read_range "tsrange",
@@ -198,6 +201,17 @@ describe PG::Driver, "encoder" do
       test_insert_object_and_read_range "numrange",
         PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])...nil,
         PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])...nil
+      test_insert_object_and_read_range "numrange",
+        PG::Range.new(
+          PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16]),
+          PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16]),
+          lower_inclusive: false
+        ),
+        PG::Range.new(
+          PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16]),
+          PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16]),
+          lower_inclusive: false
+        )
       test_insert_object_and_read_range "numrange",
         PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [5_i16, 0_i16])...PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [5_i16, 0_i16]),
         PG::Numeric.new(1_i16, 0_i16, 0_i16, 0_i16, [0_i16])...PG::Numeric.new(1_i16, 0_i16, 0_i16, 0_i16, [0_i16])
