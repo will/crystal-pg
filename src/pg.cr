@@ -6,6 +6,10 @@ module DB::MetadataValueConverter
   def self.arg_to_log(arg : Range) : ::Log::Metadata::Value
     ::Log::Metadata::Value.new(arg.to_s)
   end
+
+  def self.arg_to_log(arg : PG::Range) : ::Log::Metadata::Value
+    ::Log::Metadata::Value.new(arg.to_s)
+  end
 end
 
 module PG

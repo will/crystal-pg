@@ -33,7 +33,12 @@ module PG
                   decode_element(io)
                 end
 
-        Range.new(lower, upper, exclusive: !upper_bound_inclusive)
+        PG::Range.new(
+          lower,
+          upper,
+          lower_inclusive: lower_bound_inclusive,
+          upper_inclusive: upper_bound_inclusive
+        )
       end
     end
 
@@ -46,7 +51,7 @@ module PG
       end
 
       def type
-        Range(T?, T?)
+        PG::Range(T)
       end
 
       abstract def decode_element(io)
@@ -61,7 +66,7 @@ module PG
       end
 
       def empty_range
-        Range.new(0.as(Int32?), 0.as(Int32?), exclusive: true)
+        PG::Range(Int32).empty
       end
     end
 
@@ -73,7 +78,7 @@ module PG
       end
 
       def empty_range
-        Range.new(0_i64.as(Int64?), 0_i64.as(Int64?), exclusive: true)
+        PG::Range(Int64).empty
       end
     end
 
@@ -85,7 +90,7 @@ module PG
       end
 
       def empty_range
-        Range.new(Time.unix(0).as(Time?), Time.unix(0).as(Time?), exclusive: true)
+        PG::Range(Time).empty
       end
     end
 
@@ -97,7 +102,7 @@ module PG
       end
 
       def empty_range
-        Range.new(Time.unix(0).as(Time?), Time.unix(0).as(Time?), exclusive: true)
+        PG::Range(Time).empty
       end
     end
 
@@ -109,7 +114,7 @@ module PG
       end
 
       def empty_range
-        Range.new(Time.unix(0).as(Time?), Time.unix(0).as(Time?), exclusive: true)
+        PG::Range(Time).empty
       end
     end
 
@@ -121,8 +126,7 @@ module PG
       end
 
       def empty_range
-        zero_numeric = PG::Numeric.new(1_i16, 0_i16, 0_i16, 0_i16, [0_i16])
-        Range.new(zero_numeric.as(PG::Numeric?), zero_numeric.as(PG::Numeric?), exclusive: true)
+        PG::Range(PG::Numeric).empty
       end
     end
 
@@ -133,7 +137,7 @@ module PG
       def decode(io, bytesize, oid)
         # Multirange format: 4-byte count followed by count range elements
         count = read_i32(io)
-        ranges = Array(Range(T?, T?)).new(count)
+        ranges = Array(PG::Range(T)).new(count)
 
         count.times do
           # Each range element has a 4-byte length followed by the range data
@@ -148,7 +152,7 @@ module PG
       end
 
       def type
-        Array(Range(T?, T?))
+        Array(PG::Range(T))
       end
 
       abstract def decode_element(io)
@@ -163,7 +167,7 @@ module PG
       end
 
       def empty_range
-        Range.new(0.as(Int32?), 0.as(Int32?), exclusive: true)
+        PG::Range(Int32).empty
       end
     end
 
@@ -175,7 +179,7 @@ module PG
       end
 
       def empty_range
-        Range.new(0_i64.as(Int64?), 0_i64.as(Int64?), exclusive: true)
+        PG::Range(Int64).empty
       end
     end
 
@@ -187,7 +191,7 @@ module PG
       end
 
       def empty_range
-        Range.new(Time.unix(0).as(Time?), Time.unix(0).as(Time?), exclusive: true)
+        PG::Range(Time).empty
       end
     end
 
@@ -199,7 +203,7 @@ module PG
       end
 
       def empty_range
-        Range.new(Time.unix(0).as(Time?), Time.unix(0).as(Time?), exclusive: true)
+        PG::Range(Time).empty
       end
     end
 
@@ -211,7 +215,7 @@ module PG
       end
 
       def empty_range
-        Range.new(Time.unix(0).as(Time?), Time.unix(0).as(Time?), exclusive: true)
+        PG::Range(Time).empty
       end
     end
 
@@ -223,8 +227,7 @@ module PG
       end
 
       def empty_range
-        zero_numeric = PG::Numeric.new(1_i16, 0_i16, 0_i16, 0_i16, [0_i16])
-        Range.new(zero_numeric.as(PG::Numeric?), zero_numeric.as(PG::Numeric?), exclusive: true)
+        PG::Range(PG::Numeric).empty
       end
     end
   end

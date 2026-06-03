@@ -2,7 +2,7 @@ require "json"
 require "uuid"
 
 module PG
-  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric | UUID | Range(Int32?, Int32?) | Range(Int64?, Int64?) | Range(Time?, Time?) | Range(PG::Numeric?, PG::Numeric?) | Array(Range(Int32?, Int32?)) | Array(Range(Int64?, Int64?)) | Array(Range(Time?, Time?)) | Array(Range(PG::Numeric?, PG::Numeric?))
+  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric | UUID | PG::Range(Int32) | PG::Range(Int64) | PG::Range(Time) | PG::Range(PG::Numeric) | Array(PG::Range(Int32)) | Array(PG::Range(Int64)) | Array(PG::Range(Time)) | Array(PG::Range(PG::Numeric))
 
   # :nodoc:
   module Decoders
