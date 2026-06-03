@@ -309,9 +309,9 @@ private record Context,
   type_name : String = "test_type_#{Random::Secure.hex}"
 
 private def wait_for(condition = "the block to return truthy", timeout : Time::Span = 2.seconds, &)
-  start = Time.monotonic
+  start = Time.instant
   until yield
-    if Time.monotonic - start > 2.seconds
+    if Time.instant - start > 2.seconds
       raise "Timed out waiting for #{condition}"
     end
     sleep 5.milliseconds
