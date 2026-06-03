@@ -163,13 +163,15 @@ Since it uses protocol version 3, older versions probably also work but are not 
     in Crystal datatype. Therfore we provide a `PG::Interval` type that can be converted to
     `Time::Span` and `Time::MonthSpan`.
 
-3: A note on ranges: PostgreSQL range types map to Crystal's `Range` type with support
-    for all boundary combinations (`[]`, `()`, etc.), empty ranges, and infinite bounds using
-    beginless/endless syntax (`..10`, `5..`, `..`). Discrete types (int/date) are canonicalized
-    to `[lower,upper)` form, while continuous types (timestamp/numeric) preserve exact boundaries.
+3: A note on ranges: PostgreSQL range types decode to `PG::Range`, preserving
+    all boundary combinations (`[]`, `()`, etc.), empty ranges, and infinite bounds.
+    Native Crystal `Range` values can also be used as query parameters, but they cannot
+    represent exclusive lower bounds. Discrete types (int/date) are canonicalized
+    by PostgreSQL to `[lower,upper)` form, while continuous types (timestamp/numeric)
+    preserve exact boundaries when represented as `PG::Range`.
 
 4: A note on multiranges: PostgreSQL multirange types (PostgreSQL 14+) map to Crystal's
-    `Array(Range)` type, supporting ordered lists of non-contiguous ranges.
+    `Array(PG::Range)` type, supporting ordered lists of non-contiguous ranges.
 
 # Authentication Methods
 
