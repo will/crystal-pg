@@ -15,6 +15,7 @@ module PQ
   class Connection
     getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket::Client
     getter server_parameters = Hash(String, String).new
+    getter conninfo : ConnInfo
     property notice_handler = Proc(Notice, Void).new { }
     property notification_handler = Proc(Notification, Void).new { }
     @mutex = Mutex.new
@@ -146,7 +147,7 @@ module PQ
       soc.skip(count)
     end
 
-    def startup(args)
+    def startup(args : Array(String))
       len = args.reduce(0) { |acc, arg| acc + arg.size + 1 }
       write_i32 len + 8 + 1
       write_i32 0x30000
@@ -190,6 +191,22 @@ module PQ
       end
     end
 
+    def start_replication_frame_loop(publication_name : String, slot_name : String, start_lsn : Int64 = 0i64, &block : PG::Replication::Frame ->)
+      lsn = "%X/%X" % {start_lsn >> 32, start_lsn & 0xFFFF_FFFF}
+      command = "START_REPLICATION SLOT #{slot_name} LOGICAL #{lsn} (proto_version '1', binary 'true', publication_names '#{publication_name}')"
+      send_query_message command
+      loop do
+        break if soc.closed?
+        begin
+          block.call PG::Replication::Frame.from_io(soc)
+        rescue e : IO::Error
+          soc.closed? ? break : raise e
+        rescue e
+          Log.error(exception: e) { }
+        end
+      end
+    end
+
     private def read_one_frame(frame_type)
       size = read_i32
       slice = read_bytes(size - 4)
@@ -197,38 +214,26 @@ module PQ
     end
 
     private def handle_async_frames(frame)
-      if frame.is_a?(Frame::ErrorResponse)
-        handle_error frame
-        true
-      elsif frame.is_a?(Frame::NotificationResponse)
-        handle_notification frame
-        true
-      elsif frame.is_a?(Frame::NoticeResponse)
-        handle_notice frame
-        true
-      elsif frame.is_a?(Frame::ParameterStatus)
-        handle_parameter frame
-        true
-      else
-        false
-      end
+      false
     end
 
-    private def handle_error(error_frame : Frame::ErrorResponse)
+    private def handle_async_frames(error_frame : Frame::ErrorResponse)
       expect_frame Frame::ReadyForQuery if @established
       notice_handler.call(error_frame.as_notice)
       raise PQError.new(error_frame.fields)
     end
 
-    private def handle_notice(frame : Frame::NoticeResponse)
-      notice_handler.call(frame.as_notice)
-    end
-
-    private def handle_notification(frame : Frame::NotificationResponse)
+    private def handle_async_frames(frame : Frame::NotificationResponse)
       notification_handler.call(frame.as_notification)
+      true
     end
 
-    private def handle_parameter(frame : Frame::ParameterStatus)
+    private def handle_async_frames(frame : Frame::NoticeResponse)
+      notice_handler.call(frame.as_notice)
+      true
+    end
+
+    private def handle_async_frames(frame : Frame::ParameterStatus)
       @server_parameters[frame.key] = frame.value
       case frame.key
       when "client_encoding"
@@ -241,18 +246,21 @@ module PQ
           raise ConnectionError.new(
             "Only on is supported for integer_datetimes, got: #{frame.value.inspect}")
         end
-      else
-        # ignore
       end
+
+      true
     end
 
-    def connect
+    def connect(*, replication : String? = nil)
       startup_args = [
         "user", @conninfo.user,
         "database", @conninfo.database,
         "application_name", @conninfo.application_name,
         "client_encoding", "utf8",
       ]
+      if replication
+        startup_args << "replication" << replication
+      end
 
       startup startup_args
 
