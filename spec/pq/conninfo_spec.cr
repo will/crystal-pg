@@ -144,3 +144,25 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     end
   end
 end
+
+describe "#ssl_root_cert" do
+  it "prefers the explicit sslrootcert param" do
+    ci = PQ::ConnInfo.from_conninfo_string("postgres:///db?sslrootcert=/tmp/explicit.pem")
+    ci.ssl_root_cert.should eq("/tmp/explicit.pem")
+  end
+
+  it "falls back to PGSSLROOTCERT when no param is given" do
+    with_env({"PGSSLROOTCERT" => "/tmp/from-env.pem"}) do
+      ci = PQ::ConnInfo.from_conninfo_string("postgres:///db")
+      ci.ssl_root_cert.should eq("/tmp/from-env.pem")
+    end
+  end
+
+  it "is nil when nothing is configured and ~/.postgresql/root.crt is absent" do
+    ci = PQ::ConnInfo.from_conninfo_string("postgres:///db")
+    # only assert nil when the environment genuinely has no root cert configured
+    unless ENV["PGSSLROOTCERT"]? || File.exists?(Path.home.join(".postgresql", "root.crt"))
+      ci.ssl_root_cert.should be_nil
+    end
+  end
+end

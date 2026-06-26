@@ -35,6 +35,16 @@ module PQ
     # The sslrootcert. Optional.
     getter sslrootcert : String?
 
+    # Resolve the root certificate for sslmode=verify-ca/verify-full:
+    # explicit `sslrootcert`, else PGSSLROOTCERT, else ~/.postgresql/root.crt,
+    # else nil (the system CA store is used by default).
+    def ssl_root_cert : String?
+      @sslrootcert || ENV["PGSSLROOTCERT"]? || begin
+        default = Path.home.join(".postgresql", "root.crt")
+        File.exists?(default) ? default.to_s : nil
+      end
+    end
+
     # The application name. Optional (defaults to "crystal").
     getter application_name : String
 
