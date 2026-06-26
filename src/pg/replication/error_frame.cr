@@ -7,7 +7,7 @@ module PG::Replication
     getter misc = [] of {Char, String}
 
     def initialize(io : IO)
-      size = read(io, Int32)
+      read(io, Int32) # message length; fields below are null-terminated
       loop do
         case byte = read(io, UInt8)
         when 0   then return
