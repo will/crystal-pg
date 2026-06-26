@@ -148,7 +148,7 @@ module PQ
     end
 
     def startup(args : Array(String))
-      len = args.reduce(0) { |acc, arg| acc + arg.size + 1 }
+      len = args.reduce(0) { |acc, arg| acc + arg.bytesize + 1 }
       write_i32 len + 8 + 1
       write_i32 0x30000
       args.each { |arg| soc << arg << '\0' }
@@ -483,7 +483,7 @@ module PQ
     def send_password_message(password)
       write_chr 'p'
       if password
-        write_i32 password.size + 4 + 1
+        write_i32 password.bytesize + 4 + 1
         soc << password
       else
         write_i32 4 + 1
