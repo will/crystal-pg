@@ -23,7 +23,8 @@
             openssl req -new -nodes -text -out ca.csr -keyout ca-key.pem -subj "/CN=certificate-authority"
             openssl x509 -req -in ca.csr -text -signkey ca-key.pem -out ca-cert.pem
             openssl req -new -nodes -text -out server.csr -keyout server-key.pem -subj "/CN=pg-server"
-            openssl x509 -req -in server.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem
+            echo "subjectAltName=IP:127.0.0.1" > san.ext
+            openssl x509 -req -in server.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -extfile san.ext -out server-cert.pem
             openssl req -new -nodes -text -out client.csr -keyout client-key.pem -subj "/CN=crystal_ssl"
             openssl x509 -req -in client.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out client-cert.pem
 
