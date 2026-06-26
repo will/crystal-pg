@@ -49,16 +49,28 @@ module PQ
 
       if process_ssl_message
         ctx = OpenSSL::SSL::Context::Client.new
-        ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE # currently emulating sslmode 'require' not verify_ca or verify_full
         if sslcert = @conninfo.sslcert
           ctx.certificate_chain = sslcert
         end
         if sslkey = @conninfo.sslkey
           ctx.private_key = sslkey
         end
-        if sslrootcert = @conninfo.sslrootcert
-          ctx.ca_certificates = sslrootcert
+
+        case @conninfo.sslmode
+        when :"verify-full"
+          ctx.verify_mode = OpenSSL::SSL::VerifyMode::PEER
+          if ca = @conninfo.ssl_root_cert
+            ctx.ca_certificates = ca
+          end
+        when :"verify-ca"
+          if ca = @conninfo.ssl_root_cert
+            ctx.ca_certificates = ca
+          end
+          ctx.verify_ca_chain_only!
+        else
+          ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE
         end
+
         @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true, hostname: @conninfo.host)
       end
 

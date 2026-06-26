@@ -1,5 +1,39 @@
 require "openssl"
 
+lib LibCrypto
+  # Returns the X509_VERIFY_PARAM associated with an X509_STORE_CTX.
+  # Available since OpenSSL 1.0.2 / LibreSSL.
+  fun x509_store_ctx_get0_param = X509_STORE_CTX_get0_param(ctx : X509_STORE_CTX) : X509VerifyParam
+end
+
+class OpenSSL::SSL::Context::Client
+  # sslmode=verify-ca: verify the certificate chain against the trusted CA
+  # store but NOT the hostname. SNI is still sent (the socket is created with
+  # `hostname:`); this callback replaces the built-in chain+hostname
+  # verification with chain-only. The proc captures nothing, so a constant is
+  # GC-safe.
+  private VERIFY_CA_CHAIN_ONLY = ->(x509_ctx : LibCrypto::X509_STORE_CTX, _arg : Void*) do
+    # Clear the hostname check that Socket::Client set on the SSL param (from
+    # the `hostname:` we pass for SNI), so x509_verify_cert validates only the
+    # certificate chain — no hostname check, per sslmode=verify-ca semantics.
+    #
+    # Limitation: when the connection target is an IP literal, Socket::Client
+    # sets an IP check (X509_VERIFY_PARAM_set1_ip_asc) instead of a hostname.
+    # We do not clear that here, so verify-ca to an IP that is not in the
+    # server cert's SAN is still rejected. That is stricter than libpq (fail
+    # closed, no security weakening) and is a rare case; clearing the IP param
+    # via a NULL argument is not viable (it hangs the handshake).
+    param = LibCrypto.x509_store_ctx_get0_param(x509_ctx)
+    LibCrypto.x509_verify_param_set1_host(param, nil, 0)
+    LibCrypto.x509_verify_cert(x509_ctx) == 1 ? 1 : 0
+  end
+
+  def verify_ca_chain_only! : Nil
+    self.verify_mode = OpenSSL::SSL::VerifyMode::PEER
+    LibSSL.ssl_ctx_set_cert_verify_callback(@handle, VERIFY_CA_CHAIN_ONLY, Pointer(Void).null)
+  end
+end
+
 class OpenSSL::X509::Certificate
   def scram_signature
     # The TLS server's certificate bytes need to be hashed with SHA-256 if
