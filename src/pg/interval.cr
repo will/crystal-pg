@@ -32,11 +32,11 @@ module PG
       Time::MonthSpan.new(months)
     end
 
+    # Decompose into a `Time::Span` (days + sub-day part) and a `Time::MonthSpan`
+    # (months). Adding both to a `Time` reproduces the interval exactly, without
+    # approximating months to days.
     def to_spans
-      {
-        to_time_span,
-        to_time_month_span,
-      }
+      {to_span(approx_months: 0), to_month_span}
     end
   end
 end

@@ -52,4 +52,24 @@ describe PG::Interval do
       interval.to_month_span.should eq(Time::MonthSpan.new(123))
     end
   end
+
+  describe "to_spans" do
+    it "splits an interval with months into a Time::Span and a Time::MonthSpan" do
+      # 2 months, 3 days, 4 hours
+      interval = PG::Interval.new(microseconds: 4_i64 * 3600 * 1_000_000, days: 3, months: 2)
+      interval.to_spans.should eq({Time::Span.new(days: 3, hours: 4), Time::MonthSpan.new(2)})
+    end
+
+    it "round-trips through a Time" do
+      interval = PG::Interval.new(microseconds: 4_i64 * 3600 * 1_000_000, days: 3, months: 2)
+      span, month_span = interval.to_spans
+      base = Time.utc(2024, 1, 31, 0, 0, 0)
+      (base + span + month_span).should eq(Time.utc(2024, 4, 3, 4, 0, 0))
+    end
+
+    it "works for an interval without months" do
+      interval = PG::Interval.new(microseconds: 0, days: 5, months: 0)
+      interval.to_spans.should eq({Time::Span.new(days: 5), Time::MonthSpan.new(0)})
+    end
+  end
 end
