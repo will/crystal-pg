@@ -137,18 +137,12 @@ module PG
       def decode(io, bytesize, oid)
         # Multirange format: 4-byte count followed by count range elements
         count = read_i32(io)
-        ranges = Array(PG::Range(T)).new(count)
-
-        count.times do
+        Array(PG::Range(T)).new(count) do
           # Each range element has a 4-byte length followed by the range data
           read_i32(io)
 
-          range = decode_range(io, bytesize, oid)
-
-          ranges << range
+          decode_range(io, bytesize, oid)
         end
-
-        ranges
       end
 
       def type
