@@ -79,7 +79,7 @@ module PQ
     end
 
     private def self.format_time(value : Time)
-      Time::Format::RFC_3339.format(value, fraction_digits: 9)
+      value.to_rfc3339(fraction_digits: 9)
     end
 
     private def self.range_empty?(range : PG::Range)
