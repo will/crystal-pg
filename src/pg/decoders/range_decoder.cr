@@ -1,14 +1,14 @@
 module PG
   module Decoders
-    # Range flags from PostgreSQL range format
-    RANGE_EMPTY  = 0x01
-    RANGE_LB_INC = 0x02 # Lower bound inclusive
-    RANGE_UB_INC = 0x04 # Upper bound inclusive
-    RANGE_LB_INF = 0x08 # Lower bound infinite
-    RANGE_UB_INF = 0x10 # Upper bound infinite
+    module RangeDecoding
+      # Range flags from PostgreSQL range format
+      RANGE_EMPTY  = 0x01
+      RANGE_LB_INC = 0x02 # Lower bound inclusive
+      RANGE_UB_INC = 0x04 # Upper bound inclusive
+      RANGE_LB_INF = 0x08 # Lower bound infinite
+      RANGE_UB_INF = 0x10 # Upper bound infinite
 
-    module Decoder
-      private def decode_range(io, bytesize, oid)
+      private def decode_range(io)
         flags = io.read_byte.not_nil!
         empty = (flags & RANGE_EMPTY) != 0
 
@@ -45,9 +45,10 @@ module PG
     # Abstract base class for range decoders with common logic
     abstract struct RangeDecoder(T)
       include Decoder
+      include RangeDecoding
 
       def decode(io, bytesize, oid)
-        decode_range(io, bytesize, oid)
+        decode_range(io)
       end
 
       def type
@@ -133,6 +134,7 @@ module PG
     # Abstract base class for multirange decoders with common logic
     abstract struct MultiRangeDecoder(T)
       include Decoder
+      include RangeDecoding
 
       def decode(io, bytesize, oid)
         # Multirange format: 4-byte count followed by count range elements
@@ -141,7 +143,7 @@ module PG
           # Each range element has a 4-byte length followed by the range data
           read_i32(io)
 
-          decode_range(io, bytesize, oid)
+          decode_range(io)
         end
       end
 

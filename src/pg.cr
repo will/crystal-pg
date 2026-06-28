@@ -2,7 +2,8 @@ require "db"
 require "./pg/*"
 
 module DB::MetadataValueConverter
-  # Log Range as string representation rather than array
+  # Keep Range logging compatible with db 0.14.0. Upstream crystal-db also
+  # has this fix, but this shard's supported dependency may not include it.
   def self.arg_to_log(arg : Range) : ::Log::Metadata::Value
     ::Log::Metadata::Value.new(arg.to_s)
   end
