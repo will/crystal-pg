@@ -20,7 +20,6 @@ module PG::Replication
     end
 
     def to_io(io : IO) : Nil
-      buffer = IO::Memory.new
       io << 'd'
       payload = IO::Memory.new.tap { |buf| data.to_io buf }.to_slice
       io.write_bytes payload.bytesize + 4, IO::ByteFormat::NetworkEndian

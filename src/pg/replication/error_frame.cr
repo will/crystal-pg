@@ -8,7 +8,6 @@ module PG::Replication
 
     def initialize(io : IO)
       size = read(io, Int32)
-      pp size: size
       loop do
         case byte = read(io, UInt8)
         when 0   then return
