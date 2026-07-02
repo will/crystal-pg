@@ -25,4 +25,12 @@ describe PQ::Connection do
     PG_DB.query("") { }
     PG_DB.query_one("select 1", &.read).should eq(1)
   end
+
+  it "encodes a multi-byte application_name in the startup packet" do
+    # Verify the startup packet is accepted when application_name contains
+    # multi-byte UTF-8 characters (bytesize ≠ size; é is 2 bytes in UTF-8).
+    DB.open("#{DB_URL}?application_name=café") do |db|
+      db.scalar("select 1").should eq(1)
+    end
+  end
 end
