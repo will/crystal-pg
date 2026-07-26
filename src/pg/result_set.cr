@@ -1,3 +1,5 @@
+require "string_pool"
+
 # Remove this monkeypatch when we want to drop support for Crystal < 1.0
 # Crystal versions above 1.0 should have this already, added in this pr:
 # https://github.com/crystal-lang/crystal/pull/10520
@@ -9,6 +11,7 @@
 
 class PG::ResultSet < ::DB::ResultSet
   getter rows_affected
+  private getter string_pool : StringPool { StringPool.new }
 
   def initialize(statement, @fields : Array(PQ::Field)?)
     super(statement)
@@ -81,6 +84,12 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   def read
+    read do |io, col_bytesize|
+      decoder.decode(io, col_bytesize, oid)
+    end
+  end
+
+  def read(&)
     col_bytesize = conn.read_i32
     if col_bytesize == -1
       @column_index += 1
@@ -88,10 +97,26 @@ class PG::ResultSet < ::DB::ResultSet
     end
 
     safe_read(col_bytesize) do |io|
-      decoder.decode(io, col_bytesize, oid)
+      yield io, col_bytesize
     end
   rescue e : IO::Error
     raise DB::ConnectionLost.new(statement.connection, cause: e)
+  end
+
+  def read(t : Enum.class)
+    read do |io, bytesize|
+      if bytesize <= 1024
+        buffer = uninitialized UInt8[1024]
+        bytes = buffer.to_slice[0, bytesize]
+      else
+        # If your enum type values are over 1KB long, you deserve this heap
+        # allocation, you monster.
+        bytes = Bytes.new(bytesize)
+      end
+
+      io.read_fully bytes
+      t.parse string_pool.get(bytes)
+    end
   end
 
   def read(t : Array(T).class) : Array(T) forall T
