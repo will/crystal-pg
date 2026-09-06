@@ -62,7 +62,7 @@ end
 
 def env_var_bubble(&)
   orig_vals = Hash(String, String).new
-  vars = ["PGDATABASE", "PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGPASSFILE"]
+  vars = ["PGDATABASE", "PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGPASSFILE", "PGAPPNAME"]
   begin
     vars.each do |var|
       if ENV.has_key?(var)
