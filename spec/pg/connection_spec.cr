@@ -6,6 +6,15 @@ describe PG::Connection, "#initialize" do
       DB.open("postgres://localhost:5433")
     }
   end
+
+  it "set application name" do
+    URI.parse(DB_URL).tap do |uri|
+      uri.query = "application_name=specs"
+      DB.open(uri.to_s) do |db|
+        db.query_one("SHOW application_name", as: String).should eq("specs")
+      end
+    end
+  end
 end
 
 describe PG::Connection, "#on_notice" do
@@ -133,6 +142,64 @@ describe PG, "#pipeline" do
         PG::ConnectionSpec::TestUser.new(3, "Person #3"),
       ]
       50.times { |i| result_sets.scalar(Int32).should eq i }
+    end
+  end
+end
+
+describe PG, "#time_zone" do
+  it "reads time zones from server parameters" do
+    with_connection do |db|
+      db.exec "SET TIME ZONE 'America/Los_Angeles'"
+      now = db.query_one "SELECT now()", as: Time
+
+      now.location.should eq Time::Location.load("America/Los_Angeles")
+
+      db.transaction do |txn|
+        db.exec "SET LOCAL TIME ZONE 'America/New_York'"
+        now = db.query_one "SELECT now()", as: Time
+        now.location.should eq Time::Location.load("America/New_York")
+      end
+
+      now = db.query_one "SELECT now()", as: Time
+      now.location.should eq Time::Location.load("America/Los_Angeles")
+    end
+  end
+end
+
+describe PG, "#clear_time_zone_cache" do
+  it "returns an empty hash, trusting that that means it's been cleared" do
+    with_connection do |db|
+      db.clear_time_zone_cache.should be_empty
+    end
+  end
+end
+
+describe PG, "COPY" do
+  it "properly handles partial reads and consumes data on early close" do
+    with_connection do |db|
+      io = db.exec_copy "COPY (VALUES (1), (333)) TO STDOUT"
+      io.read_char.should eq '1'
+      io.read_char.should eq '\n'
+      io.read_char.should eq '3'
+      io.read_char.should eq '3'
+      io.close
+      db.scalar("select 1").should eq(1)
+    end
+  end
+
+  if "survives a COPY FROM STDIN and COPY TO STDOUT round-trip"
+    with_connection do |db|
+      data = "123\tdata\n\\N\t\\N\n"
+      db.exec("CREATE TEMPORARY TABLE IF NOT EXISTS copy_test (a int, b text)")
+
+      wr = db.exec_copy "COPY copy_test FROM STDIN"
+      wr << data
+      wr.close
+
+      rd = db.exec_copy "COPY copy_test TO STDOUT"
+      rd.gets_to_end.should eq data
+
+      db.exec("DROP TABLE copy_test")
     end
   end
 end

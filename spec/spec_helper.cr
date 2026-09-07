@@ -4,13 +4,13 @@ require "../src/pg"
 DB_URL = ENV["DATABASE_URL"]? || "postgres:///"
 PG_DB  = DB.open(DB_URL)
 
-def with_db
+def with_db(&)
   DB.open(DB_URL) do |db|
     yield db
   end
 end
 
-def with_connection
+def with_connection(&)
   DB.connect(DB_URL) do |conn|
     yield conn
   end
@@ -31,10 +31,24 @@ module Helper
   end
 end
 
-def test_decode(name, query, expected, file = __FILE__, line = __LINE__)
+def test_decode(name, query, expected, file = __FILE__, line = __LINE__, *, time_zone : Time::Location? = nil)
   it name, file, line do
-    value = PG_DB.query_one "select #{query}", &.read
-    value.should eq(expected), file: file, line: line
+    PG_DB.using_connection do |c|
+      old_time_zone = c.time_zone
+      c = c.as PG::Connection
+      begin
+        if time_zone
+          old_time_zone = c.time_zone
+          c.exec "SET TIME ZONE '#{time_zone.name}'"
+        end
+        value = c.query_one "select #{query}", &.read
+        value.should eq(expected), file: file, line: line
+      ensure
+        if old_time_zone
+          c.exec "SET TIME ZONE '#{old_time_zone.name}'"
+        end
+      end
+    end
   end
 end
 
@@ -43,5 +57,24 @@ def test_decode(name, query, expected : JSON::PullParser, file = __FILE__, line 
     value = PG_DB.query_one "select #{query}", &.read
     json_value = value.is_a?(JSON::PullParser) ? JSON::Any.new(value) : value
     json_value.should eq(JSON::Any.new(expected)), file: file, line: line
+  end
+end
+
+def env_var_bubble(&)
+  orig_vals = Hash(String, String).new
+  vars = ["PGDATABASE", "PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGPASSFILE"]
+  begin
+    vars.each do |var|
+      if ENV.has_key?(var)
+        orig_vals[var] = ENV[var]
+        ENV.delete(var)
+      end
+    end
+    yield
+  ensure
+    vars.each do |var|
+      ENV.delete(var)
+      ENV[var] = orig_vals[var] if orig_vals.has_key?(var)
+    end
   end
 end

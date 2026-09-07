@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request: {}
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Nix
+        uses: cachix/install-nix-action@v20
+      - uses: cachix/cachix-action@v12
+        with:
+          name: crystal-pg
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          extraPullNames: crunchy-public
+      - uses: actions/checkout@v3
+      - name: nix flake check
+        run:  nix flake check --print-build-logs --keep-going

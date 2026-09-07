@@ -14,20 +14,19 @@ module PQ
   # :nodoc:
   class Connection
     getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket::Client
-    getter server_parameters : Hash(String, String)
-    property notice_handler : Notice ->
-    property notification_handler : Notification ->
+    getter server_parameters = Hash(String, String).new
+    getter conninfo : ConnInfo
+    property notice_handler = Proc(Notice, Void).new { }
+    property notification_handler = Proc(Notification, Void).new { }
+    @mutex = Mutex.new
+    @established = false
 
     def initialize(@conninfo : ConnInfo)
-      @mutex = Mutex.new
-      @server_parameters = Hash(String, String).new
-      @established = false
-      @notice_handler = Proc(Notice, Void).new { }
-      @notification_handler = Proc(Notification, Void).new { }
-
       begin
-        if @conninfo.host[0] == '/'
-          soc = UNIXSocket.new(@conninfo.host)
+        if Path.new(@conninfo.host).absolute?
+          socket_name = ".s.PGSQL.#{@conninfo.port}"
+          socket_path = File.join(@conninfo.host, socket_name)
+          soc = UNIXSocket.new(socket_path)
         else
           soc = TCPSocket.new(@conninfo.host, @conninfo.port)
         end
@@ -37,7 +36,10 @@ module PQ
       end
 
       @soc = soc
-      negotiate_ssl if @soc.is_a?(TCPSocket)
+      negotiate_ssl if @soc.is_a?(TCPSocket) && @conninfo.sslmode != :disable
+    end
+
+    def initialize(@soc, @conninfo)
     end
 
     private def negotiate_ssl
@@ -57,7 +59,7 @@ module PQ
         if sslrootcert = @conninfo.sslrootcert
           ctx.ca_certificates = sslrootcert
         end
-        @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true)
+        @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true, hostname: @conninfo.host)
       end
 
       if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
@@ -91,7 +93,7 @@ module PQ
       end
     end
 
-    def synchronize
+    def synchronize(&)
       @mutex.synchronize { yield }
     end
 
@@ -137,11 +139,15 @@ module PQ
       data
     end
 
+    def read_direct(slice)
+      soc.read(slice)
+    end
+
     def skip_bytes(count)
       soc.skip(count)
     end
 
-    def startup(args)
+    def startup(args : Array(String))
       len = args.reduce(0) { |acc, arg| acc + arg.size + 1 }
       write_i32 len + 8 + 1
       write_i32 0x30000
@@ -150,7 +156,7 @@ module PQ
       soc.flush
     end
 
-    def read_data_row
+    def read_data_row(&)
       size = read_i32
       ncols = read_i16
       row = Array(Slice(UInt8)?).new(ncols.to_i32) do
@@ -185,6 +191,22 @@ module PQ
       end
     end
 
+    def start_replication_frame_loop(publication_name : String, slot_name : String, start_lsn : Int64 = 0i64, &block : PG::Replication::Frame ->)
+      lsn = "%X/%X" % {start_lsn >> 32, start_lsn & 0xFFFF_FFFF}
+      command = "START_REPLICATION SLOT #{slot_name} LOGICAL #{lsn} (proto_version '1', binary 'true', publication_names '#{publication_name}')"
+      send_query_message command
+      loop do
+        break if soc.closed?
+        begin
+          block.call PG::Replication::Frame.from_io(soc)
+        rescue e : IO::Error
+          soc.closed? ? break : raise e
+        rescue e
+          Log.error(exception: e) { }
+        end
+      end
+    end
+
     private def read_one_frame(frame_type)
       size = read_i32
       slice = read_bytes(size - 4)
@@ -192,38 +214,26 @@ module PQ
     end
 
     private def handle_async_frames(frame)
-      if frame.is_a?(Frame::ErrorResponse)
-        handle_error frame
-        true
-      elsif frame.is_a?(Frame::NotificationResponse)
-        handle_notification frame
-        true
-      elsif frame.is_a?(Frame::NoticeResponse)
-        handle_notice frame
-        true
-      elsif frame.is_a?(Frame::ParameterStatus)
-        handle_parameter frame
-        true
-      else
-        false
-      end
+      false
     end
 
-    private def handle_error(error_frame : Frame::ErrorResponse)
+    private def handle_async_frames(error_frame : Frame::ErrorResponse)
       expect_frame Frame::ReadyForQuery if @established
       notice_handler.call(error_frame.as_notice)
       raise PQError.new(error_frame.fields)
     end
 
-    private def handle_notice(frame : Frame::NoticeResponse)
-      notice_handler.call(frame.as_notice)
-    end
-
-    private def handle_notification(frame : Frame::NotificationResponse)
+    private def handle_async_frames(frame : Frame::NotificationResponse)
       notification_handler.call(frame.as_notification)
+      true
     end
 
-    private def handle_parameter(frame : Frame::ParameterStatus)
+    private def handle_async_frames(frame : Frame::NoticeResponse)
+      notice_handler.call(frame.as_notice)
+      true
+    end
+
+    private def handle_async_frames(frame : Frame::ParameterStatus)
       @server_parameters[frame.key] = frame.value
       case frame.key
       when "client_encoding"
@@ -236,18 +246,21 @@ module PQ
           raise ConnectionError.new(
             "Only on is supported for integer_datetimes, got: #{frame.value.inspect}")
         end
-      else
-        # ignore
       end
+
+      true
     end
 
-    def connect
+    def connect(*, replication : String? = nil)
       startup_args = [
         "user", @conninfo.user,
         "database", @conninfo.database,
-        "application_name", "crystal",
+        "application_name", @conninfo.application_name,
         "client_encoding", "utf8",
       ]
+      if replication
+        startup_args << "replication" << replication
+      end
 
       startup startup_args
 
@@ -298,7 +311,7 @@ module PQ
       end
     end
 
-    struct SamlContext
+    struct SaslContext
       SCRAM_NAME      = "SCRAM-SHA-256"
       SCRAM_PLUS_NAME = "SCRAM-SHA-256-PLUS"
 
@@ -360,17 +373,17 @@ module PQ
 
     private def handle_auth_sasl(mechanism_list)
       mechs = String.new(mechanism_list).split(Char::ZERO)
-      cbind = if mechs.includes?(SamlContext::SCRAM_PLUS_NAME)
+      cbind = if mechs.includes?(SaslContext::SCRAM_PLUS_NAME)
                 check_auth_method!("scram-sha-256-plus")
                 true
-              elsif mechs.includes?(SamlContext::SCRAM_NAME)
+              elsif mechs.includes?(SaslContext::SCRAM_NAME)
                 check_auth_method!("scram-sha-256")
                 false
               else
                 raise ConnectionError.new("no known sasl mechanism in list: #{mechs.join(", ")}")
               end
 
-      ctx = SamlContext.new(@conninfo.password || "", cbind, soc)
+      ctx = SaslContext.new(@conninfo.password || "", cbind, soc)
 
       # send client-first-message
       write_chr 'p' # SASLInitialResponse
@@ -433,12 +446,30 @@ module PQ
       end
     end
 
-    def read_all_data_rows
+    def read_all_data_rows(&)
       type = soc.read_char
       while read_next_row_start
         yield read_data_row
       end
       expect_frame Frame::CommandComplete, type
+    end
+
+    def read_next_copy_start
+      type = soc.read_char
+
+      while type == 'N'
+        # NoticeResponse
+        frame = read_one_frame('N')
+        handle_async_frames(frame)
+        type = soc.read_char
+      end
+
+      if type == 'd'
+        true
+      else
+        expect_frame Frame::CopyDone, type
+        false
+      end
     end
 
     def expect_frame(frame_class, type = nil)
@@ -497,7 +528,7 @@ module PQ
       write_i16 nparams # number of params to follow
       params.each do |p|
         write_i32 p.size
-        p.slice.each { |byte| write_byte byte }
+        soc.write(p.slice)
       end
       write_i16 1 # number of following return types (1 means apply next for all)
       write_i16 result_format
@@ -525,6 +556,18 @@ module PQ
     def send_terminate_message
       write_chr 'X'
       write_i32 4
+    end
+
+    def send_copy_data_message(slice)
+      write_chr 'd'
+      write_i32 4 + slice.size
+      soc.write slice
+    end
+
+    def send_copy_done_message
+      write_chr 'c'
+      write_i32 4
+      soc.flush
     end
 
     def flush

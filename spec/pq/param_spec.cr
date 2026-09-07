@@ -16,6 +16,7 @@ describe PQ::Param do
       it_encodes_array([1, 2, 3], "{1,2,3}")
       it_encodes_array([1.2, 3.4, 5.6], "{1.2,3.4,5.6}")
       it_encodes_array([%(a), %(\\b~), %(c\\"d), %(\uFF8F)], %({"a","\\\\b~","c\\\\\\"d","\uFF8F"}))
+      it_encodes_array([%(this is a "slice").to_slice], %({"\\\\x7468697320697320612022736c69636522"}))
       it_encodes_array(["baz, bar"], %({"baz, bar"}))
       it_encodes_array(["foo}"], %({"foo}"}))
       it_encodes_array([nil, nil], %({NULL,NULL}))

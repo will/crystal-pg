@@ -31,6 +31,10 @@ module PG
     ListenConnection.new(url, channels, blocking, &blk)
   end
 
+  def self.connect_replication(url, *, handler, publication_name, slot_name, keepalive_interval : Time::Span = 10.seconds)
+    Replication::Connection.new(url, handler, publication_name: publication_name, slot_name: slot_name, keepalive_interval: keepalive_interval)
+  end
+
   class ListenConnection
     @conn : PG::Connection
 

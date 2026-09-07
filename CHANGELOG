@@ -1,5 +1,41 @@
-v?.?.?     upcoming
+v? upcoming
 =====================
+
+v0.30.0    2026-06-02
+=====================
+* Add support for `BigDecimal` via `PG::Numeric#to_big_d` (thanks @jgaskins)
+* ~2x to ~10x+ speedup when sending large query parameters (thanks @compumike)
+* Add support for COPY (thanks @17dec)
+* Add pg log source to log entries (thanks @hugopl)
+* Update crystal-db to 0.14 (thanks @bcardiff)
+* Handle connections strings with unix domain sockets correctly (thanks @samu698)
+* Subscribe to logical replication (thanks @jgaskins)
+
+v0.29.0    2024-11-05
+=====================
+* fix: enable SNI (thanks @conradludgate)
+* Drop official support for Postgres v11
+* Support encoding PG::Interval params (thanks @Blacksmoke16)
+* Encode Crystal enum args as integers (thanks @jgaskins)
+* Handle Array(Bytes) encoding for query params containing non-Unicode text (thanks @jgaskins)
+* Avoid calling LibC.getuid on windows
+
+
+v0.28.0    2023-12-21
+=====================
+* Add support for application_name in UIR paramaters and the
+  PGAPPNAME env var (thanks @cyberdelia)
+* Fix error when used with non-postgres database drivers (thanks @ysbaddaden)
+* Update crystal-db to 0.13 (thanks @jgaskins, @bcardiff)
+
+v0.27.0    2023-06-25
+=====================
+* Add support for LSN data type (thanks @louiseGrandjonc)
+* Add support for ENV vars (PGPORT, PGUSER, PGHOST, PGDATABASE, PGPASS) and
+  pgpass files (thanks @wishdev)
+* timestamptz now parse into the connection's timezone if set (thanks @jgaskins)
+* add `sslmode=disable` to prevent TLS negotiation (thanks @ellmetha)
+* update to crystal-db 0.12.0 (refactor connection factory) (thanks @bcardiff)
 
 v0.26.0    2022-01-27
 =====================
@@ -19,7 +55,7 @@ v0.25.0    2022-01-27
 * Add support for decoding arrays of UUIDs (thanks @jwoertink)
 * Allow socket connections to have paramaters from URIs (thanks @grepsedawk)
 * Allow blocking connections to PG.connect_listen
-* Properly encode null values in arrays (thanks @robcole and @grepsedawk) 
+* Properly encode null values in arrays (thanks @robcole and @grepsedawk)
 
 v0.24.0    2021-07-21
 =====================

@@ -23,6 +23,10 @@ module PQ
       text Time::Format::RFC_3339.format(val, fraction_digits: 9)
     end
 
+    def self.encode(val : Enum)
+      encode val.value
+    end
+
     def self.encode(val : PG::Geo::Point)
       text "(#{val.x},#{val.y})"
     end
@@ -66,6 +70,11 @@ module PQ
       end
 
       text string
+    end
+
+    def self.encode(val : PG::Interval)
+      # https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
+      text "#{val.months} months #{val.days} days #{val.microseconds} microseconds"
     end
 
     def self.encode(val)
@@ -112,8 +121,10 @@ module PQ
     end
 
     def self.encode_array(io, value : Bytes)
-      io << '"'
-      io << String.new(value).gsub(%("), %(\\"))
+      io << %{"\\\\x}
+      value.each do |byte|
+        byte.to_s io, base: 16, precision: 2
+      end
       io << '"'
     end
 
