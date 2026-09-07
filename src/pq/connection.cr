@@ -168,7 +168,7 @@ module PQ
         end
       end
 
-      yield row
+      row
     end
 
     def read
@@ -448,10 +448,8 @@ module PQ
 
     def read_all_data_rows(&)
       type = soc.read_char
-      loop do
-        break unless type == 'D'
-        read_data_row { |row| yield row }
-        type = soc.read_char
+      while read_next_row_start
+        yield read_data_row
       end
       expect_frame Frame::CommandComplete, type
     end
@@ -553,7 +551,6 @@ module PQ
     def send_sync_message
       write_chr 'S'
       write_i32 4
-      soc.flush
     end
 
     def send_terminate_message
@@ -570,6 +567,10 @@ module PQ
     def send_copy_done_message
       write_chr 'c'
       write_i32 4
+      soc.flush
+    end
+
+    def flush
       soc.flush
     end
   end
