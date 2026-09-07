@@ -1,4 +1,5 @@
 require "../pg/geo"
+require "../pg/range"
 
 module PQ
   # :nodoc:
@@ -20,7 +21,7 @@ module PQ
     end
 
     def self.encode(val : Time)
-      text Time::Format::RFC_3339.format(val, fraction_digits: 9)
+      text format_time(val)
     end
 
     def self.encode(val : Enum)
@@ -75,6 +76,127 @@ module PQ
     def self.encode(val : PG::Interval)
       # https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
       text "#{val.months} months #{val.days} days #{val.microseconds} microseconds"
+    end
+
+    private def self.format_time(value : Time)
+      value.to_rfc3339(fraction_digits: 9)
+    end
+
+    private def self.range_empty?(range : PG::Range)
+      range.empty?
+    end
+
+    private def self.range_empty?(range : Range)
+      range.begin == range.end && range.excludes_end?
+    end
+
+    private def self.start_bracket(range : PG::Range)
+      range.lower_inclusive ? "[" : "("
+    end
+
+    private def self.start_bracket(range : Range)
+      "["
+    end
+
+    private def self.format_numeric_range(range)
+      if range_empty?(range)
+        "empty"
+      else
+        start_bracket = start_bracket(range)
+        end_bracket = range.excludes_end? ? ")" : "]"
+
+        begin_str = range.begin.nil? ? "" : range.begin.to_s
+        end_str = range.end.nil? ? "" : range.end.to_s
+
+        "#{start_bracket}#{begin_str},#{end_str}#{end_bracket}"
+      end
+    end
+
+    private def self.format_timestamp_range(range)
+      if range_empty?(range)
+        "empty"
+      else
+        start_bracket = start_bracket(range)
+        end_bracket = range.excludes_end? ? ")" : "]"
+
+        begin_str = range.begin.try { |val| format_time(val) } || ""
+        end_str = range.end.try { |val| format_time(val) } || ""
+
+        "#{start_bracket}#{begin_str},#{end_str}#{end_bracket}"
+      end
+    end
+
+    def self.encode(val : Range(Int32?, Int32?))
+      text format_numeric_range(val)
+    end
+
+    def self.encode(val : Range(Int64?, Int64?))
+      text format_numeric_range(val)
+    end
+
+    def self.encode(val : Range(PG::Numeric?, PG::Numeric?))
+      text format_numeric_range(val)
+    end
+
+    def self.encode(val : Range(Time?, Time?))
+      text format_timestamp_range(val)
+    end
+
+    def self.encode(val : PG::Range(Int32))
+      text format_numeric_range(val)
+    end
+
+    def self.encode(val : PG::Range(Int64))
+      text format_numeric_range(val)
+    end
+
+    def self.encode(val : PG::Range(PG::Numeric))
+      text format_numeric_range(val)
+    end
+
+    def self.encode(val : PG::Range(Time))
+      text format_timestamp_range(val)
+    end
+
+    private def self.format_multirange(val, &)
+      if val.empty?
+        "{}"
+      else
+        range_strs = val.map { |range| yield range }
+        "{#{range_strs.join(",")}}"
+      end
+    end
+
+    def self.encode(val : Array(Range(Int32?, Int32?)))
+      text format_multirange(val) { |range| format_numeric_range(range) }
+    end
+
+    def self.encode(val : Array(Range(Int64?, Int64?)))
+      text format_multirange(val) { |range| format_numeric_range(range) }
+    end
+
+    def self.encode(val : Array(Range(PG::Numeric?, PG::Numeric?)))
+      text format_multirange(val) { |range| format_numeric_range(range) }
+    end
+
+    def self.encode(val : Array(Range(Time?, Time?)))
+      text format_multirange(val) { |range| format_timestamp_range(range) }
+    end
+
+    def self.encode(val : Array(PG::Range(Int32)))
+      text format_multirange(val) { |range| format_numeric_range(range) }
+    end
+
+    def self.encode(val : Array(PG::Range(Int64)))
+      text format_multirange(val) { |range| format_numeric_range(range) }
+    end
+
+    def self.encode(val : Array(PG::Range(PG::Numeric)))
+      text format_multirange(val) { |range| format_numeric_range(range) }
+    end
+
+    def self.encode(val : Array(PG::Range(Time)))
+      text format_multirange(val) { |range| format_timestamp_range(range) }
     end
 
     def self.encode(val)

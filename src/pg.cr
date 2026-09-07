@@ -1,6 +1,18 @@
 require "db"
 require "./pg/*"
 
+module DB::MetadataValueConverter
+  # Keep Range logging compatible with db 0.14.0. Upstream crystal-db also
+  # has this fix, but this shard's supported dependency may not include it.
+  def self.arg_to_log(arg : Range) : ::Log::Metadata::Value
+    ::Log::Metadata::Value.new(arg.to_s)
+  end
+
+  def self.arg_to_log(arg : PG::Range) : ::Log::Metadata::Value
+    ::Log::Metadata::Value.new(arg.to_s)
+  end
+end
+
 module PG
   # Establish a connection to the database
   def self.connect(url)
