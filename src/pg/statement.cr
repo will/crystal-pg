@@ -48,7 +48,7 @@ class PG::Statement < ::DB::Statement
       raise "expected RowDescription or NoData, got #{frame}"
     end
 
-    ResultSet.new(self, fields)
+    fields
   rescue e : IO::Error
     raise DB::ConnectionLost.new(connection, cause: e)
   end
