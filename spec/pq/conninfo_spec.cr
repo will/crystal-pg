@@ -27,6 +27,18 @@ private def assert_ssl_params(ci)
   ci.sslcert.should eq("postgresql.crt")
   ci.sslkey.should eq("postgresql.key")
   ci.sslrootcert.should eq("root.crt")
+  ci.ssl_required?.should be_true
+  ci.verify_full?.should be_true
+end
+
+# The file and line parameters are to ensure that we report failures from where the helper was
+# called, not in the helper itself.
+private def assert_ssl_mode(mode : String, mode_symbol : Symbol, required : Bool, full : Bool, ca_only : Bool, file = __FILE__, line = __LINE__)
+  ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=#{mode}")
+  ci.sslmode.should eq(mode_symbol), file: file, line: line
+  ci.ssl_required?.should eq(required), file: file, line: line
+  ci.verify_full?.should eq(full), file: file, line: line
+  ci.verify_ca_only?.should eq(ca_only), file: file, line: line
 end
 
 describe PQ::ConnInfo, "parts" do
@@ -97,6 +109,57 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
   it "parses an IPv6 host" do
     ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@[::1]:5555/db")
     ci.host.should eq("::1")
+  end
+
+  it "handles sslmodes" do
+    assert_ssl_mode "disable", :disable, false, false, false
+    assert_ssl_mode "allow", :allow, false, false, false
+    assert_ssl_mode "prefer", :prefer, false, false, false
+    assert_ssl_mode "require", :require, true, false, false
+    assert_ssl_mode "verify-ca", :"verify-ca", true, false, true
+    assert_ssl_mode "verify-full", :"verify-full", true, true, false
+  end
+
+  it "uses sslrootcert from env" do
+    env_var_bubble do
+      ENV["PGSSLROOTCERT"] = "/env/root.crt"
+      ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db")
+      ci.resolved_sslrootcert.should eq "/env/root.crt"
+    end
+  end
+
+  it "explicit sslrootcert beats env" do
+    env_var_bubble do
+      ENV["PGSSLROOTCERT"] = "/env/root.crt"
+      ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require&sslrootcert=/explicit/root.crt")
+      ci.resolved_sslrootcert.should eq "/explicit/root.crt"
+    end
+  end
+
+  it "accepts sslrootcert=system param" do
+    env_var_bubble do
+      ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require&sslrootcert=system")
+      ci.resolved_sslrootcert.should be_nil
+      ci.sslrootcert.should eq "system"
+    end
+  end
+
+  it "accepts sslrootcert=system from env" do
+    env_var_bubble do
+      ENV["PGSSLROOTCERT"] = "system"
+      ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require")
+      ci.resolved_sslrootcert.should be_nil
+      ci.sslrootcert.should be_nil
+    end
+  end
+
+  it "handles empty PGSSLROOTCERT env value" do
+    env_var_bubble do
+      value_without_env_var = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require").resolved_sslrootcert
+      ENV["PGSSLROOTCERT"] = ""
+      value_with_empty_env_var = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require").resolved_sslrootcert
+      value_without_env_var.should eq value_with_empty_env_var
+    end
   end
 
   it "auth_methods" do

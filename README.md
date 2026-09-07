@@ -161,7 +161,35 @@ Since it uses protocol version 3, older versions probably also work but are not 
     in Crystal datatype. Therfore we provide a `PG::Interval` type that can be converted to
     `Time::Span` and `Time::MonthSpan`.
 
-# Authentication Methods
+## TLS Connections
+
+### SSL Mode
+
+Crystal-pg supports the `sslmode` parameter, with the values below:
+
+| Value         | Valid CA Required? | Matching hostname required? | TLS?                                    |
+|---------------|--------------------|-----------------------------|-----------------------------------------|
+| `disable`     | no                 | no                          | Does not negotiate TLS                  |
+| `allow`       | no                 | no                          | Negotiates TLS, falls back to plaintext |
+| `prefer`      | no                 | no                          | Negotiates TLS, falls back to plaintext |
+| `require`     | no                 | no                          | Negotiates TLS, exception otherwise     |
+| `verify-ca`   | yes                | no                          | Negotiates TLS, exception otherwise     |
+| `verify-full` | yes                | yes                         | Negotiates TLS, exception otherwise     |
+
+Note that `allow` and `prefer` are equivalent.
+
+SSL mode is not currently supported over UNIX sockets.
+
+### SSL Root Certificate
+
+This can be specified via the `sslrootcert` parameter, or the `PGSSLROOTCERT` environment variable.
+The parameter takes precedence over the environment variable. The value `system` does not load a
+custom cert and instead only uses the system's certificate store. If it is unset or the empty
+string, it falls back to either `%APPDATA%\postgresql\root.crt` on Windows or
+`~/.postgresql/root.crt` on Linux and Darwin. If the fallback file does not exist, only the system
+cert store is used.
+
+## Authentication Methods
 
 By default this driver will accept `scram-sha-256` and `md5`, as well as
 `trust`. However `cleartext` is disabled by default. You can control exactly
