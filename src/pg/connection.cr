@@ -108,6 +108,26 @@ module PG
       {major: vers[0], minor: vers[1], patch: vers[2]? || 0}
     end
 
+    # Create a cursor for the given query
+    def cursor(query : String, *args, name : String? = nil) : Cursor
+      Cursor.new(self, query, args.to_a, name)
+    end
+
+    # Create a cursor with block syntax - cursor is automatically closed
+    def cursor(query : String, *args, name : String? = nil, &)
+      cur = cursor(query, *args, name: name)
+      begin
+        yield cur
+      ensure
+        cur.close
+      end
+    end
+
+    # Check if currently in a transaction
+    def in_transaction?
+      @connection.transaction_status != PQ::Frame::ReadyForQuery::Status::Idle
+    end
+
     protected def do_close
       super
 

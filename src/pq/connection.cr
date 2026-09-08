@@ -20,6 +20,9 @@ module PQ
     property notification_handler = Proc(Notification, Void).new { }
     @mutex = Mutex.new
     @established = false
+    @transaction_status = Frame::ReadyForQuery::Status::Idle
+
+    getter transaction_status
 
     def initialize(@conninfo : ConnInfo)
       begin
@@ -177,6 +180,9 @@ module PQ
 
     def read(frame_type)
       frame = read_one_frame(frame_type)
+      if frame.is_a?(Frame::ReadyForQuery)
+        @transaction_status = frame.transaction_status
+      end
       handle_async_frames(frame) ? read : frame
     end
 
