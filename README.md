@@ -148,6 +148,7 @@ Since it uses protocol version 3, older versions probably also work but are not 
 - regtype
 - geo types: point, box, path, lseg, polygon, circle, line
 - array types: int8, int4, int2, float8, float4, bool, text, numeric, timestamptz, date, timestamp
+- range: int4range, int8range, daterange, tsrange, tstzrange, numrange
 - interval (2)
 
 1: A note on numeric: In Postgres this type has arbitrary precision. In this
