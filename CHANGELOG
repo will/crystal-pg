@@ -1,5 +1,7 @@
 v? upcoming
 =====================
+* Add `PG::Connection#driver_name`, `#server_name`, and `#server_version` (thanks @blacksmoke16)
+* Update crystal-db to 0.15 (thanks @blacksmoke16)
 
 v0.30.0    2026-06-02
 =====================
