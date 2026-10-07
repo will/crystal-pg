@@ -84,8 +84,6 @@ end
 {% end %}
 
 # Needed to be able to support the ssl modes (verify-full, verify-ca, etc)
-{% unless LibCrypto.has_method?(:x509_store_ctx_get_error) %}
-  lib LibCrypto
-    fun x509_store_ctx_get_error = X509_STORE_CTX_get_error(ctx : X509_STORE_CTX) : Int32
-  end
-{% end %}
+lib LibCrypto
+  fun x509_store_ctx_get_error = X509_STORE_CTX_get_error(ctx : X509_STORE_CTX) : Int32
+end
