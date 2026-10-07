@@ -89,6 +89,23 @@ class PG::ResultSet < ::DB::ResultSet
     end
   end
 
+  # Reads the next column value as a **type**
+  def read(type : T.class) : T forall T
+    col_index = next_column_index
+    value = read { |io, bytesize| yield io, bytesize }
+    if value.is_a?(T)
+      value
+    else
+      raise DB::ColumnTypeMismatchError.new(
+        context: "#{self.class}#read",
+        column_index: col_index,
+        column_name: column_name(col_index),
+        column_type: value.class.to_s,
+        expected_type: T.to_s
+      )
+    end
+  end
+
   def read(&)
     col_bytesize = conn.read_i32
     if col_bytesize == -1
