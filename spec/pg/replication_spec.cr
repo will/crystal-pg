@@ -224,11 +224,9 @@ if PG_DB.query_one("SHOW wal_level", as: String) == "logical"
       string = "omg"
       PG_DB.exec "CREATE TABLE #{context.table_name} (id UUID PRIMARY KEY, string TEXT)"
       PG_DB.exec "INSERT INTO #{context.table_name} (id, string) VALUES ($1, $2)", id, string
-      PG_DB.exec "DELETE FROM #{context.table_name} WHERE id = $1", id
+      wait_for "insert to propagate" { handler.data.any?(&.last.any?) }
 
-      # Wait for at least the insert to propagate
-      wait_for { handler.data.any?(&.last.any?) }
-      # Give the delete just a little longer to come in
+      PG_DB.exec "DELETE FROM #{context.table_name} WHERE id = $1", id
       wait_for "data to be deleted" { handler.data.first.last.none? }
     end
 
