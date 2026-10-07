@@ -1,5 +1,6 @@
 v? upcoming
 =====================
+* Honor `sslmode=verify-ca` and `verify-full`: verify the server certificate chain (and, for `verify-full`, the host name), and refuse a plaintext fallback under `require`, `verify-ca` and `verify-full`. `sslrootcert=system` uses the system trust store.
 
 v0.30.0    2026-06-02
 =====================
