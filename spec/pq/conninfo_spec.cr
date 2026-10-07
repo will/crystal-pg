@@ -137,11 +137,9 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
   end
 
   it "accepts sslrootcert=system param" do
-    env_var_bubble do
-      ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require&sslrootcert=system")
-      ci.resolved_sslrootcert.should be_nil
-      ci.sslrootcert.should eq "system"
-    end
+    ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require&sslrootcert=system")
+    ci.resolved_sslrootcert.should be_nil
+    ci.sslrootcert.should eq "system"
   end
 
   it "accepts sslrootcert=system from env" do
