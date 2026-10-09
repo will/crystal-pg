@@ -4,6 +4,9 @@ require "../src/pg"
 DB_URL = ENV["DATABASE_URL"]? || "postgres:///"
 PG_DB  = DB.open(DB_URL)
 
+DB_TIMEZONE = PG_DB.query_one("SHOW timezone", &.read).as(String)
+DB_LOCATION = Time::Location.load(DB_TIMEZONE)
+
 def with_db(&)
   DB.open(DB_URL) do |db|
     yield db
