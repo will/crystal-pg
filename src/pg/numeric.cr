@@ -135,5 +135,16 @@ module PG
 
       (dscale - count).times { io << '0' }
     end
+
+    def ==(other : Numeric)
+      return true if nan? && other.nan?
+      return false if nan? || other.nan?
+
+      sign == other.sign &&
+        ndigits == other.ndigits &&
+        weight == other.weight &&
+        dscale == other.dscale &&
+        digits == other.digits
+    end
   end
 end

@@ -1,4 +1,6 @@
 require "../pg/geo"
+require "../pg/network"
+require "../pg/range"
 
 module PQ
   # :nodoc:
@@ -75,6 +77,26 @@ module PQ
     def self.encode(val : PG::Interval)
       # https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
       text "#{val.months} months #{val.days} days #{val.microseconds} microseconds"
+    end
+
+    def self.encode(val : PG::Network::Inet)
+      text val.to_s
+    end
+
+    def self.encode(val : PG::Network::Cidr)
+      text val.to_s
+    end
+
+    def self.encode(val : PG::Network::MacAddr)
+      text val.to_s
+    end
+
+    def self.encode(val : PG::Network::MacAddr8)
+      text val.to_s
+    end
+
+    def self.encode(val : PG::Range)
+      text val.to_s
     end
 
     def self.encode(val)
