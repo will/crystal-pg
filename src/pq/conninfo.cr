@@ -33,6 +33,8 @@ module PQ
     getter sslkey : String?
 
     # The sslrootcert. Optional.
+    # This only reports what the DSN provides; use `#resolved_sslrootcert` if you need the path
+    # in use, if any.
     getter sslrootcert : String?
 
     # The application name. Optional (defaults to "crystal").
@@ -99,6 +101,53 @@ module PQ
       params.each do |key, value|
         handle_sslparam(key, value)
       end
+    end
+
+    # Is SSL required?
+    def ssl_required?
+      case sslmode
+      when :require, :"verify-ca", :"verify-full"
+        true
+      else
+        false
+      end
+    end
+
+    # Test for full SSL verification
+    def verify_full?
+      sslmode == :"verify-full"
+    end
+
+    # Test for only verifying SSL CA
+    def verify_ca_only?
+      sslmode == :"verify-ca"
+    end
+
+    # Resolve the SSL root cert
+    def resolved_sslrootcert : String?
+      # Use a specified sslrootcert if there is one
+      resolved = sslrootcert.presence || ENV["PGSSLROOTCERT"]?.presence || default_sslrootcert
+
+      # Use the system cert store
+      resolved = nil if resolved == "system"
+
+      resolved
+    end
+
+    # The default sslrootcert, if it exists
+    private def default_sslrootcert : String?
+      path = {% if flag?(:windows) %}
+               if ENV["APPDATA"]?
+                 Path[ENV["APPDATA"], "postgresql", "root.crt"]
+               else
+                 nil
+               end
+             {% else %}
+               Path["~/.postgresql/root.crt"].expand(home: true)
+             {% end %}
+      return unless path
+
+      File.exists?(path) ? path.to_s : nil
     end
 
     private def handle_sslparam(key : String, value : String)
