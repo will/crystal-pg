@@ -187,11 +187,17 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   protected def do_close
+    # Skip the remaining rows before releasing the connection, otherwise
+    # another fiber could check it out and read them as its own response
+    skip_remaining_rows unless @end
+  rescue DB::ConnectionLost
+    # if the connection is lost there is nothing to be
+    # done since the result set is no longer needed
+  ensure
     super
+  end
 
-    # Nothing to do if all the rows were consumed
-    return if @end
-
+  private def skip_remaining_rows
     # Check if we didn't advance to the first row
     if @column_index == -1
       return unless move_next
@@ -207,9 +213,6 @@ class PG::ResultSet < ::DB::ResultSet
 
       break unless move_next
     end
-  rescue DB::ConnectionLost
-    # if the connection is lost there is nothing to be
-    # done since the result set is no longer needed
   end
 
   private class Buffer < IO::Sized
