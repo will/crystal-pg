@@ -48,23 +48,35 @@ module PQ
       @soc.flush
 
       if process_ssl_message
-        ctx = OpenSSL::SSL::Context::Client.new
-        ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE # currently emulating sslmode 'require' not verify_ca or verify_full
+        ctx = OpenSSL::SSL::Context::Client.new # VerifyMode::PEER and the default verify paths
+        root = @conninfo.sslrootcert
+        verify = @conninfo.sslmode.in?(:"verify-ca", :"verify-full") ||
+                 (@conninfo.sslmode == :require && !root.nil? && root != "system")
+        ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE unless verify
+        if root && root != "system"
+          ctx.ca_certificates = root
+        end
         if sslcert = @conninfo.sslcert
           ctx.certificate_chain = sslcert
         end
         if sslkey = @conninfo.sslkey
           ctx.private_key = sslkey
         end
-        if sslrootcert = @conninfo.sslrootcert
-          ctx.ca_certificates = sslrootcert
+        # `verify-ca` passes no hostname: the stdlib sets the host check
+        # whenever it is given one, and it also sends SNI from it.
+        hostname = @conninfo.sslmode == :"verify-ca" ? nil : @conninfo.host
+        begin
+          @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true, hostname: hostname)
+        rescue ex : OpenSSL::SSL::Error
+          @soc.close rescue nil
+          raise ConnectionError.new("TLS handshake failed: #{ex.message}", cause: ex)
         end
-        @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true, hostname: @conninfo.host)
       end
 
-      if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
-        close
-        raise ConnectionError.new("sslmode=require and server did not establish SSL")
+      if @conninfo.sslmode.in?(:require, :"verify-ca", :"verify-full") && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
+        # Not `close`: that would send a Terminate message in plaintext.
+        @soc.close rescue nil
+        raise ConnectionError.new("sslmode=#{@conninfo.sslmode} and server did not establish SSL")
       end
     end
 
