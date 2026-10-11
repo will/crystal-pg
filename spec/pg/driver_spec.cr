@@ -202,41 +202,32 @@ describe PG::Driver do
 
   describe "close" do
     it "skips unread rows before releasing the connection" do
-      url = "#{DB_URL}#{DB_URL.includes?('?') ? '&' : '?'}max_pool_size=1"
-      db = DB.open(url)
+      db = DB.open("#{DB_URL}#{DB_URL.includes?('?') ? '&' : '?'}max_pool_size=1")
       row_read = Channel(Nil).new
-      result = Channel(Int32 | Exception).new
+      closed = false
+      checked_out_before_close = Channel(Bool).new
 
-      # Closes a result set early. The rows are larger than the server's send
-      # buffer and produced slowly, so skipping them has to wait on the socket.
-      spawn do
-        db.query("select repeat('x', 10000), pg_sleep(0.01) from generate_series(1, 50)") do |rs|
-          rs.each do
-            rs.read(String)
-            row_read.send nil
-            Fiber.yield
-            break
-          end
-        end
-      end
-
-      # Waits for the only connection while the rows above are skipped
+      # Waits for the only connection while the result set below is closed
       spawn do
         row_read.receive
-        begin
-          result.send db.scalar("select 42::int4").as(Int32)
-        rescue ex
-          result.send ex
-        end
+        db.using_connection { checked_out_before_close.send !closed }
       end
 
-      select
-      when value = result.receive
-        value.should eq(42)
-        db.close
-      when timeout(10.seconds)
-        fail "timed out waiting for the second query"
+      # The remaining rows are larger than the server's send buffer and
+      # produced slowly, so skipping them has to wait on the socket
+      db.query("select repeat('x', 10000), pg_sleep(0.01) from generate_series(1, 50)") do |rs|
+        rs.each do
+          rs.read(String)
+          row_read.send nil
+          Fiber.yield
+          break
+        end
       end
+      closed = true
+
+      checked_out_before_close.receive.should be_false
+    ensure
+      db.try &.close
     end
   end
 end
