@@ -32,17 +32,15 @@ module PQ
     # The sslkey. Optional.
     getter sslkey : String?
 
-    # The sslrootcert. Optional.
-    # This only reports what the DSN provides; use `#resolved_sslrootcert` if you need the path
-    # in use, if any.
-    getter sslrootcert : String?
-
     # The application name. Optional (defaults to "crystal").
     getter application_name : String
 
     getter replication : String?
 
     getter auth_methods : Array(String) = %w[scram-sha-256-plus scram-sha-256 md5]
+
+    # The SSL root cert from the DSN, if any
+    @dsn_sslrootcert : String? = nil
 
     # Create a new ConnInfo from all parts
     def initialize(host : String? = nil, database : String? = nil, user : String? = nil, password : String? = nil, port : Int | String? = nil, sslmode : String | Symbol? = nil, application_name : String? = nil, @replication = nil)
@@ -123,10 +121,15 @@ module PQ
       sslmode == :"verify-ca"
     end
 
+    # The sslrootcert from the DSN, or the value of `PGSSLROOTCERT`
+    def sslrootcert : String?
+      @dsn_sslrootcert.presence || ENV["PGSSLROOTCERT"]?.presence
+    end
+
     # Resolve the SSL root cert
     def resolved_sslrootcert : String?
-      # Use a specified sslrootcert if there is one
-      resolved = sslrootcert.presence || ENV["PGSSLROOTCERT"]?.presence || default_sslrootcert
+      # Fall back to libpq's default path
+      resolved = sslrootcert || default_sslrootcert
 
       # Use the system cert store
       resolved = nil if resolved == "system"
@@ -159,7 +162,7 @@ module PQ
       when "sslkey"
         @sslkey = value
       when "sslrootcert"
-        @sslrootcert = value
+        @dsn_sslrootcert = value
       when "auth_methods"
         methods = value.split(",").compact_map(&.underscore.presence).uniq
         methods.each do |method|

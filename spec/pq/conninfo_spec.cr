@@ -125,6 +125,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
       ENV["PGSSLROOTCERT"] = "/env/root.crt"
       ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db")
       ci.resolved_sslrootcert.should eq "/env/root.crt"
+      ci.sslrootcert.should eq "/env/root.crt"
     end
   end
 
@@ -133,6 +134,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
       ENV["PGSSLROOTCERT"] = "/env/root.crt"
       ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require&sslrootcert=/explicit/root.crt")
       ci.resolved_sslrootcert.should eq "/explicit/root.crt"
+      ci.sslrootcert.should eq "/explicit/root.crt"
     end
   end
 
@@ -147,7 +149,7 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
       ENV["PGSSLROOTCERT"] = "system"
       ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=require")
       ci.resolved_sslrootcert.should be_nil
-      ci.sslrootcert.should be_nil
+      ci.sslrootcert.should eq "system"
     end
   end
 
