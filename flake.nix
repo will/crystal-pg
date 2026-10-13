@@ -20,15 +20,41 @@
           nativeBuildInputs = [ pkgs.openssl ];
           installPhase = ''
             mkdir $out
-            openssl req -new -nodes -text -out ca.csr -keyout ca-key.pem -subj "/CN=certificate-authority"
-            openssl x509 -req -in ca.csr -text -signkey ca-key.pem -out ca-cert.pem
-            openssl req -new -nodes -text -out server.csr -keyout server-key.pem -subj "/CN=pg-server"
-            openssl x509 -req -in server.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem
-            openssl req -new -nodes -text -out client.csr -keyout client-key.pem -subj "/CN=crystal_ssl"
-            openssl x509 -req -in client.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out client-cert.pem
 
-            # NOTE(2024-11-05): something broke with the newer openssl and client certs and the CA but I can't figure it out
-            # openssl verify -CAfile ca-cert.pem client-cert.pem
+            cat > ca.ext <<'EOF'
+            basicConstraints = critical, CA:TRUE
+            keyUsage = critical, keyCertSign, cRLSign
+            subjectKeyIdentifier = hash
+            EOF
+
+            cat > server.ext <<'EOF'
+            basicConstraints = critical, CA:FALSE
+            keyUsage = critical, digitalSignature, keyEncipherment
+            extendedKeyUsage = serverAuth
+            subjectAltName = IP:127.0.0.1
+            EOF
+
+            cat > client.ext <<'EOF'
+            basicConstraints = critical, CA:FALSE
+            keyUsage = critical, digitalSignature, keyEncipherment
+            extendedKeyUsage = clientAuth
+            EOF
+
+            openssl req -new -nodes -text -out ca.csr -keyout ca-key.pem -subj "/CN=certificate-authority"
+            openssl x509 -req -in ca.csr -text -signkey ca-key.pem -extfile ca.ext -days 3650 -out ca-cert.pem
+
+            # An unrelated CA, used only as a bogus sslrootcert for the negative specs.
+            openssl req -new -nodes -text -out other-ca.csr -keyout other-ca-key.pem -subj "/CN=other-certificate-authority"
+            openssl x509 -req -in other-ca.csr -text -signkey other-ca-key.pem -extfile ca.ext -days 3650 -out other-ca-cert.pem
+
+            openssl req -new -nodes -text -out server.csr -keyout server-key.pem -subj "/CN=pg-server"
+            openssl x509 -req -in server.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -extfile server.ext -days 3650 -out server-cert.pem
+
+            openssl req -new -nodes -text -out client.csr -keyout client-key.pem -subj "/CN=crystal_ssl"
+            openssl x509 -req -in client.csr -text -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -extfile client.ext -days 3650 -out client-cert.pem
+
+            openssl verify -CAfile ca-cert.pem server-cert.pem
+            openssl verify -CAfile ca-cert.pem client-cert.pem
 
             mv *.pem $out
           '';
@@ -71,6 +97,7 @@
           echo "
           local   all       postgres                     trust
           host    all       postgres       127.0.0.1/32  trust
+          host    all       postgres       ::1/128       trust
           host    all       crystal_md5    127.0.0.1/32  md5
           hostssl all       crystal_ssl    127.0.0.1/32  cert
           host    all       crystal_clear  127.0.0.1/32  password

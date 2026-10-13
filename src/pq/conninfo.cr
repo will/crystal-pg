@@ -32,15 +32,15 @@ module PQ
     # The sslkey. Optional.
     getter sslkey : String?
 
-    # The sslrootcert. Optional.
-    getter sslrootcert : String?
-
     # The application name. Optional (defaults to "crystal").
     getter application_name : String
 
     getter replication : String?
 
     getter auth_methods : Array(String) = %w[scram-sha-256-plus scram-sha-256 md5]
+
+    # The SSL root cert from the DSN, if any
+    @dsn_sslrootcert : String? = nil
 
     # Create a new ConnInfo from all parts
     def initialize(host : String? = nil, database : String? = nil, user : String? = nil, password : String? = nil, port : Int | String? = nil, sslmode : String | Symbol? = nil, application_name : String? = nil, @replication = nil)
@@ -101,6 +101,58 @@ module PQ
       end
     end
 
+    # Is SSL required?
+    def ssl_required?
+      case sslmode
+      when :require, :"verify-ca", :"verify-full"
+        true
+      else
+        false
+      end
+    end
+
+    # Test for full SSL verification
+    def verify_full?
+      sslmode == :"verify-full"
+    end
+
+    # Test for only verifying SSL CA
+    def verify_ca_only?
+      sslmode == :"verify-ca"
+    end
+
+    # The sslrootcert from the DSN, or the value of `PGSSLROOTCERT`
+    def sslrootcert : String?
+      @dsn_sslrootcert.presence || ENV["PGSSLROOTCERT"]?.presence
+    end
+
+    # Resolve the SSL root cert
+    def resolved_sslrootcert : String?
+      # Fall back to libpq's default path
+      resolved = sslrootcert || default_sslrootcert
+
+      # Use the system cert store
+      resolved = nil if resolved == "system"
+
+      resolved
+    end
+
+    # The default sslrootcert, if it exists
+    private def default_sslrootcert : String?
+      path = {% if flag?(:windows) %}
+               if ENV["APPDATA"]?
+                 Path[ENV["APPDATA"], "postgresql", "root.crt"]
+               else
+                 nil
+               end
+             {% else %}
+               Path["~/.postgresql/root.crt"].expand(home: true)
+             {% end %}
+      return unless path
+
+      File.exists?(path) ? path.to_s : nil
+    end
+
     private def handle_sslparam(key : String, value : String)
       case key
       when "sslmode"
@@ -110,7 +162,7 @@ module PQ
       when "sslkey"
         @sslkey = value
       when "sslrootcert"
-        @sslrootcert = value
+        @dsn_sslrootcert = value
       when "auth_methods"
         methods = value.split(",").compact_map(&.underscore.presence).uniq
         methods.each do |method|
