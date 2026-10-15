@@ -1,5 +1,6 @@
 require "db"
 require "./pg/*"
+require "./pg/cursor"
 
 module PG
   # Establish a connection to the database

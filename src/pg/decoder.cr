@@ -1,8 +1,10 @@
 require "json"
 require "uuid"
+require "./network"
+require "./range"
 
 module PG
-  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric | UUID
+  alias PGValue = String | Nil | Bool | Int32 | Float32 | Float64 | Time | JSON::Any | PG::Numeric | UUID | PG::Network::Inet | PG::Network::Cidr | PG::Network::MacAddr | PG::Network::MacAddr8 | PG::Int4Range | PG::Int8Range | PG::NumRange | PG::TsRange | PG::TsTzRange | PG::DateRange
 
   # :nodoc:
   module Decoders
