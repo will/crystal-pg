@@ -8,7 +8,7 @@ private def assert_default_params(ci)
   ci.database.should eq(ci.user)
   ci.password.should eq(nil)
   ci.port.should eq(5432)
-  ci.sslmode.should eq(:prefer)
+  ci.sslmode.should eq(PQ::SSLMode::Prefer)
   ci.application_name.should eq("crystal")
 end
 
@@ -18,12 +18,12 @@ private def assert_custom_params(ci)
   ci.user.should eq("user")
   ci.password.should eq("pass")
   ci.port.should eq(5555)
-  ci.sslmode.should eq(:require)
+  ci.sslmode.should eq(PQ::SSLMode::Require)
   ci.application_name.should eq("specs")
 end
 
 private def assert_ssl_params(ci)
-  ci.sslmode.should eq(:"verify-full")
+  ci.sslmode.should eq(PQ::SSLMode::VerifyFull)
   ci.sslcert.should eq("postgresql.crt")
   ci.sslkey.should eq("postgresql.key")
   ci.sslrootcert.should eq("root.crt")
@@ -33,7 +33,7 @@ end
 
 # The file and line parameters are to ensure that we report failures from where the helper was
 # called, not in the helper itself.
-private def assert_ssl_mode(mode : String, mode_symbol : Symbol, required : Bool, full : Bool, ca_only : Bool, file = __FILE__, line = __LINE__)
+private def assert_ssl_mode(mode : String, mode_symbol : PQ::SSLMode, required : Bool, full : Bool, ca_only : Bool, file = __FILE__, line = __LINE__)
   ci = PQ::ConnInfo.from_conninfo_string("postgres://user:pass@host:5555/db?sslmode=#{mode}")
   ci.sslmode.should eq(mode_symbol), file: file, line: line
   ci.ssl_required?.should eq(required), file: file, line: line
@@ -116,8 +116,8 @@ describe PQ::ConnInfo, ".from_conninfo_string" do
     assert_ssl_mode "allow", :allow, false, false, false
     assert_ssl_mode "prefer", :prefer, false, false, false
     assert_ssl_mode "require", :require, true, false, false
-    assert_ssl_mode "verify-ca", :"verify-ca", true, false, true
-    assert_ssl_mode "verify-full", :"verify-full", true, true, false
+    assert_ssl_mode "verify-ca", :verify_ca, true, false, true
+    assert_ssl_mode "verify-full", :verify_full, true, true, false
   end
 
   it "uses sslrootcert from env" do
