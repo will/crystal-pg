@@ -24,7 +24,7 @@ module PQ
     getter password : String?
 
     # The sslmode. Optional (:prefer is default).
-    getter sslmode : Symbol
+    getter sslmode : SSLMode
 
     # The sslcert. Optional.
     getter sslcert : String?
@@ -104,7 +104,7 @@ module PQ
     # Is SSL required?
     def ssl_required?
       case sslmode
-      when :require, :"verify-ca", :"verify-full"
+      when .require?, .verify_ca?, .verify_full?
         true
       else
         false
@@ -113,12 +113,12 @@ module PQ
 
     # Test for full SSL verification
     def verify_full?
-      sslmode == :"verify-full"
+      sslmode.verify_full?
     end
 
     # Test for only verifying SSL CA
     def verify_ca_only?
-      sslmode == :"verify-ca"
+      sslmode.verify_ca?
     end
 
     # The sslrootcert from the DSN, or the value of `PGSSLROOTCERT`
@@ -207,23 +207,12 @@ module PQ
       u || ENV.fetch("PGUSER", current_user_name)
     end
 
-    private def default_sslmode(mode)
-      case mode
-      when nil, :prefer, "prefer"
-        :prefer
-      when :disable, "disable"
-        :disable
-      when :allow, "allow"
-        :allow
-      when :require, "require"
-        :require
-      when :"verify-ca", "verify-ca"
-        :"verify-ca"
-      when :"verify-full", "verify-full"
-        :"verify-full"
-      else
-        raise ArgumentError.new("sslmode #{mode} not supported")
-      end
+    private def default_sslmode(mode : Nil)
+      SSLMode::Prefer
+    end
+
+    private def default_sslmode(mode : String | Symbol)
+      SSLMode.parse(mode.to_s)
     end
 
     private def current_user_name
