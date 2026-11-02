@@ -66,6 +66,14 @@ private def ex(which)
     n(4, 1, 0, 8, [5, 93, 6075, 4417])
   when "2566.1918905000002000" # issue #222
     n(5, 0, 0, 16, [2566, 1918, 9050, 0, 2000])
+  when "10000"
+    n(1, 1, 0, 0, [1])
+  when "-10000"
+    n(1, 1, 0x4000, 0, [1])
+  when "200000000"
+    n(1, 2, 0, 0, [2])
+  when "10000.5"
+    n(3, 1, 0, 1, [1, 0, 5000])
   else
     raise "no example #{which}"
   end
@@ -108,6 +116,10 @@ describe PG::Numeric do
       {"-0.0000009", br(-9, 10000000)},
       {"-0.00000009", br(-9, 100000000)},
       {"0.0...9", br(BigInt.new(9999999), BigInt.new(10)**43)},
+      {"10000.5", br(20001, 2)},
+      {"10000", br(10000, 1)},
+      {"-10000", br(-10000, 1)},
+      {"200000000", br(200000000, 1)},
     ].each do |string, big_rational|
       ex(string).to_big_r.should eq(big_rational)
     end
@@ -129,12 +141,21 @@ describe PG::Numeric do
       {"-0.0000009", bd(-9, 7)},
       {"-0.00000009", bd(-9, 8)},
       {"0.0...9", bd(BigInt.new(9999999), 43)},
+      {"10000.5", bd(100005, 1)},
+      {"10000", bd(10000, 0)},
+      {"-10000", bd(-10000, 0)},
+      {"200000000", bd(200000000, 0)},
     ].each do |string, big_decimal|
       numeric = ex(string)
       it "converts #{numeric} to #{big_decimal}" do
         numeric.to_big_d.should eq(big_decimal)
       end
     end
+  end
+
+  it "reads a numeric whose trailing zero groups the server stripped" do
+    PG_DB.query_one("select 10000::numeric", &.read(BigDecimal)).should eq(bd(10000, 0))
+    PG_DB.query_one("select 10000::numeric", &.read(BigRational)).should eq(br(10000, 1))
   end
 
   it "#to_s" do
