@@ -122,8 +122,8 @@ class PG::ResultSet < ::DB::ResultSet
 
   def read(t : Enum.class)
     read do |io, bytesize|
-      if bytesize <= 1024
-        buffer = uninitialized UInt8[1024]
+      if bytesize <= 64
+        buffer = uninitialized UInt8[64]
         bytes = buffer.to_slice[0, bytesize]
       else
         # If your enum type values are over 1KB long, you deserve this heap
