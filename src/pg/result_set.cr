@@ -90,9 +90,9 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   # Reads the next column value as a **type**
-  def read(type : T.class) : T forall T
+  def read(type : T.class, &) : T forall T
     col_index = next_column_index
-    value = read { |io, bytesize| yield io, bytesize }
+    value = read { |io, bytesize, oid| yield io, bytesize, oid }
     if value.is_a?(T)
       value
     else
@@ -114,25 +114,38 @@ class PG::ResultSet < ::DB::ResultSet
     end
 
     safe_read(col_bytesize) do |io|
-      yield io, col_bytesize
+      yield io, col_bytesize, oid
     end
   rescue e : IO::Error
     raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
   def read(t : Enum.class)
-    read do |io, bytesize|
-      if bytesize <= 64
-        buffer = uninitialized UInt8[64]
-        bytes = buffer.to_slice[0, bytesize]
+    read do |io, bytesize, oid|
+      case oid
+      when 21 # int2/smallint
+        t.from_value IO::ByteFormat::BigEndian.decode Int16, io
+      when 23 # int4/integer
+        t.from_value IO::ByteFormat::BigEndian.decode Int32, io
+      when 20 # int8/bigint
+        t.from_value IO::ByteFormat::BigEndian.decode Int64, io
       else
-        # If your enum type values are over 1KB long, you deserve this heap
-        # allocation, you monster.
-        bytes = Bytes.new(bytesize)
-      end
+        # Postgres defaults to 63 bytes as the max ENUM name size, so we use a
+        # stack-allocated buffer for those as an optimization. If you've got ENUM
+        # names longer than that, we use a heap-allocated buffer, which is slower
+        # but still works.
+        #
+        # See https://www.postgresql.org/docs/current/datatype-enum.html#DATATYPE-ENUM-IMPLEMENTATION-DETAILS
+        if bytesize <= 64
+          buffer = uninitialized UInt8[64]
+          bytes = buffer.to_slice[0, bytesize]
+        else
+          bytes = Bytes.new(bytesize)
+        end
 
-      io.read_fully bytes
-      t.parse string_pool.get(bytes)
+        io.read_fully bytes
+        t.parse string_pool.get(bytes)
+      end
     end
   end
 

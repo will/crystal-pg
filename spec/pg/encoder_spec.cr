@@ -29,8 +29,12 @@ describe PG::Driver, "encoder" do
   test_insert_and_read "timestamp", Time.utc(2015, 2, 3, 17, 15, 13, nanosecond: 123_456_000)
   test_insert_and_read "timestamptz", Time.local(2019, 8, 13, 12, 30, location: Time::Location.fixed(-14_400))
 
+  test_insert_and_read "int2", EncoderSpec::Status::Open
+  test_insert_and_read "int2", EncoderSpec::Status::Closed
   test_insert_and_read "int4", EncoderSpec::Status::Open
   test_insert_and_read "int4", EncoderSpec::Status::Closed
+  test_insert_and_read "int8", EncoderSpec::Status::Open
+  test_insert_and_read "int8", EncoderSpec::Status::Closed
 
   test_insert_and_read "bool[]", [true, false, true]
 
