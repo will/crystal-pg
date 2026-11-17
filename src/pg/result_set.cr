@@ -187,8 +187,6 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   protected def do_close
-    super
-
     # Nothing to do if all the rows were consumed
     return if @end
 
@@ -210,6 +208,10 @@ class PG::ResultSet < ::DB::ResultSet
   rescue DB::ConnectionLost
     # if the connection is lost there is nothing to be
     # done since the result set is no longer needed
+  ensure
+    # Release the connection only after the remaining rows were skipped,
+    # otherwise another fiber could check it out and read them
+    super
   end
 
   private class Buffer < IO::Sized

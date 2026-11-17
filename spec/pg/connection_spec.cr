@@ -17,6 +17,30 @@ describe PG::Connection, "#initialize" do
   end
 end
 
+describe PG::Connection, "#driver_name" do
+  it "returns the name the driver is registered with" do
+    with_connection do |conn|
+      conn.driver_name.should eq("postgres")
+    end
+  end
+end
+
+describe PG::Connection, "#server_name" do
+  it "returns PostgreSQL" do
+    with_connection do |conn|
+      conn.server_name.should eq("PostgreSQL")
+    end
+  end
+end
+
+describe PG::Connection, "#server_version" do
+  it "returns the version reported by the server" do
+    with_connection do |conn|
+      conn.server_version.should eq(conn.scalar("SHOW server_version"))
+    end
+  end
+end
+
 describe PG::Connection, "#on_notice" do
   it "sends notices to on_notice" do
     last_notice = nil

@@ -31,6 +31,21 @@ module PG
       Statement.new(self, query)
     end
 
+    # :inherit:
+    def driver_name : String
+      "postgres"
+    end
+
+    # :inherit:
+    def server_name : String?
+      "PostgreSQL"
+    end
+
+    # :inherit:
+    def server_version : String?
+      @connection.server_parameters["server_version"]?
+    end
+
     # Execute several statements. No results are returned.
     def exec_all(query : String) : Nil
       PQ::SimpleQuery.new(@connection, query)

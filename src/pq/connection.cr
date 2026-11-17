@@ -13,6 +13,24 @@ module PQ
 
   # :nodoc:
   class Connection
+    # Error codes we care about for sslmode=verify-ca
+
+    X509_V_ERR_HOSTNAME_MISMATCH   = 62
+    X509_V_ERR_IP_ADDRESS_MISMATCH = 64
+
+    # A bound callback to use when verifying the SSL connection. Used to allow verify-ca to
+    # function as intended.
+    VERIFY_CA_CALLBACK = ->(preverify_ok : LibC::Int, ctx : LibCrypto::X509_STORE_CTX) do
+      return preverify_ok if preverify_ok == 1
+
+      case LibCrypto.x509_store_ctx_get_error(ctx)
+      when X509_V_ERR_HOSTNAME_MISMATCH, X509_V_ERR_IP_ADDRESS_MISMATCH
+        1
+      else
+        0
+      end
+    end
+
     getter soc : UNIXSocket | TCPSocket | OpenSSL::SSL::Socket::Client
     getter server_parameters = Hash(String, String).new
     getter conninfo : ConnInfo
@@ -49,22 +67,31 @@ module PQ
 
       if process_ssl_message
         ctx = OpenSSL::SSL::Context::Client.new
-        ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE # currently emulating sslmode 'require' not verify_ca or verify_full
         if sslcert = @conninfo.sslcert
           ctx.certificate_chain = sslcert
         end
         if sslkey = @conninfo.sslkey
           ctx.private_key = sslkey
         end
-        if sslrootcert = @conninfo.sslrootcert
+        if sslrootcert = @conninfo.resolved_sslrootcert
           ctx.ca_certificates = sslrootcert
         end
+
+        # Set the verify mode. For verify-ca, we need a custom callback that ignores hostname
+        # or ip mismatches, for verify-full we need the default verification, and otherwise
+        # we set the mode to NONE for allow/prefer
+        if @conninfo.verify_ca_only?
+          LibSSL.ssl_ctx_set_verify(ctx, OpenSSL::SSL::VerifyMode::PEER, VERIFY_CA_CALLBACK)
+        elsif !@conninfo.verify_full?
+          ctx.verify_mode = OpenSSL::SSL::VerifyMode::NONE
+        end
+
         @soc = OpenSSL::SSL::Socket::Client.new(@soc, context: ctx, sync_close: true, hostname: @conninfo.host)
       end
 
-      if @conninfo.sslmode == :require && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
+      if @conninfo.ssl_required? && !@soc.is_a?(OpenSSL::SSL::Socket::Client)
         close
-        raise ConnectionError.new("sslmode=require and server did not establish SSL")
+        raise ConnectionError.new("sslmode=#{@conninfo.sslmode} and server did not establish SSL")
       end
     end
 

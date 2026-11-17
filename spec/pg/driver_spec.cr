@@ -199,4 +199,35 @@ describe PG::Driver do
       end
     end
   end
+
+  describe "close" do
+    it "skips unread rows before releasing the connection" do
+      db = DB.open("#{DB_URL}#{DB_URL.includes?('?') ? '&' : '?'}max_pool_size=1")
+      row_read = Channel(Nil).new
+      closed = false
+      checked_out_before_close = Channel(Bool).new
+
+      # Waits for the only connection while the result set below is closed
+      spawn do
+        row_read.receive
+        db.using_connection { checked_out_before_close.send !closed }
+      end
+
+      # The remaining rows are larger than the server's send buffer and
+      # produced slowly, so skipping them has to wait on the socket
+      db.query("select repeat('x', 10000), pg_sleep(0.01) from generate_series(1, 50)") do |rs|
+        rs.each do
+          rs.read(String)
+          row_read.send nil
+          Fiber.yield
+          break
+        end
+      end
+      closed = true
+
+      checked_out_before_close.receive.should be_false
+    ensure
+      db.try &.close
+    end
+  end
 end
