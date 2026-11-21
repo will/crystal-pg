@@ -26,6 +26,10 @@ module PG
     end
 
     def to_crystal_range
+      unless lower_inclusive
+        raise Error.new("Cannot convert #{inspect} to a ::Range type because it excludes the lower bound")
+      end
+
       ::Range.new(@begin, @end, exclusive: excludes_end?)
     end
 
