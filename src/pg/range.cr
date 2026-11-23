@@ -10,7 +10,23 @@ module PG
       new(empty: true)
     end
 
-    def initialize(@begin : T? = nil, @end : T? = nil, @lower_inclusive : Bool = true, @upper_inclusive : Bool = false, @empty : Bool = false)
+    def initialize(
+      begin lower : T? = nil,
+      end upper : T? = nil,
+      @lower_inclusive : Bool = !lower.nil?,
+      @upper_inclusive : Bool = false,
+      @empty : Bool = false,
+    )
+      if lower_inclusive && lower.nil?
+        raise ArgumentError.new("A range with an infinite lower bound cannot include the lower end")
+      end
+
+      if upper_inclusive && upper.nil?
+        raise ArgumentError.new("A range with an infinite upper bound cannot include the upper end")
+      end
+
+      @begin = lower
+      @end = upper
     end
 
     def empty?
@@ -26,16 +42,16 @@ module PG
     end
 
     def to_crystal_range
-      unless lower_inclusive
+      if excludes_begin? && !@begin.nil?
         raise Error.new("Cannot convert #{inspect} to a ::Range type because it excludes the lower bound")
       end
 
       ::Range.new(@begin, @end, exclusive: excludes_end?)
     end
 
-    def ==(other : self)
+    def ==(other : Range)
       empty? == other.empty? &&
-        @begin == other.begin &&
+        self.begin == other.begin &&
         self.end == other.end &&
         lower_inclusive == other.lower_inclusive &&
         upper_inclusive == other.upper_inclusive
@@ -45,7 +61,10 @@ module PG
       if empty?
         other.begin == other.end && other.excludes_end?
       else
-        to_crystal_range == other
+        self.begin == other.begin &&
+          self.end == other.end &&
+          lower_inclusive == !other.begin.nil? &&
+          upper_inclusive == (!other.excludes_end? && !other.end.nil?)
       end
     end
 

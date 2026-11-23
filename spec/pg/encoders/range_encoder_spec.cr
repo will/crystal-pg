@@ -1,7 +1,7 @@
 require "../../spec_helper"
 
-def test_insert_sql_and_read_range(pg_type, pg_value, value)
-  it "inserts #{pg_type} with value #{pg_value}" do
+def test_insert_sql_and_read_range(pg_type, pg_value, value, *, file = __FILE__, line = __LINE__)
+  it "inserts #{pg_type} with value #{pg_value}", file: file, line: line do
     PG_DB.exec "drop table if exists test_table"
     PG_DB.exec "create table test_table (v #{pg_type})"
     PG_DB.exec "insert into test_table values ('#{pg_value}'::#{pg_type})"
@@ -11,8 +11,8 @@ def test_insert_sql_and_read_range(pg_type, pg_value, value)
   end
 end
 
-def test_insert_object_and_read_range(pg_type, range, value)
-  it "inserts #{pg_type} with value #{range}" do
+def test_insert_object_and_read_range(pg_type, range, value, *, file = __FILE__, line = __LINE__)
+  it "inserts #{pg_type} with value #{range}", file: file, line: line do
     PG_DB.exec "drop table if exists test_table"
     PG_DB.exec "create table test_table (v #{pg_type})"
 
@@ -24,8 +24,8 @@ def test_insert_object_and_read_range(pg_type, range, value)
   end
 end
 
-def test_insert_sql_and_read_multirange(pg_type, pg_value, value)
-  it "inserts #{pg_type} with value #{pg_value}" do
+def test_insert_sql_and_read_multirange(pg_type, pg_value, value, *, file = __FILE__, line = __LINE__)
+  it "inserts #{pg_type} with value #{pg_value}", file: file, line: line do
     PG_DB.exec "drop table if exists test_table"
     PG_DB.exec "create table test_table (v #{pg_type})"
     PG_DB.exec "insert into test_table values ('#{pg_value}'::#{pg_type})"
@@ -35,8 +35,8 @@ def test_insert_sql_and_read_multirange(pg_type, pg_value, value)
   end
 end
 
-def test_insert_object_and_read_multirange(pg_type, range, value)
-  it "inserts #{pg_type} with value #{range}" do
+def test_insert_object_and_read_multirange(pg_type, range, value, *, file = __FILE__, line = __LINE__)
+  it "inserts #{pg_type} with value #{range}", file: file, line: line do
     PG_DB.exec "drop table if exists test_table"
     PG_DB.exec "create table test_table (v #{pg_type})"
     PG_DB.exec "insert into test_table values ($1)", args: [range]
@@ -80,8 +80,8 @@ describe PG::Driver, "encoder" do
       test_insert_sql_and_read_range "daterange", "(,)", nil...nil
 
       # tsrange
-      test_insert_sql_and_read_range "tsrange", "(2023-01-01 10:30:00,2023-12-31 15:45:00)", Time.utc(2023, 1, 1, 10, 30, 0)...Time.utc(2023, 12, 31, 15, 45, 0)
-      test_insert_sql_and_read_range "tsrange", "(2023-01-01 10:30:00,2023-12-31 15:45:00]", Time.utc(2023, 1, 1, 10, 30, 0)..Time.utc(2023, 12, 31, 15, 45, 0)
+      test_insert_sql_and_read_range "tsrange", "(2023-01-01 10:30:00,2023-12-31 15:45:00)", PG::Range.new(Time.utc(2023, 1, 1, 10, 30, 0), Time.utc(2023, 12, 31, 15, 45, 0), lower_inclusive: false, upper_inclusive: false)
+      test_insert_sql_and_read_range "tsrange", "(2023-01-01 10:30:00,2023-12-31 15:45:00]", PG::Range.new(Time.utc(2023, 1, 1, 10, 30, 0), Time.utc(2023, 12, 31, 15, 45, 0), lower_inclusive: false, upper_inclusive: true)
       test_insert_sql_and_read_range "tsrange", "[2023-01-01 10:30:00,2023-12-31 15:45:00)", Time.utc(2023, 1, 1, 10, 30, 0)...Time.utc(2023, 12, 31, 15, 45, 0)
       test_insert_sql_and_read_range "tsrange", "[2023-01-01 10:30:00,2023-12-31 15:45:00]", Time.utc(2023, 1, 1, 10, 30, 0)..Time.utc(2023, 12, 31, 15, 45, 0)
       test_insert_sql_and_read_range "tsrange", "empty", Time.unix(0)...Time.unix(0)
@@ -90,8 +90,8 @@ describe PG::Driver, "encoder" do
       test_insert_sql_and_read_range "tsrange", "(,)", nil...nil
 
       # tstzrange
-      test_insert_sql_and_read_range "tstzrange", "(2023-01-01 10:30:00+00,2023-12-31 15:45:00+00)", Time.utc(2023, 1, 1, 10, 30, 0)...Time.utc(2023, 12, 31, 15, 45, 0)
-      test_insert_sql_and_read_range "tstzrange", "(2023-01-01 10:30:00+00,2023-12-31 15:45:00+00]", Time.utc(2023, 1, 1, 10, 30, 0)..Time.utc(2023, 12, 31, 15, 45, 0)
+      test_insert_sql_and_read_range "tstzrange", "(2023-01-01 10:30:00+00,2023-12-31 15:45:00+00)", PG::Range.new(Time.utc(2023, 1, 1, 10, 30, 0), Time.utc(2023, 12, 31, 15, 45, 0), lower_inclusive: false, upper_inclusive: false)
+      test_insert_sql_and_read_range "tstzrange", "(2023-01-01 10:30:00+00,2023-12-31 15:45:00+00]", PG::Range.new(Time.utc(2023, 1, 1, 10, 30, 0), Time.utc(2023, 12, 31, 15, 45, 0), lower_inclusive: false, upper_inclusive: true)
       test_insert_sql_and_read_range "tstzrange", "[2023-01-01 10:30:00+00,2023-12-31 15:45:00+00)", Time.utc(2023, 1, 1, 10, 30, 0)...Time.utc(2023, 12, 31, 15, 45, 0)
       test_insert_sql_and_read_range "tstzrange", "[2023-01-01 10:30:00+00,2023-12-31 15:45:00+00]", Time.utc(2023, 1, 1, 10, 30, 0)..Time.utc(2023, 12, 31, 15, 45, 0)
       test_insert_sql_and_read_range "tstzrange", "empty", Time.unix(0)...Time.unix(0)
@@ -102,10 +102,10 @@ describe PG::Driver, "encoder" do
       # numrange
       test_insert_sql_and_read_range "numrange",
         "(1.5,10.75)",
-        PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])...PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])
+        PG::Range.new(PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16]), PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16]), lower_inclusive: false, upper_inclusive: false)
       test_insert_sql_and_read_range "numrange",
         "(1.5,10.75]",
-        PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])..PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])
+        PG::Range.new(PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16]), PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16]), lower_inclusive: false, upper_inclusive: true)
       test_insert_sql_and_read_range "numrange",
         "[1.5,10.75)",
         PG::Numeric.new(2_i16, 0_i16, 0_i16, 1_i16, [1_i16, 5000_i16])...PG::Numeric.new(2_i16, 0_i16, 0_i16, 2_i16, [10_i16, 7500_i16])

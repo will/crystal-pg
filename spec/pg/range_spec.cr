@@ -1,6 +1,24 @@
 require "../spec_helper"
 
 describe PG::Range do
+  it "raises with a nil inclusive lower end" do
+    # Fine with an exclusive lower end
+    PG::Range(Int32).new(nil, 42, lower_inclusive: false)
+
+    expect_raises ArgumentError, /cannot include the lower end/ do
+      PG::Range(Int32).new(nil, 42, lower_inclusive: true)
+    end
+  end
+
+  it "raises with a nil inclusive upper end" do
+    # Fine with an exclusive upper end
+    PG::Range(Int32).new(42, nil, upper_inclusive: false)
+
+    expect_raises ArgumentError, /cannot include the upper end/ do
+      PG::Range(Int32).new(42, nil, upper_inclusive: true)
+    end
+  end
+
   describe "#to_crystal_range" do
     it "converts to a Crystal range" do
       PG::Range.new(1, 2, lower_inclusive: true, upper_inclusive: true)
