@@ -1,6 +1,13 @@
 v? upcoming
 =====================
 
+v0.32.0    2026-11-23
+=====================
+* Skip unread rows before releasing connection (thanks @mattn)
+* Add support for `verify-full` and `verify-ca` values for `sslmode` (thanks @plambert)
+* Make `PQ::Connection#sslmode` an `enum` type (thanks @jgaskins)
+* Add support for Postgres range and multirange types (thanks @mamantoha and @jgaskins)
+
 v0.31.0    2026-10-08
 =====================
 * Add `PG::Connection#driver_name`, `#server_name`, and `#server_version` (thanks @blacksmoke16)
