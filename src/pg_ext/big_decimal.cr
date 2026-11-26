@@ -9,8 +9,9 @@ module PG
 
       ten_k = BigInt.new(10_000)
       num = digits.reduce(BigInt.new(0)) { |a, i| a*ten_k + BigInt.new(i) }
+      # negative when the server stripped trailing zero groups: 10000 is [1] with weight 1
       scale = 4 * (ndigits - 1 - weight)
-      quot = BigDecimal.new(num, scale)
+      quot = scale < 0 ? BigDecimal.new(num * BigInt.new(10)**-scale, 0) : BigDecimal.new(num, scale)
       neg? ? -quot : quot
     end
   end
