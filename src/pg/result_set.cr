@@ -1,3 +1,5 @@
+require "string_pool"
+
 # Remove this monkeypatch when we want to drop support for Crystal < 1.0
 # Crystal versions above 1.0 should have this already, added in this pr:
 # https://github.com/crystal-lang/crystal/pull/10520
@@ -9,6 +11,7 @@
 
 class PG::ResultSet < ::DB::ResultSet
   getter rows_affected
+  private getter string_pool : StringPool { StringPool.new }
 
   def initialize(statement, @fields : Array(PQ::Field)?)
     super(statement)
@@ -81,6 +84,28 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   def read
+    read do |io, col_bytesize|
+      decoder.decode(io, col_bytesize, oid)
+    end
+  end
+
+  def read(type : T.class, &) : T forall T
+    col_index = next_column_index
+    value = read { |io, bytesize, oid| yield io, bytesize, oid }
+    if value.is_a?(T)
+      value
+    else
+      raise DB::ColumnTypeMismatchError.new(
+        context: "#{self.class}#read",
+        column_index: col_index,
+        column_name: column_name(col_index),
+        column_type: value.class.to_s,
+        expected_type: T.to_s
+      )
+    end
+  end
+
+  def read(&)
     col_bytesize = conn.read_i32
     if col_bytesize == -1
       @column_index += 1
@@ -88,10 +113,39 @@ class PG::ResultSet < ::DB::ResultSet
     end
 
     safe_read(col_bytesize) do |io|
-      decoder.decode(io, col_bytesize, oid)
+      yield io, col_bytesize, oid
     end
   rescue e : IO::Error
     raise DB::ConnectionLost.new(statement.connection, cause: e)
+  end
+
+  def read(t : Enum.class)
+    read do |io, bytesize, oid|
+      case oid
+      when 21 # int2/smallint
+        t.from_value IO::ByteFormat::BigEndian.decode Int16, io
+      when 23 # int4/integer
+        t.from_value IO::ByteFormat::BigEndian.decode Int32, io
+      when 20 # int8/bigint
+        t.from_value IO::ByteFormat::BigEndian.decode Int64, io
+      else # text, bytea, or custom Postgres ENUM type
+        # Postgres defaults to 63 bytes as the max ENUM name size, so we use a
+        # stack-allocated buffer for those as an optimization. If you've got ENUM
+        # names longer than that, we use a heap-allocated buffer, which is slower
+        # but still works.
+        #
+        # See https://www.postgresql.org/docs/current/datatype-enum.html#DATATYPE-ENUM-IMPLEMENTATION-DETAILS
+        if bytesize <= 64
+          buffer = uninitialized UInt8[64]
+          bytes = buffer.to_slice[0, bytesize]
+        else
+          bytes = Bytes.new(bytesize)
+        end
+
+        io.read_fully bytes
+        t.parse string_pool.get(bytes)
+      end
+    end
   end
 
   def read(t : Array(T).class) : Array(T) forall T
