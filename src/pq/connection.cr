@@ -38,6 +38,8 @@ module PQ
     property notification_handler = Proc(Notification, Void).new { }
     @mutex = Mutex.new
     @established = false
+    @lock_owner : Fiber? = nil
+    @lock_count = 0
 
     def initialize(@conninfo : ConnInfo)
       begin
@@ -120,8 +122,30 @@ module PQ
       end
     end
 
+    # Reentrant per-connection lock. An extended-query exchange
+    # (Parse/Bind/Describe/Execute/Sync plus its reply frames) must never
+    # interleave with another fiber's frames on the same socket, and a single
+    # statement's reads span several call sites (statement, result set), so
+    # the lock has to be reentrant per fiber rather than a plain Mutex.
     def synchronize(&)
-      @mutex.synchronize { yield }
+      if @lock_owner == Fiber.current
+        @lock_count += 1
+        begin
+          yield
+        ensure
+          @lock_count -= 1
+        end
+      else
+        @mutex.synchronize do
+          @lock_owner = Fiber.current
+          @lock_count = 1
+          begin
+            yield
+          ensure
+            @lock_owner = nil
+          end
+        end
+      end
     end
 
     private def write_i32(i : Int32)
@@ -503,7 +527,9 @@ module PQ
 
     def expect_frame(frame_class, type = nil)
       f = type ? read(type) : read
-      raise "Expected #{frame_class} but got #{f}" unless frame_class === f
+      unless frame_class === f
+        raise ProtocolError.new("Expected #{frame_class} but got #{f}")
+      end
       frame_class.cast(f)
     end
 

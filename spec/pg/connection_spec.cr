@@ -195,3 +195,38 @@ describe PG, "COPY" do
     end
   end
 end
+
+describe PG::Connection, "concurrent extended queries" do
+  it "serializes protocol frames on one physical connection" do
+    separator = DB_URL.includes?("?") ? "&" : "?"
+    url = "#{DB_URL}#{separator}initial_pool_size=1&max_pool_size=1&max_idle_pool_size=1&checkout_timeout=15"
+
+    DB.open(url) do |db|
+      db.exec("CREATE TEMP TABLE pg_concurrent_items (id BIGSERIAL PRIMARY KEY, value INT)")
+      fibers = 32
+      per_fiber = 8
+      results = Channel(Exception?).new(fibers)
+
+      fibers.times do |i|
+        spawn(name: "pg-concurrent-#{i}") do
+          per_fiber.times do |j|
+            db.exec("INSERT INTO pg_concurrent_items (value) VALUES ($1)", i * 100 + j)
+          end
+          db.scalar("SELECT max(id) FROM pg_concurrent_items").as(Int64)
+          results.send(nil)
+        rescue e
+          results.send(e)
+        end
+      end
+
+      fibers.times do
+        if error = results.receive
+          raise error
+        end
+      end
+
+      db.scalar("SELECT count(*) FROM pg_concurrent_items").as(Int64).should eq((fibers * per_fiber).to_i64)
+      db.pool.stats.open_connections.should eq(1)
+    end
+  end
+end

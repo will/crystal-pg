@@ -23,41 +23,43 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   def move_next : Bool
-    return false if @end
+    conn.synchronize do
+      return false if @end
 
-    fields = @fields
+      fields = @fields
 
-    # `move_next` might be called before consuming all rows,
-    # in that case we need to skip columns
-    if fields && @column_index > -1 && @column_index < fields.size
-      while @column_index < fields.size
-        skip
-      end
-    end
-
-    unless fields
-      @end = true
-      frame = conn.expect_frame PQ::Frame::CommandComplete | PQ::Frame::EmptyQueryResponse
-      if frame.is_a?(PQ::Frame::CommandComplete)
-        @rows_affected = frame.rows_affected
+      # `move_next` might be called before consuming all rows,
+      # in that case we need to skip columns
+      if fields && @column_index > -1 && @column_index < fields.size
+        while @column_index < fields.size
+          skip
+        end
       end
 
-      conn.expect_frame PQ::Frame::ReadyForQuery
-      return false
-    end
+      unless fields
+        @end = true
+        frame = conn.expect_frame PQ::Frame::CommandComplete | PQ::Frame::EmptyQueryResponse
+        if frame.is_a?(PQ::Frame::CommandComplete)
+          @rows_affected = frame.rows_affected
+        end
 
-    if conn.read_next_row_start
-      # We ignore these (redundant information)
-      conn.read_i32 # size
-      conn.read_i16 # ncols
-      @column_index = 0
-      true
-    else
-      conn.expect_frame PQ::Frame::ReadyForQuery
-      @end = true
-      false
+        conn.expect_frame PQ::Frame::ReadyForQuery
+        return false
+      end
+
+      if conn.read_next_row_start
+        # We ignore these (redundant information)
+        conn.read_i32 # size
+        conn.read_i16 # ncols
+        @column_index = 0
+        true
+      else
+        conn.expect_frame PQ::Frame::ReadyForQuery
+        @end = true
+        false
+      end
     end
-  rescue e : IO::Error
+  rescue e : IO::Error | PQ::ProtocolError
     raise DB::ConnectionLost.new(statement.connection, cause: e)
   rescue ex
     @end = true
@@ -81,16 +83,18 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   def read
-    col_bytesize = conn.read_i32
-    if col_bytesize == -1
-      @column_index += 1
-      return nil
-    end
+    conn.synchronize do
+      col_bytesize = conn.read_i32
+      if col_bytesize == -1
+        @column_index += 1
+        return nil
+      end
 
-    safe_read(col_bytesize) do |io|
-      decoder.decode(io, col_bytesize, oid)
+      safe_read(col_bytesize) do |io|
+        decoder.decode(io, col_bytesize, oid)
+      end
     end
-  rescue e : IO::Error
+  rescue e : IO::Error | PQ::ProtocolError
     raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
@@ -139,16 +143,18 @@ class PG::ResultSet < ::DB::ResultSet
   end
 
   private def read_array(t : T.class, &) : T forall T
-    col_bytesize = conn.read_i32
-    if col_bytesize == -1
-      @column_index += 1
-      yield
-    end
+    conn.synchronize do
+      col_bytesize = conn.read_i32
+      if col_bytesize == -1
+        @column_index += 1
+        yield
+      end
 
-    safe_read(col_bytesize) do |io|
-      Decoders.decode_array(io, col_bytesize, T)
+      safe_read(col_bytesize) do |io|
+        Decoders.decode_array(io, col_bytesize, T)
+      end
     end
-  rescue e : IO::Error
+  rescue e : IO::Error | PQ::ProtocolError
     raise DB::ConnectionLost.new(statement.connection, cause: e)
   end
 
